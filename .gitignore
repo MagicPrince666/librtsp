@@ -1,4 +1,5 @@
 **/*.o
 **/*.a
 **/demo
+.vscode/
 build/

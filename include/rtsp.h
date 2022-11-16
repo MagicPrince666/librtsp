@@ -5,27 +5,27 @@
  */
 #ifndef __RTSP_H__
 #define __RTSP_H__
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
 #include <assert.h>
-#define DEFAULT_STRING_MIN_LEN  (32)
-#define DEFAULT_STRING_MAX_LEN  (256)
-#define DEFAULT_RTSP_PORT       (554)
-#define DEFAULT_RTSP_SUPPORT_METHOD     "DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE,ANNOUNCE,RECORD,GET_PARAMETER,SET_PARAMETER"
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#define DEFAULT_STRING_MIN_LEN (32)
+#define DEFAULT_STRING_MAX_LEN (256)
+#define DEFAULT_RTSP_PORT (554)
+#define DEFAULT_RTSP_SUPPORT_METHOD "DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE,ANNOUNCE,RECORD,GET_PARAMETER,SET_PARAMETER"
 typedef enum {
     OPTIONS = 0,
-	DESCRIBE,
-	SETUP,
-	PLAY,
-	RECORD,
-	PAUSE,
-	TEARDOWN,
-	ANNOUNCE,
-	SET_PARAMETER,
-	GET_PARAMETER,
-	REDIRECT,
-	BUTT,
+    DESCRIBE,
+    SETUP,
+    PLAY,
+    RECORD,
+    PAUSE,
+    TEARDOWN,
+    ANNOUNCE,
+    SET_PARAMETER,
+    GET_PARAMETER,
+    REDIRECT,
+    BUTT,
 } rtsp_method_enum_t;
 
 typedef struct {
@@ -43,18 +43,15 @@ typedef struct {
 typedef struct {
     uint8_t is_tcp;
     uint8_t is_multicast;
-    union 
-    {
+    union {
         uint32_t rtp_port;
         uint32_t client_port;
     };
-    union 
-    {
+    union {
         uint32_t rtcp_port;
         uint32_t server_port;
     };
-    
-    
+
 } rtsp_transport_t;
 typedef struct {
     uint32_t status;
@@ -70,7 +67,7 @@ typedef struct {
         uint32_t is_sdp;
         uint32_t sdp_len;
     };
-    
+
     rtsp_transport_t tansport;
     rtsp_request_t request;
 } rtsp_rely_t;
@@ -90,7 +87,5 @@ typedef struct {
 #endif
     char session[DEFAULT_STRING_MIN_LEN];
 } rtsp_msg_t;
-
-
 
 #endif

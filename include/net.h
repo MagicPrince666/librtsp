@@ -5,14 +5,14 @@
  */
 #ifndef __NET_H__
 #define __NET_H__
+#include "errno.h"
 #include "stdio.h"
 #include "string.h"
-#include <fcntl.h>
-#include <unistd.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include "errno.h"
+#include <fcntl.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
+#include <unistd.h>
 #define TCP_MAX_CLIENT 128
 typedef struct {
     char ip[16];
