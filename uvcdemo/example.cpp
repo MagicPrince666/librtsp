@@ -165,7 +165,7 @@ void *rtsp_thread(void *args)
             printf("rtsp client ip:%s port:%d\n", inet_ntoa(tcp.addr.sin_addr), ntohs(tcp.addr.sin_port));
         }
         char recvbuffer[2048];
-        tcp_server_receive_msg(&tcp, client, recvbuffer, sizeof(recvbuffer));
+        tcp_server_receive_msg(&tcp, client, (uint8_t*)recvbuffer, sizeof(recvbuffer));
         rtsp_msg_t rtsp = rtsp_msg_load(recvbuffer);
         char datetime[30];
         rfc822_datetime_format(time(NULL), datetime);
@@ -188,7 +188,7 @@ void *rtsp_thread(void *args)
             break;
         case TEARDOWN:
             rtsp_rely_dumps(rely, msg, 2048);
-            tcp_server_send_msg(&tcp, client, msg, strlen(msg));
+            tcp_server_send_msg(&tcp, client, (uint8_t*)msg, strlen(msg));
             tcp_server_close_client(&tcp, client);
             client  = 0;
             g_pause = 0;
@@ -197,7 +197,7 @@ void *rtsp_thread(void *args)
             rtsp_rely_dumps(rely, msg, 2048);
             break;
         }
-        tcp_server_send_msg(&tcp, client, msg, strlen(msg));
+        tcp_server_send_msg(&tcp, client, (uint8_t*)msg, strlen(msg));
         usleep(1000);
     }
     tcp_server_deinit(&tcp);

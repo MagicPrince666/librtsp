@@ -22,6 +22,7 @@ ENDIF ()
 add_subdirectory(src)
 
 set(EXEC_NAME rtsp_demo)
+set(EXEC_NAME2 uvc_demo)
 
 add_executable(${EXEC_NAME} example/example.cpp
 )
@@ -30,3 +31,9 @@ target_link_libraries(${EXEC_NAME}
     rtsp
 )
 
+add_executable(${EXEC_NAME2} uvcdemo/example.cpp
+)
+
+target_link_libraries(${EXEC_NAME2} 
+    rtsp
+)

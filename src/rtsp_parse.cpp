@@ -105,7 +105,7 @@ int rtsp_parse_msg(const char *msg, rtsp_msg_t *rtsp)
 {
     memset(rtsp, 0, sizeof(rtsp_msg_t));
     FUNC_CHECK(rtsp_parse_request(msg, &rtsp->request), 0);
-    // FUNC_CHECK(rtsp_parse_cseq(msg, &rtsp->cseq), 0);
+    rtsp_parse_cseq(msg, (int32_t *)&rtsp->cseq);
 
     if (rtsp->request.method == SETUP) {
         FUNC_CHECK(rtsp_parse_transport(msg, &rtsp->tansport), 0);
