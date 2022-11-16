@@ -56,6 +56,7 @@ rtp_packet_t *rtp_packet_malloc(rtp_header_t *header, uint8_t *data, uint32_t le
     RTP_MALLOC_REGISTER(header)
     RTP_REGISTER(RTP_H264, rtp_h264_packet_malloc)
     RTP_MALLOC_REGISTER_END()
+    return nullptr;
 }
 
 void rtp_packet_free(rtp_packet_t *pkt)
@@ -68,5 +69,5 @@ void rtp_packet_free(rtp_packet_t *pkt)
         free(p);
         p = next;
     }
-    pkt == NULL;
+    // pkt == NULL;
 }

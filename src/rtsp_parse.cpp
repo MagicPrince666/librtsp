@@ -113,4 +113,5 @@ int rtsp_parse_msg(const char *msg, rtsp_msg_t *rtsp)
     if (rtsp->request.method == PLAY) {
         FUNC_CHECK(rtsp_parse_session(msg, rtsp->session), 0);
     }
+    return 0;
 }

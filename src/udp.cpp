@@ -70,7 +70,7 @@ int udp_server_recive_msg(udp_t *udp, ip_t *ip, unsigned char *data, int len)
     if (ret) {
         return -1;
     }
-    sprintf(ip->ip, "%s", inet_ntoa(addr.sin_addr));
+    snprintf(ip->ip, 16, "%s", inet_ntoa(addr.sin_addr));
     ip->port = ntohs(addr.sin_port);
     return size;
 }

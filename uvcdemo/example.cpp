@@ -79,7 +79,7 @@ void *rtp_thread(void *args)
         printf("udp server init fail.\n");
         return NULL;
     }
-    char *filename = H264_FILENAME;
+    const char *filename = H264_FILENAME;
     file_t file;
     uint32_t rtptime = 0;
     int idr          = 0;
@@ -87,7 +87,7 @@ void *rtp_thread(void *args)
     rtp_header_init(&header);
     header.seq = 0;
     header.ts  = 0;
-    open_h264_file(filename, &file);
+    open_h264_file((char *)filename, &file);
     h264_nalu_t *nalu = h264_nal_packet_malloc(file.data, file.len);
     printf("rtp server init.\n");
     while (g_pause) {
@@ -124,6 +124,7 @@ void *rtp_thread(void *args)
     udp_server_deinit(&udp);
     udp_server_deinit(&rtcp);
     printf("rtp exit\n");
+    return nullptr;
 }
 extern const char *rfc822_datetime_format(time_t time, char *datetime);
 void *rtsp_thread(void *args)
@@ -160,7 +161,7 @@ void *rtsp_thread(void *args)
                 continue;
             }
             client = tcp_server_wait_client(&tcp);
-            sprintf(ipaddr->ip, "%s", inet_ntoa(tcp.addr.sin_addr));
+            snprintf(ipaddr->ip, 16, "%s", inet_ntoa(tcp.addr.sin_addr));
             ipaddr->port = ntohs(tcp.addr.sin_port);
             printf("rtsp client ip:%s port:%d\n", inet_ntoa(tcp.addr.sin_addr), ntohs(tcp.addr.sin_port));
         }
@@ -175,7 +176,7 @@ void *rtsp_thread(void *args)
         case SETUP:
             rely.tansport.server_port = 45504;
             rtsp_rely_dumps(rely, msg, 2048);
-            sprintf(ip.ip, "%s", ipaddr->ip);
+            snprintf(ip.ip, 16, "%s", ipaddr->ip);
             ip.port = rtsp.tansport.client_port;
             g_pause = 1;
             pthread_create(&rtp, NULL, rtp_thread, &ip);

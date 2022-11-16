@@ -31,8 +31,8 @@
     do {                                    \
         if (m == v) {                       \
             char str[2048] = {0};           \
-            sprintf(str, ##args);           \
-            sprintf(msg, "%s%s", msg, str); \
+            snprintf(str, sizeof(str), ##args);           \
+            snprintf(msg, sizeof(str), "%s%s", msg, str); \
         }                                   \
     } while (0)
 
@@ -89,7 +89,7 @@ int rtsp_rely_dumps(rtsp_rely_t rely, char *msg, uint32_t len)
                   rely.request.url.port,
                   rely.request.url.uri,
                   rely.rtp_seq,
-                  rely.rtptime);
+                  (long)rely.rtptime);
     RELY_ADD(msg, "Content-Length: %d\r\n\r\n", rely.sdp_len);
     RELY_ADD_COND(method, DESCRIBE, msg, "%s", rely.sdp);
     // printf("msg:%ld\n%s\n",strlen(msg),msg);
@@ -99,8 +99,8 @@ rtsp_rely_t get_rely(rtsp_msg_t rtsp)
 {
     rtsp_rely_t rely;
     memset(&rely, 0, sizeof(rtsp_rely_t));
-    sprintf(rely.desc, "OK");
-    sprintf(rely.session, "%p", &rtsp);
+    snprintf(rely.desc, DEFAULT_STRING_MIN_LEN, "OK");
+    snprintf(rely.session, DEFAULT_STRING_MIN_LEN, "%p", &rtsp);
     rely.request = rtsp.request;
     rely.status  = 200;
     rely.cseq    = rtsp.cseq;
