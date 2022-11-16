@@ -48,7 +48,7 @@ h264_nalu_t *h264_nal_packet_malloc(unsigned char *buf, int len)
         memset(nalu, 0, sizeof(h264_nalu_t));
         uint8_t *next = h264_next_nal(data, end);
         
-        nalu->type = H264_NAL(data[0]);
+        nalu->type = (h264_nalu_enum_t)H264_NAL(data[0]);
         nalu->data = data;
         nalu->len = next - data;
         if(next == NULL) {

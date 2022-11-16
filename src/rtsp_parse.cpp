@@ -5,6 +5,7 @@
  */
 
 #include "include/rtsp.h"
+
 #define RTSP_METHOD_PARSE(msg, val)             do{ if(strcmp(opt, #val) == 0)      return val;         }while(0)
 #define FUNC_CHECK(func, num)                   do{ if(num != func)                 return -1;          }while(0)
 
@@ -61,14 +62,14 @@ static rtsp_method_enum_t rtsp_parse_method(const char *opt)
 
 static int rtsp_parse_session(const char *msg, char *session)
 {
-    RTSP_PARSE(msg, "Session",1, "Session: %s\r\n", session);
+    RTSP_PARSE((char *)msg, "Session",1, "Session: %s\r\n", session);
     return 0;
 }
 
 
 static int rtsp_parse_cseq(const char *msg, int *cseq)
 {
-    RTSP_PARSE(msg, "CSeq",1, "CSeq: %d\r\n", cseq);
+    RTSP_PARSE((char *)msg, "CSeq",1, "CSeq: %d\r\n", cseq);
     return 0;
 }
 
@@ -76,7 +77,7 @@ static int rtsp_parse_transport(const char *msg, rtsp_transport_t *trans)
 {
     char tcpip[DEFAULT_STRING_MIN_LEN];
     char cast[DEFAULT_STRING_MIN_LEN];
-    RTSP_PARSE(msg, "Transport", 4, "Transport: %[^;];%[^;];client_port=%d-%d\r\n", tcpip, cast, &trans->rtp_port, &trans->rtcp_port);
+    RTSP_PARSE((char *)msg, "Transport", 4, "Transport: %[^;];%[^;];client_port=%d-%d\r\n", tcpip, cast, &trans->rtp_port, &trans->rtcp_port);
     trans->is_tcp = strcmp(tcpip, "RTP/AVP/TCP") == 0 ? 1:0;
     trans->is_multicast = strcmp(cast, "multicast") == 0 ? 1:0;
     
@@ -103,7 +104,7 @@ int rtsp_parse_msg(const char *msg, rtsp_msg_t *rtsp)
 {
     memset(rtsp, 0, sizeof(rtsp_msg_t));
     FUNC_CHECK(rtsp_parse_request(msg, &rtsp->request), 0);
-    FUNC_CHECK(rtsp_parse_cseq(msg, &rtsp->cseq), 0);
+    // FUNC_CHECK(rtsp_parse_cseq(msg, &rtsp->cseq), 0);
 
     if(rtsp->request.method == SETUP){
         FUNC_CHECK(rtsp_parse_transport(msg, &rtsp->tansport), 0);

@@ -1,6 +1,6 @@
 PRO_NAME = librtsp.a
 PRO_ROOT = $(shell pwd)
-CC = $(CROSS_COMPILE)gcc
+CXX = $(CROSS_COMPILE)g++
 AR = $(CROSS_COMPILE)ar
 INC := -I$(PRO_ROOT)/..
 CFLAGS += $(INC)
@@ -9,14 +9,14 @@ LIB = -lpthread -lrt
 
 SRC_DIR := $(PRO_ROOT)
 LIB_SRC = \
-	$(SRC_DIR)/rtsp_parse.c 		\
-	$(SRC_DIR)/rtsp_handler.c 		\
-	$(SRC_DIR)/rtp.c				\
-	$(SRC_DIR)/h264.c				\
-	$(SRC_DIR)/tcp.c				\
-	$(SRC_DIR)/udp.c				\
+	$(SRC_DIR)/rtsp_parse.cpp 		\
+	$(SRC_DIR)/rtsp_handler.cpp 		\
+	$(SRC_DIR)/rtp.cpp				\
+	$(SRC_DIR)/h264.cpp				\
+	$(SRC_DIR)/tcp.cpp				\
+	$(SRC_DIR)/udp.cpp				\
 
-obj = $(LIB_SRC:%.c=%.o)
+obj = $(LIB_SRC:%.cpp=%.o)
 
 
 all:$(obj)

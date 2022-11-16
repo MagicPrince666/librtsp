@@ -48,8 +48,8 @@ int udp_server_send_msg(udp_t *udp, const char *ip, const int port, unsigned cha
     addr.sin_addr.s_addr = inet_addr(ip);
     addr.sin_port = htons(port);
     int ret;
-    int try = 3;
-    do{
+    int retry = 3;
+    do {
         ret = sendto(udp->sock, (const unsigned char*)data, len, 0, (struct sockaddr*)&addr, sizeof(addr));
         if (ret != len) {
             printf("udp %d\n",ret);
@@ -58,8 +58,8 @@ int udp_server_send_msg(udp_t *udp, const char *ip, const int port, unsigned cha
         else {
             return 0;
         }
-        try--;
-    } while(ret != len && try > 0);
+        retry--;
+    } while(ret != len && retry > 0);
     
     return -1;
 }
@@ -67,8 +67,8 @@ int udp_server_send_msg(udp_t *udp, const char *ip, const int port, unsigned cha
 int udp_server_recive_msg(udp_t *udp, ip_t *ip, unsigned char *data, int len)
 {
     struct sockaddr_in addr;
-    int size = 0;
-    int ret = recvfrom(udp->sock, data, len, 0, (struct sockaddr *)&addr, &size);
+    socklen_t size = 0;
+    ssize_t ret = recvfrom(udp->sock, data, len, 0, (struct sockaddr *)&addr, &size);
     if(ret)
     {
         return -1;

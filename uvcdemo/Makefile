@@ -1,16 +1,16 @@
 PRO_NAME = demo
 PRO_ROOT = $(shell pwd)/..
-CC = $(CROSS_COMPILE)gcc
+CXX = $(CROSS_COMPILE)g++
 INC := -I$(PRO_ROOT)
 CFLAGS += $(INC)
 LIB = -L$(SRC_DIR) -lpthread -lrtsp
 SRC_DIR := $(PRO_ROOT)/src
 
 SRC = \
-	example.c
+	example.cpp
 
 all:
-	 $(CC) $(CFLAGS)  -o $(PRO_NAME) $(SRC) $(LIB_SRC) $(LIB)
+	 $(CXX) $(CFLAGS)  -o $(PRO_NAME) $(SRC) $(LIB_SRC) $(LIB)
 
 clean:
 	@rm demo -rf
