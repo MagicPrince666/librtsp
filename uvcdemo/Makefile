@@ -3,9 +3,7 @@ PRO_ROOT = $(shell pwd)/..
 CC = $(CROSS_COMPILE)gcc
 INC := -I$(PRO_ROOT)
 CFLAGS += $(INC)
-
 LIB = -L$(SRC_DIR) -lpthread -lrtsp
-
 SRC_DIR := $(PRO_ROOT)/src
 
 SRC = \

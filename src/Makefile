@@ -4,7 +4,9 @@ CC = $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar
 INC := -I$(PRO_ROOT)/..
 CFLAGS += $(INC)
+
 LIB = -lpthread -lrt
+
 SRC_DIR := $(PRO_ROOT)
 LIB_SRC = \
 	$(SRC_DIR)/rtsp_parse.c 		\
