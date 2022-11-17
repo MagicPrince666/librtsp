@@ -5,9 +5,9 @@
  */
 
 #include "include/net.h"
-#include "spdlog/spdlog.h"
 #include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
 #include "spdlog/fmt/ostr.h" // support for user defined types
+#include "spdlog/spdlog.h"
 
 int udp_server_init(udp_t *udp, int port)
 {

@@ -6,9 +6,9 @@
 #include "include/net.h"
 #include <iostream>
 
-#include "spdlog/spdlog.h"
 #include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
 #include "spdlog/fmt/ostr.h" // support for user defined types
+#include "spdlog/spdlog.h"
 
 int tcp_server_init(tcp_t *tcp, int port)
 {
@@ -77,18 +77,18 @@ int tcp_server_send_msg(tcp_t *tcp, int client, char *data, int len)
         return -1;
     }
 
-    if(client <= 0) {
+    if (client <= 0) {
         spdlog::error("client fd = {}", client);
         return -1;
     }
 
-    if(len <= 0) {
+    if (len <= 0) {
         spdlog::error("data len = {}", len);
         return -1;
     }
 
     int ret = send(client, data, len, 0);
-    if(ret < 0 ) {
+    if (ret < 0) {
         spdlog::error("tcp send fail ret = {}", ret);
     }
     return ret;
