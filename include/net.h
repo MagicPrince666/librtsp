@@ -37,7 +37,7 @@ typedef struct {
 int tcp_server_init(tcp_t *tcp, int port);
 int tcp_server_wait_client(tcp_t *tcp);
 int tcp_server_close_client(tcp_t *tcp, int client);
-int tcp_server_send_msg(tcp_t *tcp, int client, unsigned char *data, int len);
+int tcp_server_send_msg(tcp_t *tcp, int client, char *data, int len);
 int tcp_server_receive_msg(tcp_t *tcp, int client, unsigned char *data, int len);
 int tcp_server_deinit(tcp_t *tcp);
 

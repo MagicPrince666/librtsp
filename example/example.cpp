@@ -203,6 +203,7 @@ void *rtsp_thread(void *args)
     }
 
     char msg[2048];
+    memset(msg, 0, sizeof(msg));
     char sdp[2048] = "v=0\n"
                      "o=- 16409863082207520751 16409863082207520751 IN IP4 0.0.0.0\n"
                      "c=IN IP4 0.0.0.0\n"
@@ -254,7 +255,7 @@ void *rtsp_thread(void *args)
             break;
         case TEARDOWN:
             rtsp_rely_dumps(rely, msg, 2048);
-            tcp_server_send_msg(&tcp, client, (uint8_t *)msg, strlen(msg));
+            tcp_server_send_msg(&tcp, client, msg, strlen(msg));
             tcp_server_close_client(&tcp, client);
             client  = 0;
             g_pause = 0;
@@ -263,7 +264,7 @@ void *rtsp_thread(void *args)
             rtsp_rely_dumps(rely, msg, 2048);
             break;
         }
-        tcp_server_send_msg(&tcp, client, (uint8_t *)msg, strlen(msg));
+        tcp_server_send_msg(&tcp, client, msg, strlen(msg));
         usleep(1000);
     }
     tcp_server_deinit(&tcp);
@@ -279,7 +280,7 @@ std::string GetHostIpAddress() {
 	struct hostent* host = gethostbyname(name);
 	char ipStr[32];
 	const char* ret = inet_ntop(host->h_addrtype, host->h_addr_list[0], ipStr, sizeof(ipStr));
-	if (NULL==ret) {
+	if (nullptr == ret) {
 		std::cout << "hostname transform to ip failed";
 		return "";
 	}

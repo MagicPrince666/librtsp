@@ -189,7 +189,7 @@ void *rtsp_thread(void *args)
             break;
         case TEARDOWN:
             rtsp_rely_dumps(rely, msg, 2048);
-            tcp_server_send_msg(&tcp, client, (uint8_t*)msg, strlen(msg));
+            tcp_server_send_msg(&tcp, client, msg, strlen(msg));
             tcp_server_close_client(&tcp, client);
             client  = 0;
             g_pause = 0;
@@ -198,7 +198,7 @@ void *rtsp_thread(void *args)
             rtsp_rely_dumps(rely, msg, 2048);
             break;
         }
-        tcp_server_send_msg(&tcp, client, (uint8_t*)msg, strlen(msg));
+        tcp_server_send_msg(&tcp, client, msg, strlen(msg));
         usleep(1000);
     }
     tcp_server_deinit(&tcp);

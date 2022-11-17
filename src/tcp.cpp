@@ -45,8 +45,9 @@ int tcp_server_wait_client(tcp_t *tcp)
 {
     int i             = 0;
     socklen_t addrlen = sizeof(tcp->addr);
-    while (tcp->client[i] != 0 && i < TCP_MAX_CLIENT)
+    while (tcp->client[i] != 0 && i < TCP_MAX_CLIENT) {
         i++;
+    }
     tcp->client[i] = accept(tcp->sock, (struct sockaddr *)&tcp->addr, &addrlen);
     return tcp->client[i];
 }
@@ -54,21 +55,24 @@ int tcp_server_wait_client(tcp_t *tcp)
 int tcp_server_close_client(tcp_t *tcp, int client)
 {
     int i;
-    while (tcp->client[i] != client && i < TCP_MAX_CLIENT)
+    while (tcp->client[i] != client && i < TCP_MAX_CLIENT) {
         i++;
+    }
     close(tcp->client[i]);
     tcp->client[i] = 0;
     return 0;
 }
 
-int tcp_server_send_msg(tcp_t *tcp, int client, unsigned char *data, int len)
+int tcp_server_send_msg(tcp_t *tcp, int client, char *data, int len)
 {
+    spdlog::info("send to client fd = {} msg {} len {}", client, data, len);
     int i = 0;
     while (tcp->client[i] != client && i < TCP_MAX_CLIENT) {
         i++;
     }
 
     if (i >= TCP_MAX_CLIENT) {
+        spdlog::error("illegal client fd = {}", client);
         return -1;
     }
 
@@ -83,6 +87,9 @@ int tcp_server_send_msg(tcp_t *tcp, int client, unsigned char *data, int len)
     }
 
     int ret = send(client, data, len, 0);
+    if(ret < 0 ) {
+        spdlog::error("tcp send fail ret = {}", ret);
+    }
     return ret;
 }
 
