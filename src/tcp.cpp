@@ -4,6 +4,11 @@
  * @LastEditTime: 2021-02-23 18:01:54
  */
 #include "include/net.h"
+#include <iostream>
+#include "spdlog/spdlog.h"
+#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
+#include "spdlog/fmt/ostr.h" // support for user defined types
+
 int tcp_server_init(tcp_t *tcp, int port)
 {
     memset(tcp, 0, sizeof(tcp_t));
@@ -19,6 +24,7 @@ int tcp_server_init(tcp_t *tcp, int port)
 
     int opt = 1;
     setsockopt(tcp->sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(tcp->sock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
     int ret = bind(tcp->sock, (struct sockaddr *)&tcp->addr, sizeof(struct sockaddr_in));
     if (ret) {
         printf("bind socket to address failed : %d\n", errno);
@@ -58,12 +64,26 @@ int tcp_server_close_client(tcp_t *tcp, int client)
 int tcp_server_send_msg(tcp_t *tcp, int client, unsigned char *data, int len)
 {
     int i = 0;
-    while (tcp->client[i] != client && i < TCP_MAX_CLIENT)
+    while (tcp->client[i] != client && i < TCP_MAX_CLIENT) {
         i++;
+    }
+
     if (i >= TCP_MAX_CLIENT) {
         return -1;
     }
-    return send(client, data, len, 0);
+
+    if(client <= 0) {
+        spdlog::error("client fd = {}", client);
+        return -1;
+    }
+
+    if(len <= 0) {
+        spdlog::error("data len = {}", len);
+        return -1;
+    }
+
+    int ret = send(client, data, len, 0);
+    return ret;
 }
 
 int tcp_server_receive_msg(tcp_t *tcp, int client, unsigned char *data, int len)

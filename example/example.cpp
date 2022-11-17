@@ -15,6 +15,13 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <iostream> /* cout */
+#include <netdb.h> /* struct hostent */
+#include <arpa/inet.h> /* inet_ntop */
+
+#include "spdlog/spdlog.h"
+#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
+#include "spdlog/fmt/ostr.h" // support for user defined types
 
 #define H264_FILENAME "../example/test.h264"
 #define SOCKET_ERROR (-1)
@@ -262,6 +269,24 @@ void *rtsp_thread(void *args)
     tcp_server_deinit(&tcp);
 }
 
+
+ 
+std::string GetHostIpAddress() {
+    std::string Ip;
+	char name[256];
+	gethostname(name, sizeof(name));
+	
+	struct hostent* host = gethostbyname(name);
+	char ipStr[32];
+	const char* ret = inet_ntop(host->h_addrtype, host->h_addr_list[0], ipStr, sizeof(ipStr));
+	if (NULL==ret) {
+		std::cout << "hostname transform to ip failed";
+		return "";
+	}
+	Ip = ipStr;
+	return Ip;
+}
+
 int main(int argc, char *argv[])
 {
 #if BACKTRACE_DEBUG
@@ -270,6 +295,9 @@ int main(int argc, char *argv[])
     signal(SIGFPE, _signal_handler);  // SIGFPE，数学相关的异常，如被0除，浮点溢出，等等
     signal(SIGABRT, _signal_handler);  // SIGABRT，由调用abort函数产生，进程非正常退出
 #endif
+
+    spdlog::info("Use commad: rtsp://{}:8554/live", GetHostIpAddress());
+
     pthread_t rtsp_id;
     pthread_create(&rtsp_id, NULL, rtsp_thread, &ip);
     while (1) {

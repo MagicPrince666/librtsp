@@ -13,11 +13,14 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
 #define TCP_MAX_CLIENT 128
+
 typedef struct {
     char ip[16];
     int port;
 } ip_t;
+
 typedef struct {
     int sock;
     int port;
@@ -30,6 +33,7 @@ typedef struct {
     int port;
     struct sockaddr_in addr;
 } udp_t;
+
 int tcp_server_init(tcp_t *tcp, int port);
 int tcp_server_wait_client(tcp_t *tcp);
 int tcp_server_close_client(tcp_t *tcp, int client);
@@ -41,4 +45,5 @@ int udp_server_init(udp_t *udp, int port);
 int udp_server_send_msg(udp_t *udp, const char *ip, const int port, unsigned char *data, int len);
 int udp_server_recive_msg(udp_t *udp, ip_t *ip, unsigned char *data, int len);
 int udp_server_deinit(udp_t *udp);
+
 #endif
