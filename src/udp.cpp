@@ -11,7 +11,7 @@
 
 int udp_server_init(udp_t *udp, int port)
 {
-    int size = 50 * 1024;
+    // int size = 50 * 1024;
     memset(udp, 0, sizeof(udp_t));
     udp->sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (udp->sock == -1) {
@@ -55,8 +55,7 @@ int udp_server_send_msg(udp_t *udp, const char *ip, const int port, unsigned cha
     do {
         ret = sendto(udp->sock, (const unsigned char *)data, len, 0, (struct sockaddr *)&addr, sizeof(addr));
         if (ret != len) {
-            spdlog::error("udp send fail ret = {}", ret);
-            usleep(100000);
+            // spdlog::error("udp send fail ret = {}", ret);
             // return ret;
         } else {
             return 0;

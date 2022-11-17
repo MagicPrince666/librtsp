@@ -66,7 +66,7 @@ int tcp_server_close_client(tcp_t *tcp, int client)
 
 int tcp_server_send_msg(tcp_t *tcp, int client, char *data, int len)
 {
-    spdlog::info("send to client fd = {} msg {} len {}", client, data, len);
+    // spdlog::info("send to client fd = {} msg {} len {}", client, data, len);
     int i = 0;
     while (tcp->client[i] != client && i < TCP_MAX_CLIENT) {
         i++;
