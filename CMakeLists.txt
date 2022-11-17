@@ -10,6 +10,9 @@ include_directories(
 
 PROJECT(RtspDemo)
 
+cmake_host_system_information(RESULT var QUERY OS_PLATFORM)
+message("processor platfrom: ${var}")
+
 set(CMAKE_CXX_STANDARD 20)
 
 SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb ")
