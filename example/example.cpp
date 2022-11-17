@@ -95,7 +95,7 @@ const char *rfc822_datetime_format(time_t time, char *datetime)
     char mon[8], week[8];
     int year, day, hour, min, sec;
     sscanf(date, "%s %s %d %d:%d:%d %d", week, mon, &day, &hour, &min, &sec, &year);
-    r = snprintf(datetime, 32, "%s, %02d %s %04d %02d:%02d:%02d GMT",
+    r = sprintf(datetime, "%s, %02d %s %04d %02d:%02d:%02d GMT",
                  week, day, mon, year, hour, min, sec);
     return r > 0 && r < 32 ? datetime : NULL;
 }
@@ -227,10 +227,11 @@ void *rtsp_thread(void *args)
                 continue;
             }
             client = tcp_server_wait_client(&tcp);
-            snprintf(ipaddr->ip, 16, "%s", inet_ntoa(tcp.addr.sin_addr));
+            sprintf(ipaddr->ip, "%s", inet_ntoa(tcp.addr.sin_addr));
             ipaddr->port = ntohs(tcp.addr.sin_port);
             printf("rtsp client ip:%s port:%d\n", inet_ntoa(tcp.addr.sin_addr), ntohs(tcp.addr.sin_port));
         }
+
         char recvbuffer[2048];
         tcp_server_receive_msg(&tcp, client, (uint8_t *)recvbuffer, sizeof(recvbuffer));
         rtsp_msg_t rtsp = rtsp_msg_load(recvbuffer);
@@ -242,7 +243,7 @@ void *rtsp_thread(void *args)
         case SETUP:
             rely.tansport.server_port = 45504;
             rtsp_rely_dumps(rely, msg, 2048);
-            snprintf(ip.ip, 16, "%s", ipaddr->ip);
+            sprintf(ip.ip, "%s", ipaddr->ip);
             ip.port = rtsp.tansport.client_port;
             g_pause = 1;
             pthread_create(&rtp, NULL, rtp_thread, &ip);

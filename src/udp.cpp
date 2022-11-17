@@ -5,6 +5,10 @@
  */
 
 #include "include/net.h"
+#include "spdlog/spdlog.h"
+#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
+#include "spdlog/fmt/ostr.h" // support for user defined types
+
 int udp_server_init(udp_t *udp, int port)
 {
     int size = 50 * 1024;
@@ -51,7 +55,8 @@ int udp_server_send_msg(udp_t *udp, const char *ip, const int port, unsigned cha
     do {
         ret = sendto(udp->sock, (const unsigned char *)data, len, 0, (struct sockaddr *)&addr, sizeof(addr));
         if (ret != len) {
-            printf("udp %d\n", ret);
+            spdlog::error("udp send fail ret = {}", ret);
+            usleep(100000);
             // return ret;
         } else {
             return 0;
@@ -70,7 +75,7 @@ int udp_server_recive_msg(udp_t *udp, ip_t *ip, unsigned char *data, int len)
     if (ret) {
         return -1;
     }
-    snprintf(ip->ip, 16, "%s", inet_ntoa(addr.sin_addr));
+    sprintf(ip->ip, "%s", inet_ntoa(addr.sin_addr));
     ip->port = ntohs(addr.sin_port);
     return size;
 }

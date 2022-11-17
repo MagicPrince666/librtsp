@@ -6,6 +6,8 @@
 #include "include/rtsp_handler.h"
 #include "include/rtsp.h"
 #include "include/rtsp_parse.h"
+#include <stdio.h>
+
 #define EVENT_PARSE(msg)         \
     rtsp_msg_t _rtsp;            \
     rtsp_parse_msg(msg, &_rtsp); \
@@ -31,8 +33,8 @@
     do {                                    \
         if (m == v) {                       \
             char str[2048] = {0};           \
-            snprintf(str, sizeof(str), ##args);           \
-            snprintf(msg, sizeof(str), "%s%s", msg, str); \
+            sprintf(str, ##args);           \
+            sprintf(msg, "%s%s", msg, str); \
         }                                   \
     } while (0)
 
@@ -99,8 +101,8 @@ rtsp_rely_t get_rely(rtsp_msg_t rtsp)
 {
     rtsp_rely_t rely;
     memset(&rely, 0, sizeof(rtsp_rely_t));
-    snprintf(rely.desc, DEFAULT_STRING_MIN_LEN, "OK");
-    snprintf(rely.session, DEFAULT_STRING_MIN_LEN, "%p", &rtsp);
+    sprintf(rely.desc, "OK");
+    sprintf(rely.session, "%p", &rtsp);
     rely.request = rtsp.request;
     rely.status  = 200;
     rely.cseq    = rtsp.cseq;
