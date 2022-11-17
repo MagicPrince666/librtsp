@@ -35,11 +35,11 @@ $ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_f1c100s.cmake ..
 ```
 $ mkdir build
 $ cd build
-$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_host.cmake ..
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_host.cmake -DCMAKE_BUILD_TYPE=Debug ..
 ```
 # 编译MacOs
 ```
 $ mkdir build
 $ cd build
-$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_darwin.cmake -DCMAKE_BUILD_TYPE=Debug ..
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_darwin.cmake ..
 ```

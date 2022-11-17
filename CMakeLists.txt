@@ -26,9 +26,9 @@ ELSEIF (UNIX)
 ENDIF ()
 
 add_subdirectory(src)
+add_subdirectory(uvcdemo/ringbuf)
 
 set(EXEC_NAME rtsp_demo)
-set(EXEC_NAME2 uvc_demo)
 
 add_executable(${EXEC_NAME} example/example.cpp
 )
@@ -38,10 +38,18 @@ target_link_libraries(${EXEC_NAME}
     rtsp
 )
 
-add_executable(${EXEC_NAME2} uvcdemo/example.cpp
-)
+IF (CMAKE_HOST_APPLE)
+    MESSAGE(STATUS "Not support yet")
+ELSEIF (CMAKE_HOST_UNIX)
+    set(EXEC_NAME2 uvc_demo)
+    # add_subdirectory(uvcdemo/camera)
 
-target_link_libraries(${EXEC_NAME2} 
-    pthread
-    rtsp
-)
+    add_executable(${EXEC_NAME2} uvcdemo/example.cpp)
+
+    target_link_libraries(${EXEC_NAME2} 
+        pthread
+        rtsp
+        # camera
+        ringbuf
+    )
+ENDIF()
