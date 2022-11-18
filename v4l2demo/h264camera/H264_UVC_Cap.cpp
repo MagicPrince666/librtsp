@@ -30,10 +30,17 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "spdlog/spdlog.h"
+#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
+#include "spdlog/fmt/ostr.h" // support for user defined types
 #include "H264_UVC_Cap.h"
 #include "ringbuffer.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
+
+// 这两个变量不知道干嘛的
+struct H264Format *gH264fmt = NULL;
+int Dbg_Param = 0x1f;
 
 H264UvcCap::H264UvcCap(std::string dev, uint32_t width, uint32_t height)
 : v4l2_device_(dev),
@@ -51,6 +58,7 @@ H264UvcCap::~H264UvcCap()
     if (rec_fp1_) {
         fclose(rec_fp1_);
     }
+
     if (video_) {
         if (video_->fd) {
             close(video_->fd);
@@ -61,7 +69,7 @@ H264UvcCap::~H264UvcCap()
 
 int errnoexit(const char *s)
 {
-    printf("%s error %d, %s", s, errno, strerror(errno));
+    spdlog::error("{} error {}, {}", s, errno, strerror(errno));
     return -1;
 }
 
@@ -69,9 +77,9 @@ int xioctl(int fd, int request, void *arg)
 {
     int r;
 
-    do
+    do {
         r = ioctl(fd, request, arg);
-    while (-1 == r && EINTR == errno);
+    } while (-1 == r && EINTR == errno);
 
     return r;
 }
@@ -96,19 +104,20 @@ bool H264UvcCap::OpenDevice()
     struct stat st;
 
     if (-1 == stat(v4l2_device_.c_str(), &st)) {
-        printf("Cannot identify '%s': %d, %s", v4l2_device_.c_str(), errno, strerror(errno));
+        spdlog::error("Cannot identify '{}': {}, {}", v4l2_device_, errno, strerror(errno));
         return false;
     }
 
     if (!S_ISCHR(st.st_mode)) {
-        printf("%s is no device", v4l2_device_.c_str());
+        spdlog::error("{} is not a device", v4l2_device_);
         return false;
     }
+
     video_     = (struct vdIn *)calloc(1, sizeof(struct vdIn));
     video_->fd = open(v4l2_device_.c_str(), O_RDWR);
 
     if (-1 == video_->fd) {
-        printf("Cannot open '%s': %d, %s", v4l2_device_.c_str(), errno, strerror(errno));
+        spdlog::error("Cannot open '{}': {}, {}", v4l2_device_, errno, strerror(errno));
         return false;
     }
     return true;
@@ -125,7 +134,7 @@ int H264UvcCap::InitMmap(void)
 
     if (-1 == xioctl(video_->fd, VIDIOC_REQBUFS, &req)) {
         if (EINVAL == errno) {
-            printf("%s does not support memory mapping", v4l2_device_.c_str());
+            spdlog::error("{} does not support memory mapping", v4l2_device_);
             return -1;
         } else {
             return errnoexit("VIDIOC_REQBUFS");
@@ -133,14 +142,14 @@ int H264UvcCap::InitMmap(void)
     }
 
     if (req.count < 2) {
-        printf("Insufficient buffer memory on %s", v4l2_device_.c_str());
+        spdlog::error("Insufficient buffer memory on {}", v4l2_device_);
         return -1;
     }
 
     buffers_ = (buffer *)calloc(req.count, sizeof(*buffers_));
 
     if (!buffers_) {
-        printf("Out of memory");
+        spdlog::error("Out of memory");
         return -1;
     }
 
@@ -180,7 +189,7 @@ int H264UvcCap::InitDevice(int width, int height, int format)
 
     if (-1 == xioctl(video_->fd, VIDIOC_QUERYCAP, &cap)) {
         if (EINVAL == errno) {
-            printf("%s is no V4L2 device", v4l2_device_.c_str());
+            spdlog::error("{} is not a V4L2 device", v4l2_device_);
             return -1;
         } else {
             return errnoexit("VIDIOC_QUERYCAP");
@@ -188,12 +197,12 @@ int H264UvcCap::InitDevice(int width, int height, int format)
     }
 
     if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
-        printf("%s is no video capture device", v4l2_device_.c_str());
+        spdlog::error("{} is no video capture device", v4l2_device_);
         return -1;
     }
 
     if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
-        printf("%s does not support streaming i/o", v4l2_device_.c_str());
+        spdlog::error("{} does not support streaming i/o", v4l2_device_);
         return -1;
     }
 
@@ -273,21 +282,15 @@ bool H264UvcCap::InitH264Camera(void)
 {
     int format = V4L2_PIX_FMT_H264;
 
-    bool ret = -1;
-
-    if (OpenDevice()) {
-        ret = InitDevice(video_width_, video_height_, format);
-    } else {
+    if (!OpenDevice()) {
         return false;
     }
 
-    if (ret != -1) {
-        ret = StartPreviewing();
-    } else {
+    if (InitDevice(video_width_, video_height_, format) < 0) {
         return false;
     }
 
-    if (ret < 0) {
+    if (StartPreviewing() < 0) {
         return false;
     }
 
@@ -295,27 +298,29 @@ bool H264UvcCap::InitH264Camera(void)
     time_t curdate;
     tdate = localtime(&curdate);
     XU_OSD_Set_CarcamCtrl(video_->fd, 0, 0, 0);
-    if (XU_OSD_Set_RTC(video_->fd, tdate->tm_year + 1900, tdate->tm_mon + 1, tdate->tm_mday, tdate->tm_hour, tdate->tm_min, tdate->tm_sec) < 0)
-        printf("XU_OSD_Set_RTC_fd = %d Failed\n", video_->fd);
-    if (XU_OSD_Set_Enable(video_->fd, 1, 1) < 0)
-        printf(" XU_OSD_Set_Enable_fd = %d Failed\n", video_->fd);
+    if (XU_OSD_Set_RTC(video_->fd, tdate->tm_year + 1900, tdate->tm_mon + 1, tdate->tm_mday, tdate->tm_hour, tdate->tm_min, tdate->tm_sec) < 0) {
+        spdlog::warn("XU_OSD_Set_RTC_fd = {} Failed", video_->fd);
+    }
+    if (XU_OSD_Set_Enable(video_->fd, 1, 1) < 0) {
+        spdlog::warn("XU_OSD_Set_Enable_fd = {} Failed", video_->fd);
+    }
 
-    ret = XU_Init_Ctrl(video_->fd);
+    int ret = XU_Init_Ctrl(video_->fd);
     if (ret < 0) {
-        printf("XU_H264_Set_BitRate Failed\n");
+        spdlog::error("XU_H264_Set_BitRate Failed");
     } else {
-        double m_BitRate = 0.0;
-        if (XU_H264_Set_BitRate(video_->fd, 4096 * 1024) < 0) //设置码率
-        {
-            printf("XU_H264_Set_BitRate Failed\n");
+        double m_BitRate = 4096 * 1024;
+        //设置码率
+        if (XU_H264_Set_BitRate(video_->fd, m_BitRate) < 0) {
+            spdlog::error("XU_H264_Set_BitRate {} Failed", m_BitRate);
         }
 
         XU_H264_Get_BitRate(video_->fd, &m_BitRate);
         if (m_BitRate < 0) {
-            printf("XU_H264_Get_BitRate Failed\n");
+            spdlog::error("XU_H264_Get_BitRate {} Failed", m_BitRate);
+        } else {
+            spdlog::info("-----XU_H264_Set_BitRate {}bps----", m_BitRate);
         }
-
-        printf("-----XU_H264_Set_BitRate %fbps----\n", m_BitRate);
     }
 
     CreateFile(true);
@@ -332,7 +337,7 @@ int64_t H264UvcCap::CapVideo()
 
     int ret = ioctl(video_->fd, VIDIOC_DQBUF, &buf);
     if (ret < 0) {
-        printf("Unable to dequeue buffer!\n");
+        spdlog::error("Unable to dequeue buffer!");
         return -1;
     }
 
@@ -345,7 +350,7 @@ int64_t H264UvcCap::CapVideo()
     ret = ioctl(video_->fd, VIDIOC_QBUF, &buf);
 
     if (ret < 0) {
-        printf("Unable to requeue buffer");
+        spdlog::error("Unable to requeue buffer");
         return -1;
     }
 

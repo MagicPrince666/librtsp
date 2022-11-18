@@ -197,6 +197,8 @@ extern const char *rfc822_datetime_format(time_t time, char *datetime);
 
 void rtsp_thread(void *args)
 {
+    H264UvcCap h264_camera;
+    h264_camera.InitH264Camera();
     ip_t *ipaddr = (ip_t *)args;
     tcp_t tcp;
     int client = 0;
