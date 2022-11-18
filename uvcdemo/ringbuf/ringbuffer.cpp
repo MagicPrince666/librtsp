@@ -9,10 +9,10 @@ RingBuff::RingBuff(uint64_t rbuf) : buffer_size_(rbuf)
 
 RingBuff::~RingBuff()
 {
-    RingBuffer_destroy();
+    RingBufferDestroy();
 }
 
-bool RingBuff::RingBuffer_create(uint64_t length)
+bool RingBuff::RingBufferCreate(uint64_t length)
 {
     uint64_t size = ROUND_UP_2(length);
 
@@ -32,7 +32,7 @@ bool RingBuff::RingBuffer_create(uint64_t length)
 
     p_buffer_->buf = new uint8_t[size];
     if (!p_buffer_->buf) {
-        free(p_buffer_);
+        delete p_buffer_;
         return false;
     }
 
@@ -41,7 +41,7 @@ bool RingBuff::RingBuffer_create(uint64_t length)
     return true;
 }
 
-void RingBuff::RingBuffer_destroy()
+void RingBuff::RingBufferDestroy()
 {
     if (p_buffer_) {
         delete[] p_buffer_->buf;
@@ -49,9 +49,9 @@ void RingBuff::RingBuffer_destroy()
     }
 }
 
-bool RingBuff::RingBuffer_Reset()
+bool RingBuff::RingBufferReset()
 {
-    if (p_buffer_ == NULL) {
+    if (p_buffer_ == nullptr) {
         return false;
     }
 
@@ -62,12 +62,12 @@ bool RingBuff::RingBuffer_Reset()
     return true;
 }
 
-bool RingBuff::RingBuffer_empty()
+bool RingBuff::RingBufferEmpty()
 {
     return p_buffer_->in == p_buffer_->out;
 }
 
-uint64_t RingBuff::RingBuffer_write(uint8_t *data, uint64_t length)
+uint64_t RingBuff::RingBufferWrite(uint8_t *data, uint64_t length)
 {
     uint64_t len = 0;
 
@@ -82,7 +82,7 @@ uint64_t RingBuff::RingBuffer_write(uint8_t *data, uint64_t length)
     return length;
 }
 
-uint64_t RingBuff::RingBuffer_read(uint8_t *target, uint64_t amount)
+uint64_t RingBuff::RingBufferRead(uint8_t *target, uint64_t amount)
 {
     uint64_t len = 0;
 

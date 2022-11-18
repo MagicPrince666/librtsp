@@ -28,16 +28,16 @@ public:
     RingBuff(uint64_t rbuf = DEFAULT_BUF_SIZE);
     ~RingBuff();
 
-    bool RingBuffer_create(uint64_t length);
-    bool RingBuffer_Reset();
+    bool RingBufferCreate(uint64_t length);
+    bool RingBufferReset();
 
-    uint64_t RingBuffer_read(uint8_t *target, uint64_t amount);
-    uint64_t RingBuffer_write(uint8_t *data, uint64_t length);
+    uint64_t RingBufferRead(uint8_t *target, uint64_t amount);
+    uint64_t RingBufferWrite(uint8_t *data, uint64_t length);
 
 private:
     uint64_t buffer_size_;
     RingBuffer *p_buffer_;
 
-    bool RingBuffer_empty();
-    void RingBuffer_destroy();
+    bool RingBufferEmpty();
+    void RingBufferDestroy();
 };
