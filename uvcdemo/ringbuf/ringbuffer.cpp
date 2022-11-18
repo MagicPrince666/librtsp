@@ -20,7 +20,7 @@ bool RingBuff::RingBuffer_create(uint64_t length)
         size = DEFAULT_BUF_SIZE;
     }
 
-    p_buffer_ = (RingBuffer *)malloc(sizeof(RingBuffer));
+    p_buffer_ =  new RingBuffer;
     if (!p_buffer_) {
         return false;
     }
@@ -30,7 +30,7 @@ bool RingBuff::RingBuffer_create(uint64_t length)
     p_buffer_->in   = 0;
     p_buffer_->out  = 0;
 
-    p_buffer_->buf = (unsigned char *)malloc(size);
+    p_buffer_->buf = new uint8_t[size];
     if (!p_buffer_->buf) {
         free(p_buffer_);
         return false;
@@ -44,8 +44,8 @@ bool RingBuff::RingBuffer_create(uint64_t length)
 void RingBuff::RingBuffer_destroy()
 {
     if (p_buffer_) {
-        free(p_buffer_->buf);
-        free(p_buffer_);
+        delete[] p_buffer_->buf;
+        delete p_buffer_;
     }
 }
 
