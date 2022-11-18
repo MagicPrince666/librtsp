@@ -19,10 +19,10 @@ class RingBuff
 {
 public:
     typedef struct cycle_buffer {
-        unsigned char *buf;
-        unsigned int size;
-        unsigned int in;
-        unsigned int out;
+        uint8_t *buf;
+        uint64_t size;
+        uint64_t in;
+        uint64_t out;
     } RingBuffer;
 
     RingBuff(uint64_t rbuf = DEFAULT_BUF_SIZE);
