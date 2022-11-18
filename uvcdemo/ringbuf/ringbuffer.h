@@ -1,27 +1,43 @@
-#ifndef __RINGBUFFER_H__
-#define __RINGBUFFER_H__
+/**
+ * @file ringbuffer.h
+ * @author 黄李全 (846863428@qq.com)
+ * @brief
+ * @version 0.1
+ * @date 2022-11-18
+ * @copyright Copyright (c) {2021} 个人版权所有
+ */
+
+#pragma once
 
 #include <stdint.h>
 
 #define Min(x, y) ((x) < (y) ? (x) : (y))
-#define ROUND_UP_2(num)  (((num)+1)&~1)
-#define DEFAULT_BUF_SIZE (2*1024*1024)
+#define ROUND_UP_2(num) (((num) + 1) & ~1)
+#define DEFAULT_BUF_SIZE (2 * 1024 * 1024)
 
-typedef struct cycle_buffer 
-{  
-    unsigned char* buf;
-    unsigned int   size;
-    unsigned int   in;
-    unsigned int   out;
-}RingBuffer;  
+class RingBuff
+{
+public:
+    typedef struct cycle_buffer {
+        unsigned char *buf;
+        unsigned int size;
+        unsigned int in;
+        unsigned int out;
+    } RingBuffer;
 
-RingBuffer *RingBuffer_create(int length);
-void RingBuffer_destroy(RingBuffer *buffer);
+    RingBuff(uint64_t rbuf = DEFAULT_BUF_SIZE);
+    ~RingBuff();
 
-int RingBuffer_read(RingBuffer *buffer, uint8_t *target,unsigned int amount);
-int RingBuffer_write(RingBuffer *buffer, uint8_t *data,unsigned int length);
+    bool RingBuffer_create(uint64_t length);
+    bool RingBuffer_Reset();
 
-int RingBuffer_empty(RingBuffer *buffer);
-int RingBuffer_Reset(RingBuffer *buffer);
+    uint64_t RingBuffer_read(uint8_t *target, uint64_t amount);
+    uint64_t RingBuffer_write(uint8_t *data, uint64_t length);
 
-#endif
+private:
+    uint64_t buffer_size_;
+    RingBuffer *p_buffer_;
+
+    bool RingBuffer_empty();
+    void RingBuffer_destroy();
+};
