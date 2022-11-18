@@ -9,6 +9,8 @@
 #pragma once
 
 #include "video_capture.h"
+#include <mutex>
+#include <thread>
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
@@ -43,16 +45,19 @@ private:
         unsigned char cam_mbuf[BUF_SIZE]; /*缓存区数组5242880=5MB//缓存区数组10485760=10MB//缓存区数组1536000=1.46484375MB,10f*/
         int wpos;
         int rpos;                 /*写与读的位置*/
-        pthread_cond_t captureOK; /*线程采集满一个缓冲区时的标志*/
-        pthread_cond_t encodeOK;  /*线程编码完一个缓冲区的标志*/
-        pthread_mutex_t lock;     /*互斥锁*/
+        // std::cond captureOK; /*线程采集满一个缓冲区时的标志*/
+        // std::cond encodeOK;  /*线程编码完一个缓冲区的标志*/
+        std::mutex lock;     /*互斥锁*/
     };
 
     V4l2VideoCapture capture_;
     void *s_source_;
     bool s_b_running_;
-    bool empty_buffer_ = false;
+    bool s_quit_;
+    bool empty_buffer_;
     struct cam_data* cam_data_buff_;
+    bool buff_full_flag_[2];
+
     std::thread video_capture_thread_;
     std::thread video_encode_thread_;
 };
