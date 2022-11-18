@@ -1,45 +1,58 @@
-#ifndef __H264_CAMERA_H__
-#define __H264_CAMERA_H__
+/**
+ * @file h264_camera.h
+ * @author 黄李全 (846863428@qq.com)
+ * @brief 获取视频流并编码
+ * @version 0.1
+ * @date 2022-11-18
+ * @copyright Copyright (c) {2021} 个人版权所有
+ */
+#pragma once
+
+#include "video_capture.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
 #define DelayTime 33 * 1000 //(33us*1000=0.05s 30f/s)
 
-#define DEVICE "/dev/video0"
-#define SET_WIDTH 640
-#define SET_HEIGHT 480
-
-extern struct cam_data Buff[2];
-extern pthread_t thread[3];
-
-extern int framelength;
-extern struct camera *cam;
-
-int read_buffer(void *opaque, uint8_t *buf, int buf_size);
-void init(struct cam_data *c);
-void *video_Capture_Thread(void *arg);
-void *video_Encode_Thread(void *arg);
-
-class Soft_FetchData
+class V4l2H264hData
 {
 public:
-    Soft_FetchData();
-    virtual ~Soft_FetchData();
+    V4l2H264hData();
+    virtual ~V4l2H264hData();
 
-    static void startCap();
-    static void stopCap();
+    void Init();
 
-    static void EmptyBuffer();
-    static int getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes);
+    void VideoCaptureThread();
+    void VideoEncodeThread();
 
-public:
-    static void *s_source;
+    void startCap();
+    void stopCap();
 
-    static void setSource(void *_p)
-    {
-        s_source = _p;
+    void EmptyBuffer();
+    int getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes);
+
+private:
+    void SoftInit();
+    void SoftUinit();
+
+    void setSource(void *_p) {
+        s_source_ = _p;
     }
-    static bool s_b_running;
-};
 
-#endif
+    struct cam_data {
+        unsigned char cam_mbuf[BUF_SIZE]; /*缓存区数组5242880=5MB//缓存区数组10485760=10MB//缓存区数组1536000=1.46484375MB,10f*/
+        int wpos;
+        int rpos;                 /*写与读的位置*/
+        pthread_cond_t captureOK; /*线程采集满一个缓冲区时的标志*/
+        pthread_cond_t encodeOK;  /*线程编码完一个缓冲区的标志*/
+        pthread_mutex_t lock;     /*互斥锁*/
+    };
+
+    V4l2VideoCapture capture_;
+    void *s_source_;
+    bool s_b_running_;
+    bool empty_buffer_ = false;
+    struct cam_data* cam_data_buff_;
+    std::thread video_capture_thread_;
+    std::thread video_encode_thread_;
+};

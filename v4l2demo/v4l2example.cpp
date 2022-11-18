@@ -3,7 +3,6 @@
  * @Date: 2021-02-04 16:04:16
  * @LastEditTime: 2021-02-26 17:01:59
  */
-#include "H264_UVC_Cap.h"
 #include "include/h264.h"
 #include "include/net.h"
 #include "include/rtp.h"
@@ -25,10 +24,16 @@
 #include <arpa/inet.h> /* inet_ntop */
 #include <thread>
 
-#define H264_FILENAME "test.h264"
-#define SOCKET_ERROR (-1)
-#define INVALID_SOCKET (-1)
-#define BUF_SIZE 2048
+#define SOFT_H264 1
+
+#if SOFT_H264
+#include "h264encoder.h"
+#include "video_capture.h"
+#include "h264_camera.h"
+#include "ringbuffer.h"
+#else
+#include "H264_UVC_Cap.h"
+#endif
 
 typedef struct {
     unsigned char *data;
@@ -109,7 +114,6 @@ uint32_t rtsp_get_reltime(void)
     uint64_t ts;
     clock_gettime(CLOCK_MONOTONIC, &tp);
     ts = (tp.tv_sec * 1000000 + tp.tv_nsec / 1000);
-    // printf("usec:%d\n",ts);
     return ts;
 }
 
@@ -143,14 +147,14 @@ void rtp_thread(void *args)
     ip_t *ipaddr = &g_ip;
     udp_t udp, rtcp;
     if (udp_server_init(&udp, 45504)) {
-        printf("udp server init fail.\n");
+        spdlog::error("udp server init fail.");
         return;
     }
     if (udp_server_init(&rtcp, 45505)) {
-        printf("udp server init fail.\n");
+        spdlog::error("udp server init fail.");
         return;
     }
-    const char *filename = H264_FILENAME;
+    const char *filename = "test.h264";
     file_t file;
     uint32_t rtptime = 0;
     int idr          = 0;
@@ -162,7 +166,8 @@ void rtp_thread(void *args)
         return;
     }
     h264_nalu_t *nalu = h264_nal_packet_malloc(file.data, file.len);
-    printf("rtp server init.\n");
+    spdlog::info("rtp server init.");
+
     while (g_pause) {
         h264_nalu_t *h264_nal = nalu;
         while (h264_nal && g_pause) {
@@ -196,20 +201,25 @@ void rtp_thread(void *args)
     close_h264_file(&file);
     udp_server_deinit(&udp);
     udp_server_deinit(&rtcp);
-    printf("rtp exit\n");
+    spdlog::debug("rtp exit");
 }
 
-extern const char *rfc822_datetime_format(time_t time, char *datetime);
+// extern const char *rfc822_datetime_format(time_t time, char *datetime);
 
 void rtsp_thread(void *args)
 {
+#if SOFT_H264
+    V4l2H264hData softh264;
+    softh264.Init();
+#else
     H264UvcCap h264_camera;
     h264_camera.InitH264Camera();
+#endif
     ip_t *ipaddr = (ip_t *)args;
     tcp_t tcp;
     int client = 0;
     if (tcp_server_init(&tcp, 8554)) {
-        printf("tcp server init fail.\n");
+        spdlog::error("tcp server init fail.");
         return;
     }
 
@@ -240,7 +250,7 @@ void rtsp_thread(void *args)
             client = tcp_server_wait_client(&tcp);
             sprintf(ipaddr->ip, "%s", inet_ntoa(tcp.addr.sin_addr));
             ipaddr->port = ntohs(tcp.addr.sin_port);
-            printf("rtsp client ip:%s port:%d\n", inet_ntoa(tcp.addr.sin_addr), ntohs(tcp.addr.sin_port));
+            spdlog::info("rtsp client ip:{} port:{}", inet_ntoa(tcp.addr.sin_addr), ntohs(tcp.addr.sin_port));
         }
         char recvbuffer[2048];
         tcp_server_receive_msg(&tcp, client, (uint8_t *)recvbuffer, sizeof(recvbuffer));
@@ -261,7 +271,7 @@ void rtsp_thread(void *args)
             // if (rtp_thread_test.joinable()) {
             //     rtp_thread_test.join();
             // }
-            printf("rtp client ip:%s port:%d\n", g_ip.ip, g_ip.port);
+            spdlog::info("rtp client ip:{} port:{}", g_ip.ip, g_ip.port);
             break;
         case DESCRIBE:
             rely.sdp_len = strlen(sdp);
@@ -300,7 +310,6 @@ std::string GetHostIpAddress() {
 	Ip = ipStr;
 	return Ip;
 }
-
 
 int main(int argc, char *argv[])
 {

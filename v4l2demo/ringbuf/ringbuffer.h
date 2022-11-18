@@ -26,15 +26,45 @@ public:
         return instance;
     }
 
-    bool Create(uint64_t length);
+    /**
+     * @brief 重置内存
+     * @return true 
+     * @return false 
+     */
     bool Reset();
 
+    /**
+     * @brief 判断是否为空
+     * @return true 
+     * @return false 
+     */
+    bool Empty();
+
+    /**
+     * @brief 获取buf长度
+     * @return uint64_t 
+     */
+    uint64_t Size();
+
+    /**
+     * @brief 读取一段数据
+     * @param target 
+     * @param amount 
+     * @return uint64_t 
+     */
     uint64_t Read(uint8_t *target, uint64_t amount);
+
+    /**
+     * @brief 写入一段数据
+     * @param data 
+     * @param length 
+     * @return uint64_t 
+     */
     uint64_t Write(uint8_t *data, uint64_t length);
 
 private:
     RingBuff(uint64_t rbuf = DEFAULT_BUF_SIZE);
-    bool Empty();
+    bool Create(uint64_t length);
     void Destroy();
 
 private:

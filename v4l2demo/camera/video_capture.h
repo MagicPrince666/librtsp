@@ -1,9 +1,17 @@
-#ifndef _VIDEO_CAPTURE_H
-#define _VIDEO_CAPTURE_H
+/**
+ * @file video_capture.h
+ * @author 黄李全 (846863428@qq.com)
+ * @brief 获取v4l2视频
+ * @version 0.1
+ * @date 2022-11-18
+ * @copyright Copyright (c) {2021} 个人版权所有
+ */
+#pragma once
 
 #include <linux/videodev2.h>
 #include <pthread.h>
 #include <stdint.h>
+#include <iostream>
 
 #define BUF_SIZE 614400
 /*C270 YUV 4:2:2 frame size(char)
@@ -27,59 +35,75 @@
 */
 //#define FIFO_NAME "/tmp/my_video.h264"
 
+#include "h264encoder.h"
+
+#define DEVICE "/dev/video0"
+#define SET_WIDTH 640
+#define SET_HEIGHT 480
+
 struct buffer {
     void *start;
     size_t length;
 };
-struct cam_data {
 
-    unsigned char cam_mbuf[BUF_SIZE]; /*缓存区数组5242880=5MB//缓存区数组10485760=10MB//缓存区数组1536000=1.46484375MB,10f*/
-    int wpos;
-    int rpos;                 /*写与读的位置*/
-    pthread_cond_t captureOK; /*线程采集满一个缓冲区时的标志*/
-    pthread_cond_t encodeOK;  /*线程编码完一个缓冲区的标志*/
-    pthread_mutex_t lock;     /*互斥锁*/
+class V4l2VideoCapture
+{
+public:
+    V4l2VideoCapture(std::string dev = DEVICE);
+    ~V4l2VideoCapture();
+
+    uint8_t* GetUint8tH264Buf();
+
+    v4l2_buffer BuffOneFrame();
+    int FrameLength();
+    int GetWidth();
+    int GetHeight();
+
+    uint8_t* GetData(struct v4l2_buffer buf);
+    int GetDataLen();
+
+private:
+    void OpenCamera();
+    void CloseCamera();
+
+    void V4l2Init();
+    void V4l2Close();
+
+    void StartCapturing();
+    void StopCapturing();
+
+    void InitCamera();
+    void UninitCamera();
+
+    void InitMmap();
+
+    void InitEncoder();
+    void CloseEncoder();
+    void ErrnoExit(const char *s);
+    void InitFile();
+    void CloseFile();
+
+private:
+    struct camera {
+        char *device_name;
+        int fd;
+        int width;
+        int height;
+        int fps;
+        int display_depth;
+        int image_size;
+        int frame_number;
+        struct v4l2_capability v4l2_cap;
+        struct v4l2_cropcap v4l2_cropcap;
+        struct v4l2_format v4l2_fmt;
+        struct v4l2_crop crop;
+        struct buffer *buffers;
+    };
+
+    std::string h264_file_name_ = "test.264";
+    std::string v4l2_device_;
+    FILE *h264_fp_;
+    uint8_t *h264_buf_;
+    uint32_t n_buffers_ = 0;
+    struct camera *camera_;
 };
-
-struct camera {
-    char *device_name;
-    int fd;
-    int width;
-    int height;
-    int fps;
-    int display_depth;
-    int image_size;
-    int frame_number;
-    struct v4l2_capability v4l2_cap;
-    struct v4l2_cropcap v4l2_cropcap;
-    struct v4l2_format v4l2_fmt;
-    struct v4l2_crop crop;
-    struct buffer *buffers;
-};
-
-void errno_exit(const char *s);
-
-// int xioctl(int fd, int request, void *arg);
-
-void open_camera(struct camera *cam);
-void close_camera(struct camera *cam);
-
-int read_and_encode_frame(struct camera *cam);
-
-void start_capturing(struct camera *cam);
-void stop_capturing(struct camera *cam);
-
-void init_camera(struct camera *cam);
-void uninit_camera(struct camera *cam);
-
-void init_mmap(struct camera *cam);
-
-void v4l2_init(struct camera *cam);
-void v4l2_close(struct camera *cam);
-
-int convert_yuv_to_rgb_buffer(unsigned char *yuv, unsigned char *rgb, unsigned int width, unsigned int height);
-
-int buffOneFrame(struct cam_data *tmp, struct camera *cam);
-void encode_frame(uint8_t *yuv_frame, size_t yuv_length);
-
-#endif

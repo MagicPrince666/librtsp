@@ -3,7 +3,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int x264_param_apply_preset(x264_param_t *param, const char *preset)
+H264Encoder::H264Encoder() {}
+
+H264Encoder::~H264Encoder() {
+    CompressEnd();
+}
+
+int H264Encoder::X264ParamApplyPreset(x264_param_t *param, const char *preset)
 {
     char *end;
     int i = strtol(preset, &end, 10);
@@ -88,47 +94,47 @@ static int x264_param_apply_preset(x264_param_t *param, const char *preset)
     return 0;
 }
 
-void compress_begin(Encoder *en, int width, int height)
+void H264Encoder::CompressBegin(int width, int height)
 {
 
-    en->param   = (x264_param_t *)malloc(sizeof(x264_param_t));
-    en->picture = (x264_picture_t *)malloc(sizeof(x264_picture_t));
+    encode_->param   = (x264_param_t *)malloc(sizeof(x264_param_t));
+    encode_->picture = (x264_picture_t *)malloc(sizeof(x264_picture_t));
 
-    x264_param_default(en->param); //编码器默认设置
-    // x264_param_apply_preset(en->param,"ultrafast");//订制编码器性能
-    x264_param_apply_preset(en->param, "ultrafast"); //订制编码器性能
+    x264_param_default(encode_->param); //编码器默认设置
+    // X264ParamApplyPreset(encode_->param,"ultrafast");//订制编码器性能
+    X264ParamApplyPreset(encode_->param, "ultrafast"); //订制编码器性能
 
-    en->param->i_width  = width;  //设置图像宽度
-    en->param->i_height = height; //设置图像高度
+    encode_->param->i_width  = width;  //设置图像宽度
+    encode_->param->i_height = height; //设置图像高度
 
-    if ((en->handle = x264_encoder_open(en->param)) == 0) {
+    if ((encode_->handle = x264_encoder_open(encode_->param)) == 0) {
         return;
     }
 
-    x264_picture_alloc(en->picture, X264_CSP_I420, en->param->i_width,
-                       en->param->i_height);
-    en->picture->img.i_csp   = X264_CSP_I420;
-    en->picture->img.i_plane = 3;
+    x264_picture_alloc(encode_->picture, X264_CSP_I420, encode_->param->i_width,
+                       encode_->param->i_height);
+    encode_->picture->img.i_csp   = X264_CSP_I420;
+    encode_->picture->img.i_plane = 3;
 }
 
-int compress_frame(Encoder *en, int type, uint8_t *in, uint8_t *out)
+int H264Encoder::CompressFrame(int type, uint8_t *in, uint8_t *out)
 {
     x264_picture_t pic_out;
     int nNal   = 0;
     int result = 0;
     int i = 0, j = 0;
     uint8_t *p_out = out;
-    en->nal        = NULL;
+    encode_->nal        = NULL;
     uint8_t *p422;
 
-    char *y = (char *)(en->picture->img.plane[0]);
-    char *u = (char *)(en->picture->img.plane[1]);
-    char *v = (char *)(en->picture->img.plane[2]);
+    char *y = (char *)(encode_->picture->img.plane[0]);
+    char *u = (char *)(encode_->picture->img.plane[1]);
+    char *v = (char *)(encode_->picture->img.plane[2]);
 
     //////////////////////////////////////////////////////////////////////////////////////
-    int widthStep422 = en->param->i_width * 2;
+    int widthStep422 = encode_->param->i_width * 2;
 
-    for (i = 0; i < en->param->i_height; i += 2) {
+    for (i = 0; i < encode_->param->i_height; i += 2) {
         p422 = in + i * widthStep422;
 
         for (j = 0; j < widthStep422; j += 4) {
@@ -148,48 +154,48 @@ int compress_frame(Encoder *en, int type, uint8_t *in, uint8_t *out)
 
     switch (type) {
     case 0:
-        en->picture->i_type = X264_TYPE_P;
+        encode_->picture->i_type = X264_TYPE_P;
         break;
     case 1:
-        en->picture->i_type = X264_TYPE_IDR;
+        encode_->picture->i_type = X264_TYPE_IDR;
         break;
     case 2:
-        en->picture->i_type = X264_TYPE_I;
+        encode_->picture->i_type = X264_TYPE_I;
         break;
     default:
-        en->picture->i_type = X264_TYPE_AUTO;
+        encode_->picture->i_type = X264_TYPE_AUTO;
         break;
     }
 
-    if (x264_encoder_encode(en->handle, &(en->nal), &nNal, en->picture,
+    if (x264_encoder_encode(encode_->handle, &(encode_->nal), &nNal, encode_->picture,
                             &pic_out) < 0) {
         return -1;
     }
-    en->picture->i_pts++;
+    encode_->picture->i_pts++;
 
     for (i = 0; i < nNal; i++) {
-        memcpy(p_out, en->nal[i].p_payload, en->nal[i].i_payload);
-        p_out += en->nal[i].i_payload;
-        result += en->nal[i].i_payload;
+        memcpy(p_out, encode_->nal[i].p_payload, encode_->nal[i].i_payload);
+        p_out += encode_->nal[i].i_payload;
+        result += encode_->nal[i].i_payload;
     }
 
     return result;
     // return nNal;
 }
 
-void compress_end(Encoder *en)
+void H264Encoder::CompressEnd()
 {
-    if (en->picture) {
-        x264_picture_clean(en->picture);
-        free(en->picture);
-        en->picture = 0;
+    if (encode_->picture) {
+        x264_picture_clean(encode_->picture);
+        free(encode_->picture);
+        encode_->picture = 0;
     }
-    if (en->param) {
-        free(en->param);
-        en->param = 0;
+    if (encode_->param) {
+        free(encode_->param);
+        encode_->param = 0;
     }
-    if (en->handle) {
-        x264_encoder_close(en->handle);
+    if (encode_->handle) {
+        x264_encoder_close(encode_->handle);
     }
-    free(en);
+    free(encode_);
 }

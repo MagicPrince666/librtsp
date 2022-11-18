@@ -1,11 +1,16 @@
-#ifndef _H264ENCODER_H
-#define _H264ENCODER_H
+/**
+ * @file h264encoder.h
+ * @author 黄李全 (846863428@qq.com)
+ * @brief 编码H264
+ * @version 0.1
+ * @date 2022-11-18
+ * @copyright Copyright (c) {2021} 个人版权所有
+ */
+#pragma once
 
 #include "x264.h"
 #include <stdint.h>
 #include <stdio.h>
-
-typedef unsigned char uint8_t;
 
 typedef struct {
     x264_param_t *param;
@@ -14,13 +19,23 @@ typedef struct {
     x264_nal_t *nal;
 } Encoder;
 
-//初始化编码器，并返回一个编码器对象
-void compress_begin(Encoder *en, int width, int height);
+class H264Encoder
+{
+public:
+    H264Encoder();
+    ~H264Encoder();
 
-//编码一帧
-int compress_frame(Encoder *en, int type, uint8_t *in, uint8_t *out);
+    //初始化编码器，并返回一个编码器对象
+    void CompressBegin(int width, int height);
 
-//释放内存
-void compress_end(Encoder *en);
+    //编码一帧
+    int CompressFrame(int type, uint8_t *in, uint8_t *out);
 
-#endif
+private:
+    //释放内存
+    void CompressEnd();
+    int X264ParamApplyPreset(x264_param_t *param, const char *preset);
+
+private:
+    Encoder* encode_;
+};

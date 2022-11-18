@@ -17,72 +17,74 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
+#include "spdlog/fmt/ostr.h" // support for user defined types
+#include "spdlog/spdlog.h"
+
 #include "h264_camera.h"
 #include "h264encoder.h"
 #include "ringbuffer.h"
-#include "video_capture.h"
 
 static bool s_quit = true;
-
-struct cam_data Buff[2];
 
 pthread_t thread[3];
 int flag[2], point = 0;
 
-int h264_length = 0;
-int framelength = 0;
-extern Encoder en;
-struct camera *cam;
+V4l2H264hData::V4l2H264hData()
+{
+    s_b_running_ = false;
+    s_source_    = nullptr;
+}
 
-extern char *h264_file_name;
-extern FILE *h264_fp;
-extern uint8_t *h264_buf;
+V4l2H264hData::~V4l2H264hData()
+{
+    SoftUinit();
+    if (video_capture_thread_.joinable()) {
+        video_capture_thread_.join();
+    }
+    if (video_encode_thread_.joinable()) {
+        video_encode_thread_.join();
+    }
+}
 
-extern RingBuffer *rbuf; // from ringbuffer.cpp
-
-void init(struct cam_data *c)
+void V4l2H264hData::Init()
 {
     flag[0] = flag[1] = 0;
 
-    c = (struct cam_data *)malloc(sizeof(struct cam_data));
+    cam_data_buff_ = new (std::nothrow) cam_data;
 
-    pthread_mutex_init(&c->lock, NULL); //以动态方式创建互斥锁
+    pthread_mutex_init(&cam_data_buff_->lock, NULL); //以动态方式创建互斥锁
 
-    pthread_cond_init(&c->captureOK, NULL); //初始化captureOK条件变量
+    pthread_cond_init(&cam_data_buff_->captureOK, NULL); //初始化captureOK条件变量
 
-    pthread_cond_init(&c->encodeOK, NULL); //初始化encodeOK条件变量
+    pthread_cond_init(&cam_data_buff_->encodeOK, NULL); //初始化encodeOK条件变量
 
-    c->rpos = 0;
-    c->wpos = 0;
+    cam_data_buff_->rpos = 0;
+    cam_data_buff_->wpos = 0;
+
+    // if (cam_data_buff_->wpos + len <= BUF_SIZE) { //缓冲区剩余空间足够存放当前帧数据
+    //     memcpy(cam_data_buff_->cam_mbuf + cam_data_buff_->wpos, data, len); //把一帧数据拷贝到缓冲区
+    //     cam_data_buff_->wpos += len;
+    // }
+
+    // if (cam_data_buff_->wpos + len > BUF_SIZE) {
+    //     //缓冲区剩余空间不够存放当前帧数据，切换下一缓冲区
+    //     return;
+    // }
+
+    SoftInit();
+
+    video_capture_thread_ = std::thread([](V4l2H264hData *p_this) { p_this->VideoCaptureThread(); }, this);
+    video_encode_thread_  = std::thread([](V4l2H264hData *p_this) { p_this->VideoEncodeThread(); }, this);
 }
 
-void *video_Capture_Thread(void *arg)
+void V4l2H264hData::VideoCaptureThread()
 {
-    cam = (struct camera *)malloc(sizeof(struct camera));
-    if (!cam) {
-        printf("malloc camera failure!\n");
-        exit(1);
-    }
 
-    cam->device_name = (char *)DEVICE;
-    cam->buffers     = NULL;
-    cam->width       = SET_WIDTH;
-    cam->height      = SET_HEIGHT;
-    cam->fps         = 30; //设置30fps失败
-
-    framelength = sizeof(unsigned char) * cam->width * cam->height * 2;
-
-    v4l2_init(cam);
-    init(Buff);
-
-    int i = 0;
-
-    // unsigned char *data;
-
-    int len = framelength;
+    int i   = 0;
+    int len = capture_.FrameLength();
 
     struct timeval now;
-
     struct timespec outtime;
 
     while (1) {
@@ -98,130 +100,133 @@ void *video_Capture_Thread(void *arg)
 
         outtime.tv_nsec = DelayTime * 1000;
 
-        pthread_mutex_lock(&(Buff[i].lock)); /*获取互斥锁,锁定当前缓冲区*/
-        // if(i)   printf("----video_Capture_Thread Buff 1\n");
-        // if(!i)   printf("----video_Capture_Thread Buff 0\n");
+        pthread_mutex_lock(&(cam_data_buff_[i].lock)); /*获取互斥锁,锁定当前缓冲区*/
 
-        while ((Buff[i].wpos + len) % BUF_SIZE == Buff[i].rpos && Buff[i].rpos != 0) /*等待缓存区处理操作完成*/
-        {
-            // printf("***********video_Capture_Thread ************阻塞\n");
-            // pthread_cond_wait(&(Buff[i].encodeOK),&(Buff[i].lock));
-            pthread_cond_timedwait(&(Buff[i].encodeOK), &(Buff[i].lock), &outtime);
+        while ((cam_data_buff_[i].wpos + len) % BUF_SIZE == cam_data_buff_[i].rpos && cam_data_buff_[i].rpos != 0) {
+            /*等待缓存区处理操作完成*/
+            pthread_cond_timedwait(&(cam_data_buff_[i].encodeOK), &(cam_data_buff_[i].lock), &outtime);
         }
 
-        if (buffOneFrame(&Buff[i], cam)) //采集一帧数据
-        {
+        // &cam_data_buff_[i]
+        struct v4l2_buffer v4l2_buf;
+        v4l2_buf = capture_.BuffOneFrame();
+        int length = v4l2_buf.bytesused;
 
-            pthread_cond_signal(&(Buff[i].captureOK)); /*设置状态信号*/
+        if (cam_data_buff_->wpos + length <= BUF_SIZE) {
+            //缓冲区剩余空间足够存放当前帧数据
+            memcpy(cam_data_buff_->cam_mbuf + cam_data_buff_->wpos, capture_.GetData(v4l2_buf), length); //把一帧数据拷贝到缓冲区
 
-            pthread_mutex_unlock(&(Buff[i].lock)); /*释放互斥锁*/
+            cam_data_buff_->wpos += length;
+        }
+
+        if (length > 0) {
+            //采集一帧数据
+
+            pthread_cond_signal(&(cam_data_buff_[i].captureOK)); /*设置状态信号*/
+
+            pthread_mutex_unlock(&(cam_data_buff_[i].lock)); /*释放互斥锁*/
 
             flag[i] = 1; //缓冲区i已满
 
-            Buff[i].rpos = 0;
+            cam_data_buff_[i].rpos = 0;
 
             i = !i; //切换到另一个缓冲区
 
-            Buff[i].wpos = 0;
+            cam_data_buff_[i].wpos = 0;
 
             flag[i] = 0; //缓冲区i为空
         }
 
-        pthread_cond_signal(&(Buff[i].captureOK)); /*设置状态信号*/
+        pthread_cond_signal(&(cam_data_buff_[i].captureOK)); /*设置状态信号*/
 
-        pthread_mutex_unlock(&(Buff[i].lock)); /*释放互斥锁*/
+        pthread_mutex_unlock(&(cam_data_buff_[i].lock)); /*释放互斥锁*/
     }
 }
 
-void *video_Encode_Thread(void *arg)
+void V4l2H264hData::VideoEncodeThread()
 {
     int i = -1;
-
+    H264Encoder encoder;
+    encoder.CompressBegin(capture_.GetWidth(), capture_.GetHeight());
     while (1) {
         if (s_quit) {
             usleep(10);
             continue;
         }
 
-        if ((flag[1] == 0 && flag[0] == 0) || (flag[i] == -1))
+        if ((flag[1] == 0 && flag[0] == 0) || (flag[i] == -1)) {
             continue;
+        }
 
-        if (flag[0] == 1)
+        if (flag[0] == 1) {
             i = 0;
+        }
 
-        if (flag[1] == 1)
+        if (flag[1] == 1) {
             i = 1;
+        }
 
-        pthread_mutex_lock(&(Buff[i].lock)); /*获取互斥锁*/
-        // if(i)   printf("-------------video_Encode_Thread Buff 1\n");
-        // if(!i)   printf("-------------video_Encode_Thread Buff 0\n");
+        pthread_mutex_lock(&(cam_data_buff_[i].lock)); /*获取互斥锁*/
 
         /*H.264压缩视频*/
-        // encode_frame(Buff[i].cam_mbuf + Buff[i].rpos,0);
-        int h264_length = 0;
-        h264_length     = compress_frame(&en, -1, Buff[i].cam_mbuf + Buff[i].rpos, h264_buf);
+        int h264_length = encoder.CompressFrame(-1, cam_data_buff_[i].cam_mbuf + cam_data_buff_[i].rpos, capture_.GetUint8tH264Buf());
 
         if (h264_length > 0) {
 
             // printf("%s%d\n","-----------h264_length=",h264_length);
             //写h264文件
-            // fwrite(h264_buf, h264_length, 1, h264_fp);
+            // fwrite(capture_.GetUint8tH264Buf(), h264_length, 1, h264_fp);
 #if 1
-            RingBuffer_write(rbuf, h264_buf, h264_length);
+            RINGBUF.Write(capture_.GetUint8tH264Buf(), h264_length);
 #else
-            fwrite(h264_buf, h264_length, 1, h264_fp);
+            fwrite(capture_.GetUint8tH264Buf(), h264_length, 1, h264_fp);
 #endif
             // printf("buf front:%d rear :%d\n",q.front,q.rear);
         }
 
-        Buff[i].rpos += framelength;
+        cam_data_buff_[i].rpos += capture_.FrameLength();
 
-        if (Buff[i].rpos >= BUF_SIZE) {
-            Buff[i].rpos  = 0;
-            Buff[!i].rpos = 0;
-            flag[i]       = -1;
+        if (cam_data_buff_[i].rpos >= BUF_SIZE) {
+            cam_data_buff_[i].rpos  = 0;
+            cam_data_buff_[!i].rpos = 0;
+            flag[i]                 = -1;
         }
 
         /*H.264压缩视频*/
-        pthread_cond_signal(&(Buff[i].encodeOK));
+        pthread_cond_signal(&(cam_data_buff_[i].encodeOK));
 
-        pthread_mutex_unlock(&(Buff[i].lock)); /*释放互斥锁*/
+        pthread_mutex_unlock(&(cam_data_buff_[i].lock)); /*释放互斥锁*/
     }
 }
 
-void Soft_init()
+void V4l2H264hData::SoftInit()
 {
-    // v4l2_init(cam);
-    // init(Buff);
-    printf("Camera init\n");
+    spdlog::info("Camera init");
 }
 
-int Soft_uinit()
+void V4l2H264hData::SoftUinit()
 {
-    // v4l2_close(cam);
-    printf("Camera uinit\n");
-    return 0;
+    spdlog::info("Camera uinit");
 }
 
-void *Soft_FetchData::s_source = NULL;
 
-static bool emptyBuffer = false;
 
-int Soft_FetchData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
+int V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
 {
-    if (!s_b_running) {
-        printf("Soft_FetchData::getData s_b_running = false  \n");
+    if (!s_b_running_) {
+        spdlog::warn("V4l2H264hData::getData s_b_running_ = false");
         return 0;
     }
 
 #if 1
 
-    if (RingBuffer_empty(rbuf)) {
+    if (RINGBUF.Empty()) {
         usleep(100); //等待数据
         fFrameSize         = 0;
         fNumTruncatedBytes = 0;
     }
-    fFrameSize         = RingBuffer_read(rbuf, (uint8_t *)fTo, fMaxSize);
+    fFrameSize = RINGBUF.Write((uint8_t *)fTo, fMaxSize);
+
     fNumTruncatedBytes = 0;
 #else
     fFrameSize = 0;
@@ -242,27 +247,26 @@ int Soft_FetchData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, 
     return fFrameSize;
 }
 
-bool Soft_FetchData::s_b_running = false;
-
-void Soft_FetchData::EmptyBuffer()
+void V4l2H264hData::EmptyBuffer()
 {
-    emptyBuffer = true;
+    empty_buffer_ = true;
 }
 
-void Soft_FetchData::startCap()
+void V4l2H264hData::startCap()
 {
-    s_b_running = true;
-    if (!s_quit)
+    s_b_running_ = true;
+    if (!s_quit) {
         return;
+    }
     s_quit = false;
-    Soft_init();
-    printf("FetchData startCap\n");
+    SoftInit();
+    spdlog::debug("FetchData startCap");
 }
 
-void Soft_FetchData::stopCap()
+void V4l2H264hData::stopCap()
 {
-    s_b_running = false;
-    s_quit      = true;
-    Soft_uinit();
-    printf("FetchData stopCap\n");
+    s_b_running_ = false;
+    s_quit       = true;
+    SoftUinit();
+    spdlog::debug("FetchData stopCap");
 }

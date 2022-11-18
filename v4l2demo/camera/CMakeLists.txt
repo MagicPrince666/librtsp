@@ -3,5 +3,11 @@ add_library(camera
     ${camera_srcs}
 )
 
+include_directories(
+    ${CMAKE_SOURCE_DIR}/v4l2demo/ringbuf
+    ${CMAKE_SOURCE_DIR}/v4l2demo/x264
+)
+
 target_include_directories(camera
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+)
