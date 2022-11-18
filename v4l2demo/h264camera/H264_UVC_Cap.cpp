@@ -31,6 +31,7 @@
 #include <memory>
 
 #include "H264_UVC_Cap.h"
+#include "ringbuffer.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
@@ -45,6 +46,12 @@ H264UvcCap::H264UvcCap(std::string dev) : v4l2_device_(dev)
 H264UvcCap::~H264UvcCap() {
     if (rec_fp1_) {
         fclose(rec_fp1_);
+    }
+    if(video_) {
+        if(video_->fd) {
+            close(video_->fd);
+        }
+        close_v4l2(video_);
     }
 }
 
@@ -314,48 +321,32 @@ bool H264UvcCap::InitH264Camera(void)
     return true;
 }
 
-void *H264UvcCap::CapVideo(void *arg)
+int64_t H264UvcCap::CapVideo()
 {
-    int ret;
     struct v4l2_buffer buf;
+    CLEAR(buf);
 
-    struct timeval tv;
-    tv.tv_sec  = 0;
-    tv.tv_usec = 10000;
-    fd_set rfds;
-    int retval = 0;
+    buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
 
-    while (capturing_) {
-        CLEAR(buf);
-
-        buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory = V4L2_MEMORY_MMAP;
-
-        FD_ZERO(&rfds);
-        FD_SET(video_->fd, &rfds);
-
-        retval = select(video_->fd + 1, &rfds, NULL, NULL, &tv);
-        if (retval < 0) {
-            perror("select error\n");
-        } else //有数据要收
-        {
-            ret = ioctl(video_->fd, VIDIOC_DQBUF, &buf);
-            if (ret < 0) {
-                printf("Unable to dequeue buffer!\n");
-                exit(1);
-            }
-            if (rec_fp1_) {
-                fwrite(buffers_[buf.index].start, buf.bytesused, 1, rec_fp1_);
-            }
-
-            ret = ioctl(video_->fd, VIDIOC_QBUF, &buf);
-
-            if (ret < 0) {
-                printf("Unable to requeue buffer");
-                exit(1);
-            }
-        }
+    int ret = ioctl(video_->fd, VIDIOC_DQBUF, &buf);
+    if (ret < 0) {
+        printf("Unable to dequeue buffer!\n");
+        return -1;
     }
-    close_v4l2(video_);
-    pthread_exit(NULL);
+
+    if (rec_fp1_) {
+        fwrite(buffers_[buf.index].start, buf.bytesused, 1, rec_fp1_);
+    }
+
+    RINGBUF.Write((uint8_t*)buffers_[buf.index].start, buf.bytesused);
+
+    ret = ioctl(video_->fd, VIDIOC_QBUF, &buf);
+
+    if (ret < 0) {
+        printf("Unable to requeue buffer");
+        return -1;
+    }
+
+    return buf.bytesused;
 }

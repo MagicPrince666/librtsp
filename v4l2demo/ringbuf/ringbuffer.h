@@ -15,6 +15,8 @@
 #define ROUND_UP_2(num) (((num) + 1) & ~1)
 #define DEFAULT_BUF_SIZE (2 * 1024 * 1024)
 
+#define RINGBUF RingBuff::GetInstance()
+
 class RingBuff
 {
 public:
@@ -24,16 +26,16 @@ public:
         return instance;
     }
 
-    bool RingBufferCreate(uint64_t length);
-    bool RingBufferReset();
+    bool Create(uint64_t length);
+    bool Reset();
 
-    uint64_t RingBufferRead(uint8_t *target, uint64_t amount);
-    uint64_t RingBufferWrite(uint8_t *data, uint64_t length);
+    uint64_t Read(uint8_t *target, uint64_t amount);
+    uint64_t Write(uint8_t *data, uint64_t length);
 
 private:
     RingBuff(uint64_t rbuf = DEFAULT_BUF_SIZE);
-    bool RingBufferEmpty();
-    void RingBufferDestroy();
+    bool Empty();
+    void Destroy();
 
 private:
     typedef struct cycle_buffer {

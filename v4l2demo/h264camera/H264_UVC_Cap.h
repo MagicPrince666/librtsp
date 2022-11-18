@@ -19,8 +19,18 @@ public:
     H264UvcCap(std::string dev = "/dev/video0");
     ~H264UvcCap();
 
+    /**
+     * @brief 初始化摄像头
+     * @return true 
+     * @return false 
+     */
     bool InitH264Camera(void);
-    void *CapVideo(void *arg);
+
+    /**
+     * @brief 取数据
+     * @return int64_t 数据长度
+     */
+    int64_t CapVideo();
 
 private:
     /**

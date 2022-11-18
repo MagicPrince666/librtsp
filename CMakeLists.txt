@@ -47,6 +47,7 @@ ELSEIF (CMAKE_HOST_UNIX)
     set(EXEC_NAME2 v4l2_demo)
     # add_subdirectory(v4l2demo/camera)
     add_subdirectory(v4l2demo/h264camera)
+    add_subdirectory(v4l2demo/epoll)
 
     add_executable(${EXEC_NAME2} v4l2demo/example.cpp)
 
