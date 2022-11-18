@@ -8,86 +8,29 @@
 #include "include/rtp.h"
 #include "include/rtsp_handler.h"
 #include "include/rtsp_parse.h"
-#include "pthread.h"
 #include <errno.h>
 #include <fcntl.h>
+
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <iostream> /* cout */
-#include <netdb.h> /* struct hostent */
-#include <arpa/inet.h> /* inet_ntop */
 
-#include "spdlog/spdlog.h"
-#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
-#include "spdlog/fmt/ostr.h" // support for user defined types
+#include <thread>
 
-#define H264_FILENAME "../example/test.h264"
+#define H264_FILENAME "test.h264"
 #define SOCKET_ERROR (-1)
 #define INVALID_SOCKET (-1)
 #define BUF_SIZE 2048
-
-#define BACKTRACE_DEBUG 1
-
-#if BACKTRACE_DEBUG
-#include <signal.h>
-#include <execinfo.h>
-
-#define PRINT_SIZE_ 100
-
-static void _signal_handler(int signum)
-{
-    void *array[PRINT_SIZE_];
-    char **strings;
-
-    size_t size = backtrace(array, PRINT_SIZE_);
-    strings = backtrace_symbols(array, size);
-
-    if (strings == nullptr) {
-	   fprintf(stderr, "backtrace_symbols");
-	   exit(EXIT_FAILURE);
-    }
-
-    switch(signum) {
-        case SIGSEGV:
-        fprintf(stderr, "widebright received SIGSEGV! Stack trace:\n");
-        break;
-
-        case SIGPIPE:
-        fprintf(stderr, "widebright received SIGPIPE! Stack trace:\n");
-        break;
-
-        case SIGFPE:
-        fprintf(stderr, "widebright received SIGFPE! Stack trace:\n");
-        break;
-
-        case SIGABRT:
-        fprintf(stderr, "widebright received SIGABRT! Stack trace:\n");
-        break;
-
-        default:
-        break;
-    }
-
-    for (size_t i = 0; i < size; i++) {
-        fprintf(stderr, "%zu %s \n", i, strings[i]);
-    }
-
-    free(strings);
-    signal(signum, SIG_DFL); /* 还原默认的信号处理handler */
-
-    exit(1);
-}
-#endif
 
 typedef struct {
     unsigned char *data;
     int len;
 } file_t;
-pthread_t rtp;
+
 int g_pause = 0;
-ip_t ip;
+ip_t g_ip;
+
 const char *rfc822_datetime_format(time_t time, char *datetime)
 {
     int r;
@@ -95,7 +38,7 @@ const char *rfc822_datetime_format(time_t time, char *datetime)
     char mon[8], week[8];
     int year, day, hour, min, sec;
     sscanf(date, "%s %s %d %d:%d:%d %d", week, mon, &day, &hour, &min, &sec, &year);
-    r = sprintf(datetime, "%s, %02d %s %04d %02d:%02d:%02d GMT",
+    r = snprintf(datetime, 32, "%s, %02d %s %04d %02d:%02d:%02d GMT",
                  week, day, mon, year, hour, min, sec);
     return r > 0 && r < 32 ? datetime : NULL;
 }
@@ -131,17 +74,17 @@ void close_h264_file(file_t *file)
     }
 }
 
-void *rtp_thread(void *args)
+void rtp_thread(void *args)
 {
-    ip_t *ipaddr = &ip;
+    ip_t *ipaddr = &g_ip;
     udp_t udp, rtcp;
     if (udp_server_init(&udp, 45504)) {
         printf("udp server init fail.\n");
-        return NULL;
+        return;
     }
     if (udp_server_init(&rtcp, 45505)) {
         printf("udp server init fail.\n");
-        return NULL;
+        return;
     }
     const char *filename = H264_FILENAME;
     file_t file;
@@ -151,7 +94,7 @@ void *rtp_thread(void *args)
     rtp_header_init(&header);
     header.seq = 0;
     header.ts  = 0;
-    open_h264_file((char*)filename, &file);
+    open_h264_file((char *)filename, &file);
     h264_nalu_t *nalu = h264_nal_packet_malloc(file.data, file.len);
     printf("rtp server init.\n");
     while (g_pause) {
@@ -188,22 +131,21 @@ void *rtp_thread(void *args)
     udp_server_deinit(&udp);
     udp_server_deinit(&rtcp);
     printf("rtp exit\n");
-    return nullptr;
 }
 
 extern const char *rfc822_datetime_format(time_t time, char *datetime);
-void *rtsp_thread(void *args)
+
+void rtsp_thread(void *args)
 {
     ip_t *ipaddr = (ip_t *)args;
     tcp_t tcp;
     int client = 0;
     if (tcp_server_init(&tcp, 8554)) {
         printf("tcp server init fail.\n");
-        return NULL;
+        return;
     }
 
     char msg[2048];
-    memset(msg, 0, sizeof(msg));
     char sdp[2048] = "v=0\n"
                      "o=- 16409863082207520751 16409863082207520751 IN IP4 0.0.0.0\n"
                      "c=IN IP4 0.0.0.0\n"
@@ -212,6 +154,7 @@ void *rtsp_thread(void *args)
                      "a=recvonly\n"
                      "m=video 0 RTP/AVP 97\n"
                      "a=rtpmap:97 H264/90000\n";
+    std::thread rtp_thread_test;
     while (1) {
         if (client == 0) {
             fd_set fds;
@@ -227,11 +170,10 @@ void *rtsp_thread(void *args)
                 continue;
             }
             client = tcp_server_wait_client(&tcp);
-            sprintf(ipaddr->ip, "%s", inet_ntoa(tcp.addr.sin_addr));
+            snprintf(ipaddr->ip, 16, "%s", inet_ntoa(tcp.addr.sin_addr));
             ipaddr->port = ntohs(tcp.addr.sin_port);
             printf("rtsp client ip:%s port:%d\n", inet_ntoa(tcp.addr.sin_addr), ntohs(tcp.addr.sin_port));
         }
-
         char recvbuffer[2048];
         tcp_server_receive_msg(&tcp, client, (uint8_t *)recvbuffer, sizeof(recvbuffer));
         rtsp_msg_t rtsp = rtsp_msg_load(recvbuffer);
@@ -243,11 +185,15 @@ void *rtsp_thread(void *args)
         case SETUP:
             rely.tansport.server_port = 45504;
             rtsp_rely_dumps(rely, msg, 2048);
-            sprintf(ip.ip, "%s", ipaddr->ip);
-            ip.port = rtsp.tansport.client_port;
+            snprintf(g_ip.ip, 16, "%s", ipaddr->ip);
+            g_ip.port = rtsp.tansport.client_port;
             g_pause = 1;
-            pthread_create(&rtp, NULL, rtp_thread, &ip);
-            printf("rtp client ip:%s port:%d\n", ip.ip, ip.port);
+            rtp_thread_test = std::thread(rtp_thread, &g_ip);
+            // rtp_thread_test.detach();
+            if (rtp_thread_test.joinable()) {
+                rtp_thread_test.join();
+            }
+            printf("rtp client ip:%s port:%d\n", g_ip.ip, g_ip.port);
             break;
         case DESCRIBE:
             rely.sdp_len = strlen(sdp);
@@ -271,37 +217,13 @@ void *rtsp_thread(void *args)
     tcp_server_deinit(&tcp);
 }
 
-
- 
-std::string GetHostIpAddress() {
-    std::string Ip;
-	char name[256];
-	gethostname(name, sizeof(name));
-	
-	struct hostent* host = gethostbyname(name);
-	char ipStr[32];
-	const char* ret = inet_ntop(host->h_addrtype, host->h_addr_list[0], ipStr, sizeof(ipStr));
-	if (nullptr == ret) {
-		std::cout << "hostname transform to ip failed";
-		return "";
-	}
-	Ip = ipStr;
-	return Ip;
-}
-
 int main(int argc, char *argv[])
 {
-#if BACKTRACE_DEBUG
-    signal(SIGPIPE, _signal_handler);  // SIGPIPE，管道破裂。
-    signal(SIGSEGV, _signal_handler);  // SIGSEGV，非法内存访问
-    signal(SIGFPE, _signal_handler);  // SIGFPE，数学相关的异常，如被0除，浮点溢出，等等
-    signal(SIGABRT, _signal_handler);  // SIGABRT，由调用abort函数产生，进程非正常退出
-#endif
+    std::thread rtsp_thread_test(rtsp_thread, &g_ip);
+    if (rtsp_thread_test.joinable()) {
+        rtsp_thread_test.join();
+    }
 
-    spdlog::info("Use commad: rtsp://{}:8554/live", GetHostIpAddress());
-
-    pthread_t rtsp_id;
-    pthread_create(&rtsp_id, NULL, rtsp_thread, &ip);
     while (1) {
         sleep(1);
     }
