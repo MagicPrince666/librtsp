@@ -16,7 +16,7 @@
 class H264UvcCap
 {
 public:
-    H264UvcCap(std::string dev = "/dev/video0");
+    H264UvcCap(std::string dev = "/dev/video0", uint32_t width  = 1280, uint32_t height = 720);
     ~H264UvcCap();
 
     /**
@@ -80,5 +80,7 @@ private:
     bool capturing_;
     uint32_t n_buffers_;
     std::string v4l2_device_;
+    uint32_t video_width_;
+    uint32_t video_height_;
     FILE *rec_fp1_;
 };

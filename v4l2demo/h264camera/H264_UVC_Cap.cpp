@@ -9,9 +9,13 @@
  * 修改时间  ：2017-06-28
 
 *****************************************************************************************/
+#include <chrono>
 #include <errno.h>
 #include <fcntl.h>
+#include <functional>
+#include <iostream>
 #include <linux/videodev2.h>
+#include <memory>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
@@ -25,36 +29,35 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include <chrono>
-#include <functional>
-#include <iostream>
-#include <memory>
 
 #include "H264_UVC_Cap.h"
 #include "ringbuffer.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-H264UvcCap::H264UvcCap(std::string dev) : v4l2_device_(dev)
+H264UvcCap::H264UvcCap(std::string dev, uint32_t width, uint32_t height)
+: v4l2_device_(dev),
+video_width_(width),
+video_height_(height)
 {
     capturing_ = true;
-    buffers_ = nullptr;
-    n_buffers_     = 0;
-    rec_fp1_ = nullptr;
+    buffers_   = nullptr;
+    n_buffers_ = 0;
+    rec_fp1_   = nullptr;
 }
 
-H264UvcCap::~H264UvcCap() {
+H264UvcCap::~H264UvcCap()
+{
     if (rec_fp1_) {
         fclose(rec_fp1_);
     }
-    if(video_) {
-        if(video_->fd) {
+    if (video_) {
+        if (video_->fd) {
             close(video_->fd);
         }
         close_v4l2(video_);
     }
 }
-
 
 int errnoexit(const char *s)
 {
@@ -73,14 +76,15 @@ int xioctl(int fd, int request, void *arg)
     return r;
 }
 
-bool H264UvcCap::CreateFile(bool yes) {
+bool H264UvcCap::CreateFile(bool yes)
+{
     if (yes) { // 不创建文件
         return false;
     }
     // remove("Record.264");
-    time_t tt = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    time_t tt        = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::string file = "/tmp/" + std::to_string(tt) + ".264";
-    rec_fp1_ = fopen(file.c_str(), "a+b");
+    rec_fp1_         = fopen(file.c_str(), "a+b");
     if (rec_fp1_ == nullptr) {
         return false;
     }
@@ -267,15 +271,12 @@ int H264UvcCap::StartPreviewing(void)
 
 bool H264UvcCap::InitH264Camera(void)
 {
-    int width  = 1280;
-    int height = 720;
-
     int format = V4L2_PIX_FMT_H264;
 
     bool ret = -1;
 
     if (OpenDevice()) {
-        ret = InitDevice(width, height, format);
+        ret = InitDevice(video_width_, video_height_, format);
     } else {
         return false;
     }
@@ -339,7 +340,7 @@ int64_t H264UvcCap::CapVideo()
         fwrite(buffers_[buf.index].start, buf.bytesused, 1, rec_fp1_);
     }
 
-    RINGBUF.Write((uint8_t*)buffers_[buf.index].start, buf.bytesused);
+    RINGBUF.Write((uint8_t *)buffers_[buf.index].start, buf.bytesused);
 
     ret = ioctl(video_->fd, VIDIOC_QBUF, &buf);
 
