@@ -1,276 +1,268 @@
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
-#include <string.h>
-#include <netdb.h>
-#include <sys/ioctl.h>
-#include <termios.h>
-#include <stdlib.h>
-#include <sys/stat.h>
 #include <fcntl.h>
-#include <signal.h>
-#include <sys/time.h>
-#include <stddef.h>
-#include <unistd.h>
+#include <netdb.h>
+#include <netinet/in.h>
 #include <pthread.h>
+#include <signal.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <termios.h>
 #include <time.h>
+#include <unistd.h>
 
-#include "h264encoder.h"
-#include "video_capture.h"
 #include "h264_camera.h"
+#include "h264encoder.h"
 #include "ringbuffer.h"
+#include "video_capture.h"
 
-static bool s_quit = true; 
+static bool s_quit = true;
 
 struct cam_data Buff[2];
 
 pthread_t thread[3];
-int flag[2],point=0;
+int flag[2], point = 0;
 
-int h264_length=0;
-int framelength=0;
+int h264_length = 0;
+int framelength = 0;
 extern Encoder en;
 struct camera *cam;
 
-extern char * h264_file_name;
+extern char *h264_file_name;
 extern FILE *h264_fp;
 extern uint8_t *h264_buf;
 
-extern RingBuffer* rbuf;//from ringbuffer.cpp
-
+extern RingBuffer *rbuf; // from ringbuffer.cpp
 
 void init(struct cam_data *c)
 {
-	flag[0]=flag[1]=0;
+    flag[0] = flag[1] = 0;
 
-	c= (struct cam_data *)malloc(sizeof(struct cam_data ));
+    c = (struct cam_data *)malloc(sizeof(struct cam_data));
 
-	pthread_mutex_init(&c->lock,NULL); //以动态方式创建互斥锁
+    pthread_mutex_init(&c->lock, NULL); //以动态方式创建互斥锁
 
-	pthread_cond_init(&c->captureOK,NULL); //初始化captureOK条件变量
+    pthread_cond_init(&c->captureOK, NULL); //初始化captureOK条件变量
 
-	pthread_cond_init(&c->encodeOK,NULL);//初始化encodeOK条件变量
+    pthread_cond_init(&c->encodeOK, NULL); //初始化encodeOK条件变量
 
-	c->rpos=0;
-	c->wpos=0;
+    c->rpos = 0;
+    c->wpos = 0;
 }
-
-
 
 void *video_Capture_Thread(void *arg)
 {
-	cam = (struct camera *) malloc(sizeof(struct camera));
-	if (!cam) {
-		printf("malloc camera failure!\n");
-		exit(1);
-	}
+    cam = (struct camera *)malloc(sizeof(struct camera));
+    if (!cam) {
+        printf("malloc camera failure!\n");
+        exit(1);
+    }
 
-	cam->device_name = (char *)DEVICE;
-	cam->buffers = NULL;
-	cam->width = SET_WIDTH;
-	cam->height = SET_HEIGHT;
-	cam->fps = 30;//设置30fps失败
+    cam->device_name = (char *)DEVICE;
+    cam->buffers     = NULL;
+    cam->width       = SET_WIDTH;
+    cam->height      = SET_HEIGHT;
+    cam->fps         = 30; //设置30fps失败
 
-	framelength=sizeof(unsigned char)*cam->width * cam->height * 2;
+    framelength = sizeof(unsigned char) * cam->width * cam->height * 2;
 
-	v4l2_init(cam);
-  	init(Buff);
+    v4l2_init(cam);
+    init(Buff);
 
-	int i=0;
+    int i = 0;
 
-	//unsigned char *data;
+    // unsigned char *data;
 
-	int len=framelength;
-	
-	struct timeval now;
+    int len = framelength;
 
-	struct timespec outtime;
+    struct timeval now;
 
-	while(1)
-	{
-		if(s_quit)
-		{
-			usleep(10);
-			continue;
-		}
-		usleep(DelayTime);
+    struct timespec outtime;
 
-		gettimeofday(&now, NULL);
+    while (1) {
+        if (s_quit) {
+            usleep(10);
+            continue;
+        }
+        usleep(DelayTime);
 
-		outtime.tv_sec =now.tv_sec;
+        gettimeofday(&now, NULL);
 
-		outtime.tv_nsec =DelayTime * 1000;
+        outtime.tv_sec = now.tv_sec;
 
-		pthread_mutex_lock(&(Buff[i].lock)); /*获取互斥锁,锁定当前缓冲区*/
-		//if(i)   printf("----video_Capture_Thread Buff 1\n");
-		//if(!i)   printf("----video_Capture_Thread Buff 0\n");
+        outtime.tv_nsec = DelayTime * 1000;
 
-		while((Buff[i].wpos + len)%BUF_SIZE==Buff[i].rpos && Buff[i].rpos != 0) /*等待缓存区处理操作完成*/
-		{
-			//printf("***********video_Capture_Thread ************阻塞\n");
-			//pthread_cond_wait(&(Buff[i].encodeOK),&(Buff[i].lock));
-			pthread_cond_timedwait(&(Buff[i].encodeOK),&(Buff[i].lock),&outtime);
-		}
+        pthread_mutex_lock(&(Buff[i].lock)); /*获取互斥锁,锁定当前缓冲区*/
+        // if(i)   printf("----video_Capture_Thread Buff 1\n");
+        // if(!i)   printf("----video_Capture_Thread Buff 0\n");
 
+        while ((Buff[i].wpos + len) % BUF_SIZE == Buff[i].rpos && Buff[i].rpos != 0) /*等待缓存区处理操作完成*/
+        {
+            // printf("***********video_Capture_Thread ************阻塞\n");
+            // pthread_cond_wait(&(Buff[i].encodeOK),&(Buff[i].lock));
+            pthread_cond_timedwait(&(Buff[i].encodeOK), &(Buff[i].lock), &outtime);
+        }
 
-		if(buffOneFrame(&Buff[i] , cam))//采集一帧数据
-		{
+        if (buffOneFrame(&Buff[i], cam)) //采集一帧数据
+        {
 
-			pthread_cond_signal(&(Buff[i].captureOK)); /*设置状态信号*/
+            pthread_cond_signal(&(Buff[i].captureOK)); /*设置状态信号*/
 
-			pthread_mutex_unlock(&(Buff[i].lock)); /*释放互斥锁*/
+            pthread_mutex_unlock(&(Buff[i].lock)); /*释放互斥锁*/
 
-			flag[i]=1;//缓冲区i已满
+            flag[i] = 1; //缓冲区i已满
 
-			Buff[i].rpos=0;
+            Buff[i].rpos = 0;
 
-			i=!i;	//切换到另一个缓冲区
-			
-			Buff[i].wpos=0;
+            i = !i; //切换到另一个缓冲区
 
-			flag[i]=0;//缓冲区i为空
-		}
+            Buff[i].wpos = 0;
 
-		pthread_cond_signal(&(Buff[i].captureOK)); /*设置状态信号*/
+            flag[i] = 0; //缓冲区i为空
+        }
 
-		pthread_mutex_unlock(&(Buff[i].lock)); /*释放互斥锁*/
-		
-	}
+        pthread_cond_signal(&(Buff[i].captureOK)); /*设置状态信号*/
+
+        pthread_mutex_unlock(&(Buff[i].lock)); /*释放互斥锁*/
+    }
 }
-
 
 void *video_Encode_Thread(void *arg)
 {
-	int i=-1;
+    int i = -1;
 
+    while (1) {
+        if (s_quit) {
+            usleep(10);
+            continue;
+        }
 
-	while(1)
-	{	
-		if(s_quit)
-		{
-			usleep(10);
-			continue;
-		}
+        if ((flag[1] == 0 && flag[0] == 0) || (flag[i] == -1))
+            continue;
 
-		if((flag[1]==0 && flag[0]==0) || (flag[i]==-1)) continue;
+        if (flag[0] == 1)
+            i = 0;
 
-		if(flag[0]==1) i=0;
+        if (flag[1] == 1)
+            i = 1;
 
-		if(flag[1]==1) i=1;
+        pthread_mutex_lock(&(Buff[i].lock)); /*获取互斥锁*/
+        // if(i)   printf("-------------video_Encode_Thread Buff 1\n");
+        // if(!i)   printf("-------------video_Encode_Thread Buff 0\n");
 
-		pthread_mutex_lock(&(Buff[i].lock)); /*获取互斥锁*/
-		//if(i)   printf("-------------video_Encode_Thread Buff 1\n");
-		//if(!i)   printf("-------------video_Encode_Thread Buff 0\n");
+        /*H.264压缩视频*/
+        // encode_frame(Buff[i].cam_mbuf + Buff[i].rpos,0);
+        int h264_length = 0;
+        h264_length     = compress_frame(&en, -1, Buff[i].cam_mbuf + Buff[i].rpos, h264_buf);
 
-		/*H.264压缩视频*/
-		//encode_frame(Buff[i].cam_mbuf + Buff[i].rpos,0);
-		int h264_length = 0;
-		h264_length = compress_frame(&en, -1, Buff[i].cam_mbuf + Buff[i].rpos, h264_buf);
+        if (h264_length > 0) {
 
-		if (h264_length > 0) {
-	
-			//printf("%s%d\n","-----------h264_length=",h264_length);
-			//写h264文件
-			//fwrite(h264_buf, h264_length, 1, h264_fp);
+            // printf("%s%d\n","-----------h264_length=",h264_length);
+            //写h264文件
+            // fwrite(h264_buf, h264_length, 1, h264_fp);
 #if 1
-			RingBuffer_write(rbuf,h264_buf,h264_length);
+            RingBuffer_write(rbuf, h264_buf, h264_length);
 #else
-			fwrite(h264_buf, h264_length, 1, h264_fp);
+            fwrite(h264_buf, h264_length, 1, h264_fp);
 #endif
-			//printf("buf front:%d rear :%d\n",q.front,q.rear);
-		}
+            // printf("buf front:%d rear :%d\n",q.front,q.rear);
+        }
 
-		Buff[i].rpos+=framelength;
+        Buff[i].rpos += framelength;
 
-		if(Buff[i].rpos>=BUF_SIZE) { Buff[i].rpos=0;Buff[!i].rpos=0;flag[i]=-1;}
+        if (Buff[i].rpos >= BUF_SIZE) {
+            Buff[i].rpos  = 0;
+            Buff[!i].rpos = 0;
+            flag[i]       = -1;
+        }
 
-		/*H.264压缩视频*/
-		pthread_cond_signal(&(Buff[i].encodeOK));
+        /*H.264压缩视频*/
+        pthread_cond_signal(&(Buff[i].encodeOK));
 
-		pthread_mutex_unlock(&(Buff[i].lock));/*释放互斥锁*/
-	}
+        pthread_mutex_unlock(&(Buff[i].lock)); /*释放互斥锁*/
+    }
 }
 
 void Soft_init()
 {
-  	//v4l2_init(cam);
-	//init(Buff);
-	printf("Camera init\n");
+    // v4l2_init(cam);
+    // init(Buff);
+    printf("Camera init\n");
 }
 
 int Soft_uinit()
-{	
-	//v4l2_close(cam);
-	printf("Camera uinit\n");
-	return 0;
+{
+    // v4l2_close(cam);
+    printf("Camera uinit\n");
+    return 0;
 }
 
-void* Soft_FetchData::s_source = NULL;
-
+void *Soft_FetchData::s_source = NULL;
 
 static bool emptyBuffer = false;
 
-int Soft_FetchData::getData(void* fTo, unsigned fMaxSize, unsigned& fFrameSize, unsigned& fNumTruncatedBytes)
+int Soft_FetchData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
 {
-	if(!s_b_running)
-	{
-		printf("Soft_FetchData::getData s_b_running = false  \n");
-		return 0;
-	}
+    if (!s_b_running) {
+        printf("Soft_FetchData::getData s_b_running = false  \n");
+        return 0;
+    }
 
 #if 1
-			
-	if(RingBuffer_empty(rbuf))
-	{
-		usleep(100);//等待数据
-		fFrameSize = 0;
-		fNumTruncatedBytes = 0;
-	}
-	fFrameSize = RingBuffer_read(rbuf,(uint8_t*)fTo,fMaxSize);
-	fNumTruncatedBytes = 0;
+
+    if (RingBuffer_empty(rbuf)) {
+        usleep(100); //等待数据
+        fFrameSize         = 0;
+        fNumTruncatedBytes = 0;
+    }
+    fFrameSize         = RingBuffer_read(rbuf, (uint8_t *)fTo, fMaxSize);
+    fNumTruncatedBytes = 0;
 #else
-		fFrameSize = 0;
-		fNumTruncatedBytes = 0;
+    fFrameSize = 0;
+    fNumTruncatedBytes = 0;
 #endif
-	// //拷贝视频到live555缓存
-	// if(len < fMaxSize)
-	// {            
-	// 	fFrameSize = len;
-	// 	fNumTruncatedBytes = 0;
-	// }        
-	// else        
-	// {           
-	// 	fNumTruncatedBytes = len - fMaxSize; 
-	// 	fFrameSize = fMaxSize;
-	// }
+    // //拷贝视频到live555缓存
+    // if(len < fMaxSize)
+    // {
+    // 	fFrameSize = len;
+    // 	fNumTruncatedBytes = 0;
+    // }
+    // else
+    // {
+    // 	fNumTruncatedBytes = len - fMaxSize;
+    // 	fFrameSize = fMaxSize;
+    // }
 
-	return fFrameSize;
-}	
+    return fFrameSize;
+}
 
-bool Soft_FetchData::s_b_running=false;
-
+bool Soft_FetchData::s_b_running = false;
 
 void Soft_FetchData::EmptyBuffer()
 {
-	emptyBuffer = true;
+    emptyBuffer = true;
 }
 
 void Soft_FetchData::startCap()
 {
-	s_b_running = true;
-	if(!s_quit)return;
-	s_quit = false;
+    s_b_running = true;
+    if (!s_quit)
+        return;
+    s_quit = false;
     Soft_init();
-	printf("FetchData startCap\n");   
+    printf("FetchData startCap\n");
 }
 
 void Soft_FetchData::stopCap()
 {
-	s_b_running = false;
-    s_quit = true;
+    s_b_running = false;
+    s_quit      = true;
     Soft_uinit();
-	printf("FetchData stopCap\n");  
+    printf("FetchData stopCap\n");
 }

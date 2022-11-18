@@ -46,6 +46,7 @@ IF (CMAKE_HOST_APPLE)
 ELSEIF (CMAKE_HOST_UNIX)
     set(EXEC_NAME2 uvc_demo)
     # add_subdirectory(uvcdemo/camera)
+    add_subdirectory(uvcdemo/h264camera)
 
     add_executable(${EXEC_NAME2} uvcdemo/example.cpp)
 
@@ -53,6 +54,7 @@ ELSEIF (CMAKE_HOST_UNIX)
         pthread
         rtsp
         # camera
+        h264camera
         ringbuf
     )
 ENDIF()

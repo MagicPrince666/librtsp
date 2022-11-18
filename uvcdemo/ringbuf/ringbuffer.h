@@ -18,13 +18,6 @@
 class RingBuff
 {
 public:
-    typedef struct cycle_buffer {
-        uint8_t *buf;
-        uint64_t size;
-        uint64_t in;
-        uint64_t out;
-    } RingBuffer;
-
     ~RingBuff();
     static RingBuff& GetInstance() {
         static RingBuff instance;
@@ -43,6 +36,13 @@ private:
     void RingBufferDestroy();
 
 private:
+    typedef struct cycle_buffer {
+        uint8_t *buf;
+        uint64_t size;
+        uint64_t in;
+        uint64_t out;
+    } RingBuffer;
+
     uint64_t buffer_size_;
     RingBuffer *p_buffer_;
 };

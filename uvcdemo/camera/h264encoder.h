@@ -1,17 +1,17 @@
 #ifndef _H264ENCODER_H
 #define _H264ENCODER_H
 
+#include "x264.h"
 #include <stdint.h>
 #include <stdio.h>
-#include "x264.h"
 
 typedef unsigned char uint8_t;
 
 typedef struct {
-	x264_param_t *param;
-	x264_t *handle;
-	x264_picture_t *picture; //说明一个视频序列中每帧特点
-	x264_nal_t *nal;
+    x264_param_t *param;
+    x264_t *handle;
+    x264_picture_t *picture; //说明一个视频序列中每帧特点
+    x264_nal_t *nal;
 } Encoder;
 
 //初始化编码器，并返回一个编码器对象
@@ -24,4 +24,3 @@ int compress_frame(Encoder *en, int type, uint8_t *in, uint8_t *out);
 void compress_end(Encoder *en);
 
 #endif
-

@@ -5,11 +5,10 @@
 #include <pthread.h>
 #include <stdint.h>
 
-
 #define BUF_SIZE 614400
 /*C270 YUV 4:2:2 frame size(char)
 160*120*2  = 38400
-176*144*2  = 50688 
+176*144*2  = 50688
 320*176*2  = 112640
 320*240*2  = 153600
 352*288*2  = 202752
@@ -29,38 +28,38 @@
 //#define FIFO_NAME "/tmp/my_video.h264"
 
 struct buffer {
-	void *start;
-	size_t length;
+    void *start;
+    size_t length;
 };
-struct cam_data{
+struct cam_data {
 
-	unsigned char  cam_mbuf[BUF_SIZE] ;	/*缓存区数组5242880=5MB//缓存区数组10485760=10MB//缓存区数组1536000=1.46484375MB,10f*/
-	int wpos; 
-	int rpos;	/*写与读的位置*/
-	pthread_cond_t captureOK;/*线程采集满一个缓冲区时的标志*/
-	pthread_cond_t encodeOK;/*线程编码完一个缓冲区的标志*/
-	pthread_mutex_t lock;/*互斥锁*/
-                 };
+    unsigned char cam_mbuf[BUF_SIZE]; /*缓存区数组5242880=5MB//缓存区数组10485760=10MB//缓存区数组1536000=1.46484375MB,10f*/
+    int wpos;
+    int rpos;                 /*写与读的位置*/
+    pthread_cond_t captureOK; /*线程采集满一个缓冲区时的标志*/
+    pthread_cond_t encodeOK;  /*线程编码完一个缓冲区的标志*/
+    pthread_mutex_t lock;     /*互斥锁*/
+};
 
 struct camera {
-	char *device_name;
-	int fd;
-	int width;
-	int height;
-	int fps;
-	int display_depth;
-	int image_size;
-	int frame_number;
-	struct v4l2_capability v4l2_cap;
-	struct v4l2_cropcap v4l2_cropcap;
-	struct v4l2_format v4l2_fmt;
-	struct v4l2_crop crop;
-	struct buffer *buffers;
+    char *device_name;
+    int fd;
+    int width;
+    int height;
+    int fps;
+    int display_depth;
+    int image_size;
+    int frame_number;
+    struct v4l2_capability v4l2_cap;
+    struct v4l2_cropcap v4l2_cropcap;
+    struct v4l2_format v4l2_fmt;
+    struct v4l2_crop crop;
+    struct buffer *buffers;
 };
 
 void errno_exit(const char *s);
 
-//int xioctl(int fd, int request, void *arg);
+// int xioctl(int fd, int request, void *arg);
 
 void open_camera(struct camera *cam);
 void close_camera(struct camera *cam);
@@ -80,8 +79,7 @@ void v4l2_close(struct camera *cam);
 
 int convert_yuv_to_rgb_buffer(unsigned char *yuv, unsigned char *rgb, unsigned int width, unsigned int height);
 
-int buffOneFrame(struct cam_data *tmp , struct camera *cam );
+int buffOneFrame(struct cam_data *tmp, struct camera *cam);
 void encode_frame(uint8_t *yuv_frame, size_t yuv_length);
 
 #endif
-
