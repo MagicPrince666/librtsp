@@ -44,7 +44,7 @@ target_link_libraries(${EXEC_NAME}
 IF (CMAKE_HOST_APPLE)
     MESSAGE(STATUS "Not support yet")
 ELSEIF (CMAKE_HOST_UNIX)
-    set(EXEC_NAME2 uvc_demo)
+    set(EXEC_NAME2 v4l2_demo)
     # add_subdirectory(v4l2demo/camera)
     add_subdirectory(v4l2demo/h264camera)
 
