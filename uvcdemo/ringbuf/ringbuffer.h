@@ -25,8 +25,11 @@ public:
         uint64_t out;
     } RingBuffer;
 
-    RingBuff(uint64_t rbuf = DEFAULT_BUF_SIZE);
     ~RingBuff();
+    static RingBuff& GetInstance() {
+        static RingBuff instance;
+        return instance;
+    }
 
     bool RingBufferCreate(uint64_t length);
     bool RingBufferReset();
@@ -35,9 +38,11 @@ public:
     uint64_t RingBufferWrite(uint8_t *data, uint64_t length);
 
 private:
-    uint64_t buffer_size_;
-    RingBuffer *p_buffer_;
-
+    RingBuff(uint64_t rbuf = DEFAULT_BUF_SIZE);
     bool RingBufferEmpty();
     void RingBufferDestroy();
+
+private:
+    uint64_t buffer_size_;
+    RingBuffer *p_buffer_;
 };
