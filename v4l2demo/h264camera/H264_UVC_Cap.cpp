@@ -38,10 +38,6 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-// 这两个变量不知道干嘛的
-struct H264Format *gH264fmt = NULL;
-int Dbg_Param = 0x1f;
-
 H264UvcCap::H264UvcCap(std::string dev, uint32_t width, uint32_t height)
 : v4l2_device_(dev),
 video_width_(width),

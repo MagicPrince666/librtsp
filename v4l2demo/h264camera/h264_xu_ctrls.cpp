@@ -20,7 +20,8 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-extern struct H264Format *gH264fmt;
+struct H264Format *gH264fmt = nullptr;
+int Dbg_Param = 0x1f;
 
 unsigned char m_CurrentFPS      = 24;
 unsigned char m_CurrentFPS_9422 = 30;

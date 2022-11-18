@@ -49,7 +49,7 @@ ELSEIF (CMAKE_HOST_UNIX)
     add_subdirectory(v4l2demo/h264camera)
     add_subdirectory(v4l2demo/epoll)
 
-    add_executable(${EXEC_NAME2} v4l2demo/example.cpp)
+    add_executable(${EXEC_NAME2} v4l2demo/v4l2example.cpp)
 
     target_link_libraries(${EXEC_NAME2} 
         pthread

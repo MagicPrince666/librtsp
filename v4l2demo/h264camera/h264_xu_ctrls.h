@@ -9,8 +9,7 @@
  * 修改时间  ：2017-06-28
 
 *****************************************************************************************/
-#ifndef H264_XU_CTRLS_H
-#define H264_XU_CTRLS_H
+#pragma once
 
 #include <linux/version.h>
 #include <linux/videodev2.h>
@@ -179,7 +178,12 @@ typedef enum {
 #define UVCIOC_CTRL_GET _IOWR('U', 3, struct uvc_xu_control)
 #define UVCIOC_CTRL_SET _IOW('U', 4, struct uvc_xu_control)
 #endif
-extern unsigned int chip_id;
+
+// extern unsigned int chip_id;
+class H264XuCtrls
+{
+public:
+};
 
 int XU_Init_Ctrl(int fd);
 int XU_Ctrl_ReadChipID(int fd);
@@ -318,4 +322,3 @@ int XU_OSD_Get_Coordinate1(int fd, unsigned char *Direction, unsigned char *Vaul
 int XU_OSD_Get_Coordinate2(int fd, unsigned char *Direction, unsigned char *Vaule1, unsigned long *Vaule2, unsigned char *Vaule3, unsigned long *Vaule4);
 #endif
 
-#endif

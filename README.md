@@ -41,5 +41,5 @@ $ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_host.cmake -DCMAKE_BUILD_TYPE=Deb
 ```
 $ mkdir build
 $ cd build
-$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_darwin.cmake ..
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_darwin.cmake -DCMAKE_BUILD_TYPE=Debug ..
 ```

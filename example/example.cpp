@@ -115,6 +115,10 @@ int open_h264_file(char *filename, file_t *file)
     struct stat info;
     stat(filename, &info);
     FILE *fp   = fopen(filename, "rb");
+    if (fp == nullptr) {
+        spdlog::error("file {} open fail", filename);
+        return -1;
+    }
     file->data = (unsigned char *)malloc(info.st_size);
     memset(file->data, 0, info.st_size);
     fread(file->data, 1, info.st_size, fp);
@@ -151,7 +155,9 @@ void rtp_thread(void *args)
     rtp_header_init(&header);
     header.seq = 0;
     header.ts  = 0;
-    open_h264_file((char *)filename, &file);
+    if (open_h264_file((char *)filename, &file) < 0) {
+        return;
+    }
     h264_nalu_t *nalu = h264_nal_packet_malloc(file.data, file.len);
     printf("rtp server init.\n");
     while (g_pause) {
