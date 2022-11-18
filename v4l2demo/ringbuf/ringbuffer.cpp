@@ -1,10 +1,12 @@
 #include "ringbuffer.h"
-#include <stdio.h>
+#include <new>
+
 #include <stdlib.h>
 #include <string.h>
 
 RingBuff::RingBuff(uint64_t rbuf) : buffer_size_(rbuf)
 {
+    Create(buffer_size_);
 }
 
 RingBuff::~RingBuff()
@@ -20,7 +22,7 @@ bool RingBuff::Create(uint64_t length)
         size = DEFAULT_BUF_SIZE;
     }
 
-    p_buffer_ =  new RingBuffer;
+    p_buffer_ = new (std::nothrow) RingBuffer;
     if (!p_buffer_) {
         return false;
     }
@@ -30,7 +32,7 @@ bool RingBuff::Create(uint64_t length)
     p_buffer_->in   = 0;
     p_buffer_->out  = 0;
 
-    p_buffer_->buf = new uint8_t[size];
+    p_buffer_->buf = new (std::nothrow) uint8_t[size];
     if (!p_buffer_->buf) {
         delete p_buffer_;
         return false;
