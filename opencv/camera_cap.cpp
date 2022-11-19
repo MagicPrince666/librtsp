@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[])
 {
-    cv::VideoCapture capture(-1);
+    cv::VideoCapture capture(0);
     capture.set(cv::CAP_PROP_FRAME_WIDTH, 1920);
     capture.set(cv::CAP_PROP_FRAME_HEIGHT, 1080);
     capture.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
@@ -21,18 +21,18 @@ int main(int argc, char *argv[])
     // capture.set(cv::CAP_PROP_EXPOSURE, 50);//曝光 -12
 
     //打印摄像头参数
-    spdlog::debug("width = {}", capture.get(cv::CAP_PROP_FRAME_WIDTH));
-    spdlog::debug("height = {}", capture.get(cv::CAP_PROP_FRAME_HEIGHT));
-    spdlog::debug("fbs = {}", capture.get(cv::CAP_PROP_FPS));
-    spdlog::debug("brightness = {}", capture.get(cv::CAP_PROP_BRIGHTNESS));
-    spdlog::debug("contrast = {}", capture.get(cv::CAP_PROP_CONTRAST));
-    spdlog::debug("saturation = {}", capture.get(cv::CAP_PROP_SATURATION));
-    spdlog::debug("hue = {}", capture.get(cv::CAP_PROP_HUE));
-    spdlog::debug("exposure = {}", capture.get(cv::CAP_PROP_EXPOSURE));
+    spdlog::info("width = {}", capture.get(cv::CAP_PROP_FRAME_WIDTH));
+    spdlog::info("height = {}", capture.get(cv::CAP_PROP_FRAME_HEIGHT));
+    spdlog::info("fbs = {}", capture.get(cv::CAP_PROP_FPS));
+    spdlog::info("brightness = {}", capture.get(cv::CAP_PROP_BRIGHTNESS));
+    spdlog::info("contrast = {}", capture.get(cv::CAP_PROP_CONTRAST));
+    spdlog::info("saturation = {}", capture.get(cv::CAP_PROP_SATURATION));
+    spdlog::info("hue = {}", capture.get(cv::CAP_PROP_HUE));
+    spdlog::info("exposure = {}", capture.get(cv::CAP_PROP_EXPOSURE));
     while (1) {
         cv::Mat frame;
         capture >> frame;
-        cv::imshow("读取视频", frame);
+        cv::imshow("read frame", frame);
         cv::waitKey(1);
         spdlog::debug("{}", time(NULL));
     }
