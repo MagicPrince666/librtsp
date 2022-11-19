@@ -12,6 +12,13 @@
 #include <stdint.h>
 #include <stdio.h>
 
+enum frametype {
+    FRAME_TYPE_P = 0,
+    FRAME_TYPE_IDR,
+    FRAME_TYPE_I,
+    FRAME_TYPE_AUTO
+};
+
 class H264Encoder
 {
 public:
@@ -32,7 +39,7 @@ public:
      * @param out 
      * @return int 
      */
-    int CompressFrame(int type, uint8_t *in, uint8_t *out);
+    int CompressFrame(frametype type, uint8_t *in, uint8_t *out);
 
 private:
     /**

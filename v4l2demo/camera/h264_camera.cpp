@@ -104,9 +104,9 @@ void V4l2H264hData::VideoCaptureThread()
             //缓冲区剩余空间不够存放当前帧数据，切换下一缓冲区
             // pthread_cond_signal(&(cam_data_buff_[i].captureOK)); /*设置状态信号*/
             cam_data_buff_[i].lock.unlock(); /*释放互斥锁*/
-            buff_full_flag_[i] = true; //缓冲区i已满
+            buff_full_flag_[i] = true;  //缓冲区i已满
             cam_data_buff_[i].rpos = 0;
-            i = !i; //切换到另一个缓冲区
+            i = !i;                     //切换到另一个缓冲区
             cam_data_buff_[i].wpos = 0;
             buff_full_flag_[i] = false; //缓冲区i为空
         }
@@ -145,7 +145,7 @@ void V4l2H264hData::VideoEncodeThread()
         cam_data_buff_[i].lock.lock();
 
         /*H.264压缩视频*/
-        int h264_length = encoder.CompressFrame(-1, cam_data_buff_[i].cam_mbuf + cam_data_buff_[i].rpos, h264_buf_);
+        int h264_length = encoder.CompressFrame(FRAME_TYPE_AUTO, cam_data_buff_[i].cam_mbuf + cam_data_buff_[i].rpos, h264_buf_);
 
         if (h264_length > 0) {
             RINGBUF.Write(h264_buf_, h264_length);

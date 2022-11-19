@@ -118,7 +118,7 @@ void H264Encoder::CompressBegin(int width, int height)
     encode_.picture->img.i_plane = 3;
 }
 
-int H264Encoder::CompressFrame(int type, uint8_t *in, uint8_t *out)
+int H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out)
 {
     x264_picture_t pic_out;
     int nNal   = 0;
@@ -153,13 +153,13 @@ int H264Encoder::CompressFrame(int type, uint8_t *in, uint8_t *out)
     }
 
     switch (type) {
-    case 0:
+    case FRAME_TYPE_P:
         encode_.picture->i_type = X264_TYPE_P;
         break;
-    case 1:
+    case FRAME_TYPE_IDR:
         encode_.picture->i_type = X264_TYPE_IDR;
         break;
-    case 2:
+    case FRAME_TYPE_I:
         encode_.picture->i_type = X264_TYPE_I;
         break;
     default:

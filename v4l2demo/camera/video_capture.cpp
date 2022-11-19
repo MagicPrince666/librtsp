@@ -95,9 +95,9 @@ bool V4l2VideoCapture::CloseCamera()
     return true;
 }
 
-int V4l2VideoCapture::BuffOneFrame(uint8_t *data, int32_t offset, uint64_t maxsize)
+uint64_t V4l2VideoCapture::BuffOneFrame(uint8_t *data, int32_t offset, uint64_t maxsize)
 {
-    int len = 0;
+    uint64_t len = 0;
     struct v4l2_buffer buf;
     CLEAR(buf);
 

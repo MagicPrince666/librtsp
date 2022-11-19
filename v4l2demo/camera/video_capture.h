@@ -29,9 +29,9 @@ public:
      * @param data 拷贝到此地址
      * @param offset 地址偏移
      * @param maxsize 最大长度
-     * @return int 
+     * @return uint64_t 
      */
-    int BuffOneFrame(uint8_t* data, int32_t offset, uint64_t maxsize);
+    uint64_t BuffOneFrame(uint8_t* data, int32_t offset, uint64_t maxsize);
 
     int FrameLength();
 
