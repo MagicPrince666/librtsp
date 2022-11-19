@@ -46,7 +46,7 @@ IF (CMAKE_HOST_APPLE)
 ELSEIF (CMAKE_HOST_UNIX)
     set(EXEC_NAME2 v4l2_demo)
     add_subdirectory(v4l2demo/camera)
-    # add_subdirectory(v4l2demo/h264camera)
+    add_subdirectory(v4l2demo/h264camera)
     add_subdirectory(v4l2demo/epoll)
 
     add_executable(${EXEC_NAME2} v4l2demo/v4l2example.cpp)
@@ -55,7 +55,7 @@ ELSEIF (CMAKE_HOST_UNIX)
         pthread
         rtsp
         camera
-        # h264camera
+        h264camera
         ringbuf
         x264
         dl

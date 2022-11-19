@@ -55,6 +55,8 @@ private:
     struct cam_data cam_data_buff_[2];
     bool buff_full_flag_[2];
 
+    uint8_t *h264_buf_;
+
     std::thread video_capture_thread_;
     std::thread video_encode_thread_;
 };

@@ -210,7 +210,7 @@ void rtsp_thread(void *args)
     V4l2H264hData softh264;
     softh264.Init();
 #else
-    H264UvcCap h264_camera;
+    H264UvcCap h264_camera("/dev/video0");
     h264_camera.InitH264Camera();
 #endif
     ip_t *ipaddr = (ip_t *)args;

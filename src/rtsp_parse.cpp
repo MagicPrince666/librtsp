@@ -33,20 +33,20 @@
         FUNC_CHECK(sscanf(line, ##args), num); \
     } while (0)
 
-static const char *method[] = {
-    "OPTIONS",
-    "DESCRIBE",
-    "SETUP",
-    "PLAY",
-    "RECORD",
-    "PAUSE",
-    "TEARDOWN",
-    "ANNOUNCE",
-    "SET_PARAMETER",
-    "GET_PARAMETER",
-    "REDIRECT",
-    "BUTT",
-};
+// static const char *method[] = {
+//     "OPTIONS",
+//     "DESCRIBE",
+//     "SETUP",
+//     "PLAY",
+//     "RECORD",
+//     "PAUSE",
+//     "TEARDOWN",
+//     "ANNOUNCE",
+//     "SET_PARAMETER",
+//     "GET_PARAMETER",
+//     "REDIRECT",
+//     "BUTT",
+// };
 
 static rtsp_method_enum_t rtsp_parse_method(const char *opt)
 {

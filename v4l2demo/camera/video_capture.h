@@ -70,11 +70,11 @@ private:
 
     void InitMmap();
 
-    void InitEncoder();
-    void CloseEncoder();
-    void ErrnoExit(const char *s);
     void InitFile();
     void CloseFile();
+
+    void ErrnoExit(const char *s);
+    int xioctl(int fd, int request, void *arg);
 
 private:
     struct buffer {
@@ -101,7 +101,7 @@ private:
     std::string h264_file_name_ = "test.264";
     std::string v4l2_device_;
     FILE *h264_fp_;
-    uint8_t *h264_buf_;
+
     uint32_t n_buffers_ = 0;
     struct camera *camera_;
 };

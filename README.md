@@ -43,3 +43,9 @@ $ mkdir build
 $ cd build
 $ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_darwin.cmake -DCMAKE_BUILD_TYPE=Debug ..
 ```
+# 获取摄像头信息
+```
+$ v4l2-ctl --list-devices
+$ v4l2-ctl --all
+$ v4l2-ctl -d /dev/video0 --all
+```
