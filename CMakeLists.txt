@@ -20,14 +20,6 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
 
-IF (CMAKE_HOST_WIN32)
-	MESSAGE(STATUS "Now is windows.")
-    # add_subdirectory(iocp)
-ELSEIF (UNIX)
-	MESSAGE(STATUS "Now is UNIX-like OS's.")
-    # add_subdirectory(epoll)
-ENDIF ()
-
 add_subdirectory(src)
 add_subdirectory(v4l2demo/ringbuf)
 
@@ -42,6 +34,8 @@ target_link_libraries(${EXEC_NAME}
 )
 
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+    MESSAGE(STATUS "Now is ${CMAKE_SYSTEM_NAME}.")
+
     set(EXEC_NAME2 v4l2_demo)
     add_subdirectory(v4l2demo/camera)
     add_subdirectory(v4l2demo/h264camera)
@@ -58,6 +52,8 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         x264
         dl
     )
+ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
+    MESSAGE(STATUS "Now is windows.")
 ELSE ()
     MESSAGE(STATUS "Not support ${CMAKE_SYSTEM_NAME} yet")
 ENDIF ()
