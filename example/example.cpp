@@ -145,7 +145,7 @@ void rtp_thread(void *args)
         spdlog::error("udp server init fail.");
         return;
     }
-    const char *filename = "test.h264";
+    const char *filename = "../example/test.h264";
     file_t file;
     uint32_t rtptime = 0;
     int idr          = 0;
