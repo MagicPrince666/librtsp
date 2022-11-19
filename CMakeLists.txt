@@ -41,9 +41,7 @@ target_link_libraries(${EXEC_NAME}
     rtsp
 )
 
-IF (CMAKE_HOST_APPLE)
-    MESSAGE(STATUS "Not support yet")
-ELSEIF ()
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     set(EXEC_NAME2 v4l2_demo)
     add_subdirectory(v4l2demo/camera)
     add_subdirectory(v4l2demo/h264camera)
@@ -60,7 +58,9 @@ ELSEIF ()
         x264
         dl
     )
-ENDIF()
+ELSE ()
+    MESSAGE(STATUS "Not support ${CMAKE_SYSTEM_NAME} yet")
+ENDIF ()
 
 find_package(OpenCV REQUIRED)
 IF (OPENCV_FOUND)
