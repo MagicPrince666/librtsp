@@ -61,3 +61,12 @@ ELSEIF (CMAKE_HOST_UNIX)
         dl
     )
 ENDIF()
+
+find_package(OpenCV REQUIRED)
+ 
+IF (OPENCV_FOUND)
+    set(OPENCV_DEMO_NAME CameraShow)
+    include_directories(${OpenCV_INCLUDE_DIRS})
+    add_executable(${OPENCV_DEMO_NAME} opencv/camera_cap.cpp)
+    target_link_libraries(${OPENCV_DEMO_NAME} ${OpenCV_LIBS})
+ENDIF()

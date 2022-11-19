@@ -24,32 +24,74 @@ public:
     V4l2VideoCapture(std::string dev = "/dev/video0");
     ~V4l2VideoCapture();
 
-    uint8_t* GetUint8tH264Buf();
-
+    /**
+     * @brief 获取一帧数据
+     * @param data 拷贝到此地址
+     * @param offset 地址偏移
+     * @param maxsize 最大长度
+     * @return int 
+     */
     int BuffOneFrame(uint8_t* data, int32_t offset, uint64_t maxsize);
 
     int FrameLength();
+
+    /**
+     * @brief 获取视频宽度
+     * @return int 
+     */
     int GetWidth();
+
+    /**
+     * @brief 获取视频高度
+     * @return int 
+     */
     int GetHeight();
 
-    void Init();
+    /**
+     * @brief 初始化
+     */
+    bool Init();
 
 private:
-    void V4l2Close();
+    /**
+     * @brief 关闭v4l2资源
+     */
+    bool V4l2Close();
 
-    void OpenCamera();
-    void CloseCamera();
+    /**
+     * @brief 打开摄像头
+     */
+    bool OpenCamera();
 
-    void StartCapturing();
-    void StopCapturing();
+    /**
+     * @brief 关闭摄像头
+     */
+    bool CloseCamera();
 
-    void InitCamera();
-    void UninitCamera();
+    /**
+     * @brief 开始录制
+     */
+    bool StartCapturing();
 
-    void InitMmap();
+    /**
+     * @brief 停止录制
+     */
+    bool StopCapturing();
 
-    void InitFile();
-    void CloseFile();
+    /**
+     * @brief 初始化摄像头参数
+     */
+    bool InitCamera();
+
+    /**
+     * @brief 退出设置
+     */
+    bool UninitCamera();
+
+    /**
+     * @brief 初始化mmap
+     */
+    bool InitMmap();
 
     void ErrnoExit(const char *s);
     int xioctl(int fd, int request, void *arg);
@@ -76,10 +118,7 @@ private:
         struct buffer *buffers;
     };
 
-    std::string h264_file_name_ = "test.264";
     std::string v4l2_device_;
-    FILE *h264_fp_;
-
     uint32_t n_buffers_ = 0;
-    struct camera *camera_;
+    struct camera camera_;
 };

@@ -12,30 +12,50 @@
 #include <stdint.h>
 #include <stdio.h>
 
-typedef struct {
-    x264_param_t *param;
-    x264_t *handle;
-    x264_picture_t *picture; //说明一个视频序列中每帧特点
-    x264_nal_t *nal;
-} Encoder;
-
 class H264Encoder
 {
 public:
     H264Encoder();
     ~H264Encoder();
 
-    //初始化编码器，并返回一个编码器对象
+    /**
+     * @brief 初始化编码器，并返回一个编码器对象
+     * @param width 视频宽度
+     * @param height 视频高度
+     */
     void CompressBegin(int width, int height);
 
-    //编码一帧
+    /**
+     * @brief 编码一帧
+     * @param type 
+     * @param in 
+     * @param out 
+     * @return int 
+     */
     int CompressFrame(int type, uint8_t *in, uint8_t *out);
 
 private:
-    //释放内存
+    /**
+     * @brief 释放内存
+     */
     void CompressEnd();
+
+    /**
+     * @brief 设置编码器参数
+     * @param param 
+     * @param preset 
+     * @return int 
+     */
     int X264ParamApplyPreset(x264_param_t *param, const char *preset);
 
 private:
-    Encoder* encode_;
+    typedef struct {
+        x264_param_t *param;
+        x264_t *handle;
+        // 说明一个视频序列中每帧特点
+        x264_picture_t *picture;
+        x264_nal_t *nal;
+    } EncoderData;
+
+    EncoderData encode_;
 };

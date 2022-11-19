@@ -43,23 +43,56 @@ public:
     V4l2H264hData(uint64_t size = BUF_SIZE);
     virtual ~V4l2H264hData();
 
+    /**
+     * @brief 初始化资源
+     */
     void Init();
 
+    /**
+     * @brief 开启抓起摄像头视频线程
+     */
     void VideoCaptureThread();
+
+    /**
+     * @brief 开启h264编码线程
+     */
     void VideoEncodeThread();
 
-    void startCap();
+    /**
+     * @brief 暂停线程
+     * @param pause 是否暂停
+     * @return true 暂停
+     * @return false 继续
+     */
+    bool PauseCap(bool pause);
+
+    /**
+     * @brief 停止
+     */
     void stopCap();
 
-    void EmptyBuffer();
+    /**
+     * @brief 给live555用
+     * @param fTo 
+     * @param fMaxSize 
+     * @param fFrameSize 
+     * @param fNumTruncatedBytes 
+     * @return int32_t 
+     */
     int32_t getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes);
 
 private:
-    void setSource(void *_p)
-    {
-        s_source_ = _p;
-    }
+    /**
+     * @brief 打开文件
+     */
+    void InitFile();
 
+    /**
+     * 关闭文件
+    */
+    void CloseFile();
+
+private:
     struct cam_data {
         uint8_t *cam_mbuf; /*缓存区数组5242880=5MB//缓存区数组10485760=10MB//缓存区数组1536000=1.46484375MB,10f*/
         int wpos;
@@ -70,15 +103,16 @@ private:
     };
 
     V4l2VideoCapture *p_capture_;
-    void *s_source_;
     bool s_b_running_;
-    bool s_quit_;
-    bool empty_buffer_;
+    bool s_pause_;
     struct cam_data cam_data_buff_[2];
     bool buff_full_flag_[2];
 
     uint8_t *h264_buf_;
     uint64_t cam_mbuf_size_;
+
+    std::string h264_file_name_;
+    FILE *h264_fp_;
 
     std::thread video_capture_thread_;
     std::thread video_encode_thread_;

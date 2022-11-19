@@ -28,10 +28,10 @@
 V4l2H264hData::V4l2H264hData(uint64_t size) :
 cam_mbuf_size_(size)
 {
-    s_b_running_  = false;
-    s_source_     = nullptr;
-    s_quit_       = true;
-    empty_buffer_ = false;
+    s_b_running_  = true;
+    s_pause_       = false;
+    h264_fp_ = nullptr;
+    h264_file_name_ = "test.264";
 }
 
 V4l2H264hData::~V4l2H264hData()
@@ -42,6 +42,7 @@ V4l2H264hData::~V4l2H264hData()
     if (video_encode_thread_.joinable()) {
         video_encode_thread_.join();
     }
+    CloseFile();
     if (p_capture_) {
         delete p_capture_;
     }
@@ -63,7 +64,9 @@ void V4l2H264hData::Init()
     cam_data_buff_[1].cam_mbuf = new (std::nothrow) uint8_t[cam_mbuf_size_];
 
     p_capture_ = new (std::nothrow) V4l2VideoCapture("/dev/video0");
-    p_capture_->Init();// 初始化摄像头
+    p_capture_->Init(); // 初始化摄像头
+
+    InitFile();         // 存储264文件
 
     video_capture_thread_ = std::thread([](V4l2H264hData *p_this) { p_this->VideoCaptureThread(); }, this);
     video_encode_thread_  = std::thread([](V4l2H264hData *p_this) { p_this->VideoEncodeThread(); }, this);
@@ -77,9 +80,9 @@ void V4l2H264hData::VideoCaptureThread()
     struct timeval now;
     struct timespec outtime;
 
-    while (1) {
-        if (s_quit_) {
-            usleep(10);
+    while (s_b_running_) {
+        if (s_pause_) {
+            usleep(50000);
             continue;
         }
         usleep(DelayTime);
@@ -121,9 +124,9 @@ void V4l2H264hData::VideoEncodeThread()
     // 设置缓冲区
     h264_buf_ = new (std::nothrow) uint8_t[sizeof(uint8_t) * p_capture_->GetWidth() * p_capture_->GetHeight() * 3];
 
-    while (1) {
-        if (s_quit_) {
-            usleep(10);
+    while (s_b_running_) {
+        if (s_pause_) {
+            usleep(50000);
             continue;
         }
 
@@ -145,11 +148,10 @@ void V4l2H264hData::VideoEncodeThread()
         int h264_length = encoder.CompressFrame(-1, cam_data_buff_[i].cam_mbuf + cam_data_buff_[i].rpos, h264_buf_);
 
         if (h264_length > 0) {
-#if 1
             RINGBUF.Write(h264_buf_, h264_length);
-#else
-            fwrite(h264_buf_, h264_length, 1, h264_fp);
-#endif
+            if(h264_fp_) {
+                fwrite(h264_buf_, h264_length, 1, h264_fp_);
+            }
         }
 
         cam_data_buff_[i].rpos += p_capture_->FrameLength();
@@ -176,7 +178,6 @@ int32_t V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSiz
     }
 
 #if 1
-
     if (RINGBUF.Empty()) {
         usleep(100); //等待数据
         fFrameSize         = 0;
@@ -204,24 +205,24 @@ int32_t V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSiz
     return fFrameSize;
 }
 
-void V4l2H264hData::EmptyBuffer()
-{
-    empty_buffer_ = true;
-}
-
-void V4l2H264hData::startCap()
-{
-    s_b_running_ = true;
-    if (!s_quit_) {
-        return;
-    }
-    s_quit_ = false;
-    spdlog::debug("FetchData startCap");
-}
-
 void V4l2H264hData::stopCap()
 {
     s_b_running_ = false;
-    s_quit_      = true;
     spdlog::debug("FetchData stopCap");
+}
+
+void V4l2H264hData::InitFile()
+{
+    h264_fp_ = fopen(h264_file_name_.c_str(), "wa+");
+}
+
+void V4l2H264hData::CloseFile()
+{
+    fclose(h264_fp_);
+}
+
+bool V4l2H264hData::PauseCap(bool pause)
+{
+    s_pause_ = pause;
+    return s_pause_;
 }
