@@ -26,7 +26,6 @@
 V4l2VideoCapture::V4l2VideoCapture(std::string dev) :
 v4l2_device_(dev) {
     h264_fp_ = nullptr;
-    V4l2Init();
 }
 
 V4l2VideoCapture::~V4l2VideoCapture() {
@@ -124,10 +123,10 @@ uint8_t* V4l2VideoCapture::GetUint8tH264Buf() {
     return h264_buf_;
 }
 
-v4l2_buffer V4l2VideoCapture::BuffOneFrame()
+int V4l2VideoCapture::BuffOneFrame(uint8_t* data, int32_t offset)
 {
+    int len = 0;
     struct v4l2_buffer buf;
-
     CLEAR(buf);
 
     buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -137,7 +136,7 @@ v4l2_buffer V4l2VideoCapture::BuffOneFrame()
     if (-1 == ioctl(camera_->fd, VIDIOC_DQBUF, &buf)) {
         switch (errno) {
         case EAGAIN:
-            return buf;
+            return 0;
         case EIO:
             /* Could ignore EIO, see spec. */
             /* fall through */
@@ -146,21 +145,16 @@ v4l2_buffer V4l2VideoCapture::BuffOneFrame()
         }
     }
 
+    len =(size_t)buf.bytesused;//当前帧的长度
+    if(offset + len <= BUF_SIZE) {
+        memcpy(data + offset, (uint8_t *)(camera_->buffers[buf.index].start) ,len);//把一帧数据拷贝到缓冲区
+    }
+
     if (-1 == ioctl(camera_->fd, VIDIOC_QBUF, &buf)) {
         ErrnoExit("VIDIOC_QBUF");
     }
 
-    return buf;
-}
-
-uint8_t* V4l2VideoCapture::GetData(struct v4l2_buffer buf)
-{
-    return (uint8_t *)(camera_->buffers[buf.index].start); //当前帧的首地址
-}
-
-int V4l2VideoCapture::GetDataLen()
-{
-    return -1;
+    return len;
 }
 
 void V4l2VideoCapture::StartCapturing()
@@ -330,7 +324,7 @@ void V4l2VideoCapture::InitCamera()
     InitMmap();
 }
 
-void V4l2VideoCapture::V4l2Init()
+void V4l2VideoCapture::Init()
 {
     OpenCamera();
     InitCamera();

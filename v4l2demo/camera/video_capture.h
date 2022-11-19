@@ -37,37 +37,30 @@
 
 #include "h264encoder.h"
 
-#define DEVICE "/dev/video0"
 #define SET_WIDTH 640
 #define SET_HEIGHT 480
-
-struct buffer {
-    void *start;
-    size_t length;
-};
 
 class V4l2VideoCapture
 {
 public:
-    V4l2VideoCapture(std::string dev = DEVICE);
+    V4l2VideoCapture(std::string dev = "/dev/video0");
     ~V4l2VideoCapture();
 
     uint8_t* GetUint8tH264Buf();
 
-    v4l2_buffer BuffOneFrame();
+    int BuffOneFrame(uint8_t* data, int32_t offset);
+
     int FrameLength();
     int GetWidth();
     int GetHeight();
 
-    uint8_t* GetData(struct v4l2_buffer buf);
-    int GetDataLen();
+    void Init();
 
 private:
+    void V4l2Close();
+
     void OpenCamera();
     void CloseCamera();
-
-    void V4l2Init();
-    void V4l2Close();
 
     void StartCapturing();
     void StopCapturing();
@@ -84,6 +77,11 @@ private:
     void CloseFile();
 
 private:
+    struct buffer {
+        void *start;
+        size_t length;
+    };
+
     struct camera {
         char *device_name;
         int fd;

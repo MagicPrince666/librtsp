@@ -66,7 +66,13 @@ bool RingBuff::Reset()
 
 uint64_t RingBuff::Size()
 {
-    return p_buffer_->out - p_buffer_->in;
+    uint64_t len = 0;
+    if(p_buffer_->in >= p_buffer_->out) {
+        len = p_buffer_->in - p_buffer_->out;
+    } else {
+        len =buffer_size_ - p_buffer_->out + p_buffer_->in;
+    }
+    return len;
 }
 
 bool RingBuff::Empty()

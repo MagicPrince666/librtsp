@@ -34,9 +34,6 @@ public:
     int getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes);
 
 private:
-    void SoftInit();
-    void SoftUinit();
-
     void setSource(void *_p) {
         s_source_ = _p;
     }
@@ -50,12 +47,12 @@ private:
         std::mutex lock;     /*互斥锁*/
     };
 
-    V4l2VideoCapture capture_;
+    V4l2VideoCapture *p_capture_;
     void *s_source_;
     bool s_b_running_;
     bool s_quit_;
     bool empty_buffer_;
-    struct cam_data* cam_data_buff_;
+    struct cam_data cam_data_buff_[2];
     bool buff_full_flag_[2];
 
     std::thread video_capture_thread_;

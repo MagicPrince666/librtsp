@@ -204,8 +204,6 @@ void rtp_thread(void *args)
     spdlog::debug("rtp exit");
 }
 
-// extern const char *rfc822_datetime_format(time_t time, char *datetime);
-
 void rtsp_thread(void *args)
 {
 #if SOFT_H264
