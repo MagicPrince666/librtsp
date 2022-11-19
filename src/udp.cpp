@@ -4,12 +4,17 @@
  * @LastEditTime: 2021-02-26 09:29:41
  */
 
-#include "include/net.h"
+#include "net.h"
+
 #include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
 #include "spdlog/fmt/ostr.h" // support for user defined types
 #include "spdlog/spdlog.h"
 
-int udp_server_init(udp_t *udp, int port)
+
+UdpServer::UdpServer() {}
+UdpServer::~UdpServer() {}
+
+int UdpServer::Init(udp_t *udp, int port)
 {
     // int size = 50 * 1024;
     memset(udp, 0, sizeof(udp_t));
@@ -43,7 +48,8 @@ int udp_server_init(udp_t *udp, int port)
     udp->port = port;
     return 0;
 }
-int udp_server_send_msg(udp_t *udp, const char *ip, const int port, unsigned char *data, int len)
+
+int UdpServer::SendMsg(udp_t *udp, const char *ip, const int port, unsigned char *data, int len)
 {
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
@@ -66,7 +72,7 @@ int udp_server_send_msg(udp_t *udp, const char *ip, const int port, unsigned cha
     return -1;
 }
 
-int udp_server_recive_msg(udp_t *udp, ip_t *ip, unsigned char *data, int len)
+int UdpServer::ReciveMsg(udp_t *udp, ip_t *ip, unsigned char *data, int len)
 {
     struct sockaddr_in addr;
     socklen_t size = 0;
@@ -79,7 +85,7 @@ int udp_server_recive_msg(udp_t *udp, ip_t *ip, unsigned char *data, int len)
     return size;
 }
 
-int udp_server_deinit(udp_t *udp)
+int UdpServer::Deinit(udp_t *udp)
 {
     close(udp->sock);
     return 0;

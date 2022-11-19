@@ -3,11 +3,18 @@
  * @Date: 2021-02-02 15:48:13
  * @LastEditTime: 2021-02-24 17:26:52
  */
-#include "include/h264.h"
-#include "sys/stat.h"
+#include "h264.h"
+#include <sys/stat.h>
 #include <assert.h>
+
 #define RTP_TS_DEFAULT (3600)
-static uint8_t *h264_nal_data_ptr(uint8_t *ptr)
+
+
+H264::H264() {}
+
+H264::~H264() {}
+
+uint8_t *H264::NalDataPtr(uint8_t *ptr)
 {
     if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x01) {
         return &ptr[3];
@@ -17,7 +24,8 @@ static uint8_t *h264_nal_data_ptr(uint8_t *ptr)
     }
     return NULL;
 }
-static int h264_nal_is_header(uint8_t *ptr)
+
+int H264::NalIsHeader(uint8_t *ptr)
 {
     if (ptr[0] == 0x00 && ptr[1] == 0x00 && ptr[2] == 0x01) {
         return 0;
@@ -27,26 +35,28 @@ static int h264_nal_is_header(uint8_t *ptr)
     }
     return -1;
 }
-static uint8_t *h264_next_nal(uint8_t *ptr, uint8_t *end)
+
+uint8_t *H264::NextNal(uint8_t *ptr, uint8_t *end)
 {
     uint8_t *p = ptr;
     while (p < end) {
-        if (!h264_nal_is_header(p)) {
+        if (!NalIsHeader(p)) {
             return p;
         }
         p++;
     }
     return NULL;
 }
-h264_nalu_t *h264_nal_packet_malloc(unsigned char *buf, int len)
+
+h264_nalu_t *H264::NalPacketMalloc(unsigned char *buf, int len)
 {
     uint8_t *end          = buf + len - 1;
-    uint8_t *data         = h264_nal_data_ptr(buf);
+    uint8_t *data         = NalDataPtr(buf);
     h264_nalu_t *nalu     = (h264_nalu_t *)malloc(sizeof(h264_nalu_t));
     h264_nalu_t *h264_nal = nalu;
     while (data && data < end) {
         memset(nalu, 0, sizeof(h264_nalu_t));
-        uint8_t *next = h264_next_nal(data, end);
+        uint8_t *next = NextNal(data, end);
 
         nalu->type = (h264_nalu_enum_t)H264_NAL(data[0]);
         nalu->data = data;
@@ -57,13 +67,13 @@ h264_nalu_t *h264_nal_packet_malloc(unsigned char *buf, int len)
         }
         nalu->next = (h264_nalu_t *)malloc(sizeof(h264_nalu_t));
         nalu       = nalu->next;
-        data       = h264_nal_data_ptr(next);
+        data       = NalDataPtr(next);
     }
     free(h264_nal);
     return NULL;
 }
 
-void h264_nal_packet_free(h264_nalu_t *nal)
+void H264::NalPacketFree(h264_nalu_t *nal)
 {
     h264_nalu_t *p = nal;
     while (p) {
@@ -73,7 +83,8 @@ void h264_nal_packet_free(h264_nalu_t *nal)
     }
     nal = NULL;
 }
-static rtp_packet_t *rtp_packet_nalu(rtp_header_t *header, uint8_t *data, uint32_t len)
+
+rtp_packet_t *H264::PacketNalu(rtp_header_t *header, uint8_t *data, uint32_t len)
 {
     RTP_ASSERT(header);
     RTP_ASSERT(data);
@@ -95,7 +106,8 @@ static rtp_packet_t *rtp_packet_nalu(rtp_header_t *header, uint8_t *data, uint32
     header->ts += RTP_TS_DEFAULT;
     return ptk;
 }
-static rtp_packet_t *rtp_packet_nalu_with_fu_a(rtp_header_t *header, uint8_t nalu_type, uint8_t *data, uint32_t len)
+
+rtp_packet_t *H264::PacketNaluWithFua(rtp_header_t *header, uint8_t nalu_type, uint8_t *data, uint32_t len)
 {
     RTP_ASSERT(header);
     RTP_ASSERT(data);
@@ -139,14 +151,15 @@ static rtp_packet_t *rtp_packet_nalu_with_fu_a(rtp_header_t *header, uint8_t nal
     header->ts += RTP_TS_DEFAULT;
     return ptk;
 }
-rtp_packet_t *rtp_h264_packet_malloc(rtp_header_t *header, uint8_t *data, uint32_t len)
+
+rtp_packet_t *H264::RtpH264PacketMalloc(rtp_header_t *header, uint8_t *data, uint32_t len)
 {
     uint32_t payload_size = RTP_MAX_PAYLOAD - sizeof(rtp_header_t);
     if (len > payload_size) {
         uint8_t nalu_type  = data[0];
         uint8_t *nalu_rbsp = &data[1];
         uint32_t rbsp_len  = len - 1;
-        return rtp_packet_nalu_with_fu_a(header, nalu_type, nalu_rbsp, rbsp_len);
+        return PacketNaluWithFua(header, nalu_type, nalu_rbsp, rbsp_len);
     }
-    return rtp_packet_nalu(header, data, len);
+    return PacketNalu(header, data, len);
 }

@@ -3,16 +3,18 @@
  * @Date: 2021-02-04 16:43:10
  * @LastEditTime: 2021-02-20 16:39:00
  */
-#ifndef __RTSP_H__
-#define __RTSP_H__
+#pragma once
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
 #define DEFAULT_STRING_MIN_LEN (32)
 #define DEFAULT_STRING_MAX_LEN (256)
 #define DEFAULT_RTSP_PORT (554)
 #define DEFAULT_RTSP_SUPPORT_METHOD "DESCRIBE,SETUP,TEARDOWN,PLAY,PAUSE,ANNOUNCE,RECORD,GET_PARAMETER,SET_PARAMETER"
+
 typedef enum {
     OPTIONS = 0,
     DESCRIBE,
@@ -87,5 +89,3 @@ typedef struct {
 #endif
     char session[DEFAULT_STRING_MIN_LEN];
 } rtsp_msg_t;
-
-#endif

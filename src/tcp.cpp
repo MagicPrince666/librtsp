@@ -3,14 +3,19 @@
  * @Date: 2021-02-11 14:17:59
  * @LastEditTime: 2021-02-23 18:01:54
  */
-#include "include/net.h"
+#include "net.h"
 #include <iostream>
 
 #include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
 #include "spdlog/fmt/ostr.h" // support for user defined types
 #include "spdlog/spdlog.h"
 
-int tcp_server_init(tcp_t *tcp, int port)
+
+TcpServer::TcpServer() {}
+
+TcpServer::~TcpServer() {}
+
+int TcpServer::Init(tcp_t *tcp, int port)
 {
     memset(tcp, 0, sizeof(tcp_t));
     tcp->sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -42,7 +47,7 @@ int tcp_server_init(tcp_t *tcp, int port)
     return 0;
 }
 
-int tcp_server_wait_client(tcp_t *tcp)
+int TcpServer::WaitClient(tcp_t *tcp)
 {
     int i             = 0;
     socklen_t addrlen = sizeof(tcp->addr);
@@ -53,7 +58,7 @@ int tcp_server_wait_client(tcp_t *tcp)
     return tcp->client[i];
 }
 
-int tcp_server_close_client(tcp_t *tcp, int client)
+int TcpServer::CloseClient(tcp_t *tcp, int client)
 {
     int i;
     while (tcp->client[i] != client && i < TCP_MAX_CLIENT) {
@@ -64,7 +69,7 @@ int tcp_server_close_client(tcp_t *tcp, int client)
     return 0;
 }
 
-int tcp_server_send_msg(tcp_t *tcp, int client, char *data, int len)
+int TcpServer::SendMsg(tcp_t *tcp, int client, char *data, int len)
 {
     // spdlog::info("send to client fd = {} msg {} len {}", client, data, len);
     int i = 0;
@@ -94,7 +99,7 @@ int tcp_server_send_msg(tcp_t *tcp, int client, char *data, int len)
     return ret;
 }
 
-int tcp_server_receive_msg(tcp_t *tcp, int client, unsigned char *data, int len)
+int TcpServer::ReceiveMsg(tcp_t *tcp, int client, unsigned char *data, int len)
 {
     int i = 0;
     while (tcp->client[i] != client && i < TCP_MAX_CLIENT)
@@ -105,7 +110,7 @@ int tcp_server_receive_msg(tcp_t *tcp, int client, unsigned char *data, int len)
     return read(client, data, len);
 }
 
-int tcp_server_deinit(tcp_t *tcp)
+int TcpServer::Deinit(tcp_t *tcp)
 {
     int i;
     for (i = 0; i < TCP_MAX_CLIENT; i++) {

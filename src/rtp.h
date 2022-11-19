@@ -3,14 +3,15 @@
  * @Date: 2021-02-04 16:29:39
  * @LastEditTime: 2021-02-26 16:38:24
  */
-#ifndef __RTP_H__
-#define __RTP_H__
+#pragma once
+
 #include <arpa/inet.h>
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #define __RTP_BIG_ENDIAN (1)
 #define __RTP_LITTLE_ENDIAN (0)
 #define __RTP_ENDIAN_MODE __RTP_LITTLE_ENDIAN
@@ -23,6 +24,7 @@
 typedef enum {
     RTP_H264 = 97,
 } rtp_pt_enum_t;
+
 typedef struct {
 #if __RTP_ENDIAN_MODE == __RTP_BIG_ENDIAN
     uint16_t v : 2;
@@ -43,6 +45,7 @@ typedef struct {
     uint32_t ts;
     uint32_t ssrc;
 } rtp_header_t;
+
 typedef struct rtp_packet {
     union {
         uint8_t data[RTP_MAX_PAYLOAD];
@@ -57,7 +60,14 @@ typedef struct rtp_packet {
     uint64_t len;
 } rtp_packet_t;
 
-void rtp_header_init(rtp_header_t *header);
-rtp_packet_t *rtp_packet_malloc(rtp_header_t *header, uint8_t *data, uint32_t len);
-void rtp_packet_free(rtp_packet_t *pkt);
-#endif
+class Rtp
+{
+public:
+    Rtp();
+    ~Rtp();
+    void HeaderInit(rtp_header_t *header);
+    rtp_packet_t *PacketMalloc(rtp_header_t *header, uint8_t *data, uint32_t len);
+    void PacketFree(rtp_packet_t *pkt);
+
+private:
+};

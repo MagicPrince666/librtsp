@@ -3,14 +3,16 @@
  * @Date: 2021-02-01 14:09:37
  * @LastEditTime: 2021-02-26 16:39:45
  */
-#include "include/rtsp_handler.h"
-#include "include/rtsp.h"
-#include "include/rtsp_parse.h"
+#include "rtsp_handler.h"
+#include "rtsp.h"
+#include "rtsp_parse.h"
 #include <stdio.h>
+
+RtspParse g_rtsp_parse;
 
 #define EVENT_PARSE(msg)         \
     rtsp_msg_t _rtsp;            \
-    rtsp_parse_msg(msg, &_rtsp); \
+    g_rtsp_parse.RtspParseMsg(msg, &_rtsp); \
     switch (_rtsp.request.method) {
 
 #define EVENT_END(func) \
@@ -40,6 +42,10 @@
 
 #define RELY_ADD(msg, args...) RELY_ADD_COND(0, 0, msg, ##args)
 
+RtspHandler::RtspHandler() {}
+
+RtspHandler::~RtspHandler() {}
+
 void event_error_handler(rtsp_msg_t rtsp)
 {
     printf("undefine rtsp type\n");
@@ -48,24 +54,25 @@ void event_default_handler(rtsp_msg_t rtsp)
 {
     // printf("undefine rtsp type\n");
 }
-rtsp_msg_t rtsp_msg_load(const char *msg)
+
+rtsp_msg_t RtspHandler::RtspMsgLoad(const char *msg)
 {
     EVENT_PARSE(msg)
-    EVENT(OPTIONS, rtsp_options_handler, 0);
-    EVENT(DESCRIBE, rtsp_describe_handler, 0);
-    EVENT(SETUP, rtsp_setup_handler, 0);
-    EVENT(PLAY, rtsp_play_handler, 0);
-    EVENT(RECORD, rtsp_record_handler, 0);
-    EVENT(PAUSE, rtsp_pause_handler, 0);
-    EVENT(TEARDOWN, rtsp_teardown_handler, 0);
-    EVENT(ANNOUNCE, rtsp_announce_handler, 0);
-    EVENT(SET_PARAMETER, rtsp_set_parameter_handler, 0);
-    EVENT(GET_PARAMETER, rtsp_get_parameter_handler, 0);
-    EVENT(REDIRECT, rtsp_redirect_handler, 0);
+    EVENT(OPTIONS, Options, 0);
+    EVENT(DESCRIBE, Describe, 0);
+    EVENT(SETUP, Setup, 0);
+    EVENT(PLAY, Play, 0);
+    EVENT(RECORD, Record, 0);
+    EVENT(PAUSE, Pause, 0);
+    EVENT(TEARDOWN, Teardown, 0);
+    EVENT(ANNOUNCE, Announce, 0);
+    EVENT(SET_PARAMETER, SetParameter, 0);
+    EVENT(GET_PARAMETER, GetParameter, 0);
+    EVENT(REDIRECT, Redirect, 0);
     EVENT_END(event_error_handler);
 }
 
-int rtsp_rely_dumps(rtsp_rely_t rely, char *msg, uint32_t len)
+int RtspHandler::RtspRelyDumps(rtsp_rely_t rely, char *msg, uint32_t len)
 {
     rtsp_method_enum_t method = rely.request.method;
     if (len < 1024)
@@ -97,7 +104,8 @@ int rtsp_rely_dumps(rtsp_rely_t rely, char *msg, uint32_t len)
     // printf("msg:%ld\n%s\n",strlen(msg),msg);
     return 0;
 }
-rtsp_rely_t get_rely(rtsp_msg_t rtsp)
+
+rtsp_rely_t RtspHandler::GetRely(rtsp_msg_t rtsp)
 {
     rtsp_rely_t rely;
     memset(&rely, 0, sizeof(rtsp_rely_t));
