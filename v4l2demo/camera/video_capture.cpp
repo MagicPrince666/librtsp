@@ -110,7 +110,7 @@ void V4l2VideoCapture::CloseFile()
     fclose(h264_fp_);
 }
 
-int V4l2VideoCapture::BuffOneFrame(uint8_t *data, int32_t offset)
+int V4l2VideoCapture::BuffOneFrame(uint8_t *data, int32_t offset, uint64_t maxsize)
 {
     int len = 0;
     struct v4l2_buffer buf;
@@ -134,7 +134,7 @@ int V4l2VideoCapture::BuffOneFrame(uint8_t *data, int32_t offset)
 
     //当前帧的长度
     len = (size_t)buf.bytesused;
-    if (offset + len <= BUF_SIZE) {
+    if (offset + len <= maxsize) {
         //把一帧数据拷贝到缓冲区
         memcpy(data + offset, (uint8_t *)(camera_->buffers[buf.index].start), len);
     }

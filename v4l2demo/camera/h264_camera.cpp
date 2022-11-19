@@ -25,7 +25,8 @@
 #include "h264encoder.h"
 #include "ringbuffer.h"
 
-V4l2H264hData::V4l2H264hData()
+V4l2H264hData::V4l2H264hData(uint64_t size) :
+cam_mbuf_size_(size)
 {
     s_b_running_  = false;
     s_source_     = nullptr;
@@ -44,21 +45,25 @@ V4l2H264hData::~V4l2H264hData()
     if (p_capture_) {
         delete p_capture_;
     }
+    delete[] cam_data_buff_[0].cam_mbuf;
+    delete[] cam_data_buff_[1].cam_mbuf;
 }
 
 void V4l2H264hData::Init()
 {
-    buff_full_flag_[0] = buff_full_flag_[1] = 0;
+    buff_full_flag_[0] = 0;
+    buff_full_flag_[1] = 0;
 
     cam_data_buff_[0].rpos = 0;
     cam_data_buff_[0].wpos = 0;
     cam_data_buff_[1].rpos = 0;
     cam_data_buff_[1].wpos = 0;
 
-    p_capture_ = new (std::nothrow) V4l2VideoCapture("/dev/video0");
+    cam_data_buff_[0].cam_mbuf = new (std::nothrow) uint8_t[cam_mbuf_size_];
+    cam_data_buff_[1].cam_mbuf = new (std::nothrow) uint8_t[cam_mbuf_size_];
 
-    // 初始化摄像头
-    p_capture_->Init();
+    p_capture_ = new (std::nothrow) V4l2VideoCapture("/dev/video0");
+    p_capture_->Init();// 初始化摄像头
 
     video_capture_thread_ = std::thread([](V4l2H264hData *p_this) { p_this->VideoCaptureThread(); }, this);
     video_encode_thread_  = std::thread([](V4l2H264hData *p_this) { p_this->VideoEncodeThread(); }, this);
@@ -80,40 +85,30 @@ void V4l2H264hData::VideoCaptureThread()
         usleep(DelayTime);
 
         gettimeofday(&now, nullptr);
-
         outtime.tv_sec = now.tv_sec;
-
         outtime.tv_nsec = DelayTime * 1000;
 
         cam_data_buff_[i].lock.lock(); /*获取互斥锁,锁定当前缓冲区*/
 
-        while ((cam_data_buff_[i].wpos + len) % BUF_SIZE == cam_data_buff_[i].rpos && cam_data_buff_[i].rpos != 0) {
+        while ((cam_data_buff_[i].wpos + len) % cam_mbuf_size_ == cam_data_buff_[i].rpos && cam_data_buff_[i].rpos != 0) {
             /*等待缓存区处理操作完成*/
             // pthread_cond_timedwait(&(cam_data_buff_[i].encodeOK), &(cam_data_buff_[i].lock), &outtime);
         }
 
-        int length = p_capture_->BuffOneFrame(cam_data_buff_[i].cam_mbuf, cam_data_buff_[i].wpos);
+        int length = p_capture_->BuffOneFrame(cam_data_buff_[i].cam_mbuf, cam_data_buff_[i].wpos, cam_mbuf_size_);
         cam_data_buff_[i].wpos += length;
-        if (cam_data_buff_[i].wpos + length > BUF_SIZE) {
+        if (cam_data_buff_[i].wpos + length > cam_mbuf_size_) {
             //缓冲区剩余空间不够存放当前帧数据，切换下一缓冲区
-
             // pthread_cond_signal(&(cam_data_buff_[i].captureOK)); /*设置状态信号*/
-
             cam_data_buff_[i].lock.unlock(); /*释放互斥锁*/
-
             buff_full_flag_[i] = true; //缓冲区i已满
-
             cam_data_buff_[i].rpos = 0;
-
             i = !i; //切换到另一个缓冲区
-
             cam_data_buff_[i].wpos = 0;
-
             buff_full_flag_[i] = false; //缓冲区i为空
         }
 
         // pthread_cond_signal(&(cam_data_buff_[i].captureOK)); /*设置状态信号*/
-
         cam_data_buff_[i].lock.unlock(); /*释放互斥锁*/
     }
 }
@@ -158,8 +153,7 @@ void V4l2H264hData::VideoEncodeThread()
         }
 
         cam_data_buff_[i].rpos += p_capture_->FrameLength();
-
-        if (cam_data_buff_[i].rpos >= BUF_SIZE) {
+        if (cam_data_buff_[i].rpos >= cam_mbuf_size_) {
             cam_data_buff_[i].rpos  = 0;
             cam_data_buff_[!i].rpos = 0;
             buff_full_flag_[i]      = false;
@@ -167,7 +161,6 @@ void V4l2H264hData::VideoEncodeThread()
 
         /*H.264压缩视频*/
         // pthread_cond_signal(&(cam_data_buff_[i].encodeOK));
-
         cam_data_buff_[i].lock.unlock(); /*释放互斥锁*/
     }
 
@@ -175,7 +168,7 @@ void V4l2H264hData::VideoEncodeThread()
     h264_buf_ = nullptr;
 }
 
-int V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
+int32_t V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
 {
     if (!s_b_running_) {
         spdlog::warn("V4l2H264hData::getData s_b_running_ = false");

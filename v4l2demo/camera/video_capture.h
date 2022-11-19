@@ -13,28 +13,6 @@
 #include <stdint.h>
 #include <iostream>
 
-#define BUF_SIZE 614400
-/*C270 YUV 4:2:2 frame size(char)
-160*120*2  = 38400
-176*144*2  = 50688
-320*176*2  = 112640
-320*240*2  = 153600
-352*288*2  = 202752
-432*240*2  = 207360
-544*288*2  = 313344
-640*360*2  = 460800
-640*480*2  = 614400
-752*416*2  = 625664
-800*448*2  = 716800
-800*600*2  = 960000
-864*480*2  = 829440
-960*544*2  = 1044480
-960*720*2  = 1382400
-1024*576*2 = 1179648
-1184*656*2 = 1553408
-*/
-//#define FIFO_NAME "/tmp/my_video.h264"
-
 #include "h264encoder.h"
 
 #define SET_WIDTH 640
@@ -48,7 +26,7 @@ public:
 
     uint8_t* GetUint8tH264Buf();
 
-    int BuffOneFrame(uint8_t* data, int32_t offset);
+    int BuffOneFrame(uint8_t* data, int32_t offset, uint64_t maxsize);
 
     int FrameLength();
     int GetWidth();
