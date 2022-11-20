@@ -43,7 +43,7 @@ public:
     int WaitClient(tcp_t *tcp);
     int CloseClient(tcp_t *tcp, int client);
     int SendMsg(tcp_t *tcp, int client, char *data, int len);
-    int ReceiveMsg(tcp_t *tcp, int client, unsigned char *data, int len);
+    int ReceiveMsg(tcp_t *tcp, int client, uint8_t *data, int len);
     int Deinit(tcp_t *tcp);
 private:
 };
@@ -54,8 +54,8 @@ public:
     UdpServer();
     ~UdpServer();
     int Init(udp_t *udp, int port);
-    int SendMsg(udp_t *udp, const char *ip, const int port, unsigned char *data, int len);
-    int ReciveMsg(udp_t *udp, ip_t *ip, unsigned char *data, int len);
+    int SendMsg(udp_t *udp, const char *ip, const int port, uint8_t *data, int len);
+    int ReciveMsg(udp_t *udp, ip_t *ip, uint8_t *data, int len);
     int Deinit(udp_t *udp);
 private:
 };

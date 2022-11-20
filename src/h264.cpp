@@ -48,7 +48,7 @@ uint8_t *H264::NextNal(uint8_t *ptr, uint8_t *end)
     return NULL;
 }
 
-h264_nalu_t *H264::NalPacketMalloc(unsigned char *buf, int len)
+h264_nalu_t *H264::NalPacketMalloc(uint8_t *buf, int len)
 {
     uint8_t *end          = buf + len - 1;
     uint8_t *data         = NalDataPtr(buf);

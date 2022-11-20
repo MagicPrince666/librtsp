@@ -99,7 +99,7 @@ int TcpServer::SendMsg(tcp_t *tcp, int client, char *data, int len)
     return ret;
 }
 
-int TcpServer::ReceiveMsg(tcp_t *tcp, int client, unsigned char *data, int len)
+int TcpServer::ReceiveMsg(tcp_t *tcp, int client, uint8_t *data, int len)
 {
     int i = 0;
     while (tcp->client[i] != client && i < TCP_MAX_CLIENT)

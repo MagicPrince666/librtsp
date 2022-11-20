@@ -40,15 +40,15 @@ public:
 
     rtp_packet_t *RtpH264PacketMalloc(rtp_header_t *header, uint8_t *data, uint32_t len);
 
-    h264_nalu_t *NalPacketMalloc(unsigned char *buf, int len);
+    h264_nalu_t *NalPacketMalloc(uint8_t *buf, int len);
     void NalPacketFree(h264_nalu_t *nal);
 
 private:
     H264();
     uint8_t *NaluFind(uint8_t *ptr, uint8_t *end);
     uint8_t *SearchStartCode(uint8_t *ptr, uint8_t *end);
-    int NalType(unsigned char *ptr);
-    int NalNewAccess(unsigned char *ptr, uint8_t *end);
+    int NalType(uint8_t *ptr);
+    int NalNewAccess(uint8_t *ptr, uint8_t *end);
     uint8_t *NalDataPtr(uint8_t *ptr);
     int NalIsHeader(uint8_t *ptr);
     uint8_t *NextNal(uint8_t *ptr, uint8_t *end);

@@ -54,7 +54,7 @@ int UdpServer::Init(udp_t *udp, int port)
     return 0;
 }
 
-int UdpServer::SendMsg(udp_t *udp, const char *ip, const int port, unsigned char *data, int len)
+int UdpServer::SendMsg(udp_t *udp, const char *ip, const int port, uint8_t *data, int len)
 {
     struct sockaddr_in addr;
     memset(&addr, 0, sizeof(addr));
@@ -64,7 +64,7 @@ int UdpServer::SendMsg(udp_t *udp, const char *ip, const int port, unsigned char
     int ret;
     int retry = 3;
     do {
-        ret = sendto(udp->sock, (const unsigned char *)data, len, 0, (struct sockaddr *)&addr, sizeof(addr));
+        ret = sendto(udp->sock, (const uint8_t *)data, len, 0, (struct sockaddr *)&addr, sizeof(addr));
         if (ret != len) {
             // spdlog::error("udp send fail ret = {}", ret);
             // return ret;
@@ -77,7 +77,7 @@ int UdpServer::SendMsg(udp_t *udp, const char *ip, const int port, unsigned char
     return -1;
 }
 
-int UdpServer::ReciveMsg(udp_t *udp, ip_t *ip, unsigned char *data, int len)
+int UdpServer::ReciveMsg(udp_t *udp, ip_t *ip, uint8_t *data, int len)
 {
     struct sockaddr_in addr;
     socklen_t size = 0;
