@@ -16,6 +16,7 @@
 #define __RTP_LITTLE_ENDIAN (0)
 #define __RTP_ENDIAN_MODE __RTP_LITTLE_ENDIAN
 #define RTP_MAX_PAYLOAD (1280)
+#define RTP_TS_DEFAULT (3600)
 #define RTP_RBSP_MAX_LEN (RTP_MAX_PAYLOAD - 14)
 #define RTP_ASSERT(x)      \
     do {                   \
@@ -70,4 +71,7 @@ public:
     void PacketFree(rtp_packet_t *pkt);
 
 private:
+    rtp_packet_t *RtpH264PacketMalloc(rtp_header_t *header, uint8_t *data, uint32_t len);
+    rtp_packet_t* PacketNalu(rtp_header_t *header, uint8_t *data, uint32_t len);
+    rtp_packet_t *PacketNaluWithFua(rtp_header_t *header, uint8_t nalu_type, uint8_t *data, uint32_t len);
 };

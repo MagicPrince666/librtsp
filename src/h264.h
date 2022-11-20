@@ -38,8 +38,6 @@ public:
         return instance;
     }
 
-    rtp_packet_t *RtpH264PacketMalloc(rtp_header_t *header, uint8_t *data, uint32_t len);
-
     h264_nalu_t *NalPacketMalloc(uint8_t *buf, int len);
     void NalPacketFree(h264_nalu_t *nal);
 
@@ -52,6 +50,4 @@ private:
     uint8_t *NalDataPtr(uint8_t *ptr);
     int NalIsHeader(uint8_t *ptr);
     uint8_t *NextNal(uint8_t *ptr, uint8_t *end);
-    rtp_packet_t* PacketNalu(rtp_header_t *header, uint8_t *data, uint32_t len);
-    rtp_packet_t *PacketNaluWithFua(rtp_header_t *header, uint8_t nalu_type, uint8_t *data, uint32_t len);
 };
