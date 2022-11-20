@@ -165,7 +165,6 @@ bool V4l2VideoCapture::UninitCamera()
         }
     }
 
-    // free(camera_.buffers);
     delete[] camera_.buffers;
     return true;
 }
@@ -195,7 +194,6 @@ bool V4l2VideoCapture::InitMmap()
         exit(EXIT_FAILURE);
     }
 
-    // camera_.buffers = (buffer *)calloc(req.count, sizeof(*(camera_.buffers)));
     camera_.buffers = new (std::nothrow) buffer[req.count];
 
     if (!camera_.buffers) {
