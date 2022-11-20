@@ -149,11 +149,9 @@ void rtp_thread(void *args)
     file_t file;
     uint32_t rtptime = 0;
     int idr          = 0;
-    rtp_header_t header;
+
     Rtp rtp;
-    rtp.HeaderInit(&header);
-    header.seq = 0;
-    header.ts  = 0;
+
     if (open_h264_file((char *)filename, &file) < 0) {
         return;
     }
@@ -176,7 +174,7 @@ void rtp_thread(void *args)
                     rtptime = rtsp_get_reltime();
                 }
                 idr                   = 1;
-                rtp_packet_t *rtp_ptk = rtp.PacketMalloc(&header, h264_nal->data, h264_nal->len);
+                rtp_packet_t *rtp_ptk = rtp.PacketMalloc(h264_nal->data, h264_nal->len);
                 rtp_packet_t *cur     = rtp_ptk;
                 while (cur) {
                     udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (unsigned char *)cur->data, cur->len);
@@ -184,7 +182,7 @@ void rtp_thread(void *args)
                 }
                 rtp.PacketFree(rtp_ptk);
             } else if ((h264_nal->type == H264_NAL_SPS || h264_nal->type == H264_NAL_PPS) && !idr) {
-                rtp_packet_t *cur = rtp.PacketMalloc(&header, h264_nal->data, h264_nal->len);
+                rtp_packet_t *cur = rtp.PacketMalloc(h264_nal->data, h264_nal->len);
                 udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (unsigned char *)cur->data, cur->len);
                 rtp.PacketFree(cur);
             }
