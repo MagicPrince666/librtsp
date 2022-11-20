@@ -298,6 +298,7 @@ bool V4l2VideoCapture::InitCamera()
 
 bool V4l2VideoCapture::Init()
 {
+    spdlog::info("V4l2VideoCapture init device: {}", v4l2_device_);
     bool ret = false;
     ret |= OpenCamera();
     ret |= InitCamera();

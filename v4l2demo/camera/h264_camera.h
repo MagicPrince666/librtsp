@@ -40,7 +40,7 @@
 class V4l2H264hData
 {
 public:
-    V4l2H264hData(uint64_t size = BUF_SIZE);
+    V4l2H264hData(std::string dev = "/dev/video0", uint64_t size = BUF_SIZE);
     virtual ~V4l2H264hData();
 
     /**
@@ -109,6 +109,7 @@ private:
     bool buff_full_flag_[2];
 
     uint8_t *h264_buf_;
+    std::string v4l2_device_;
     uint64_t cam_mbuf_size_;
 
     std::string h264_file_name_;

@@ -25,7 +25,8 @@
 #include "h264encoder.h"
 #include "ringbuffer.h"
 
-V4l2H264hData::V4l2H264hData(uint64_t size) :
+V4l2H264hData::V4l2H264hData(std::string dev, uint64_t size) :
+v4l2_device_(dev),
 cam_mbuf_size_(size)
 {
     s_b_running_  = true;
@@ -63,7 +64,7 @@ void V4l2H264hData::Init()
     cam_data_buff_[0].cam_mbuf = new (std::nothrow) uint8_t[cam_mbuf_size_];
     cam_data_buff_[1].cam_mbuf = new (std::nothrow) uint8_t[cam_mbuf_size_];
 
-    p_capture_ = new (std::nothrow) V4l2VideoCapture("/dev/video0");
+    p_capture_ = new (std::nothrow) V4l2VideoCapture(v4l2_device_.c_str());
     p_capture_->Init(); // 初始化摄像头
 
     InitFile();         // 存储264文件
