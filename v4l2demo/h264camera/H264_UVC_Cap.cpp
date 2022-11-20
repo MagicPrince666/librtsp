@@ -345,7 +345,7 @@ int64_t H264UvcCap::CapVideo()
         fwrite(buffers_[buf.index].start, buf.bytesused, 1, rec_fp1_);
     }
 
-    spdlog::debug("Get buffer size = {}", buf.bytesused);
+    // spdlog::info("Get buffer size = {}", buf.bytesused);
 
     // RINGBUF.Write((uint8_t *)buffers_[buf.index].start, buf.bytesused);
 

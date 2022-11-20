@@ -25,7 +25,7 @@
 
 #include "ringbuffer.h"
 
-#define SOFT_H264 0
+#define SOFT_H264 1
 #if SOFT_H264
 #include "h264encoder.h"
 #include "video_capture.h"
