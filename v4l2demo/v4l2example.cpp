@@ -34,7 +34,7 @@
 #include "H264_UVC_Cap.h"
 #endif
 
-int g_pause = 0;
+bool g_pause = false;
 
 #define BACKTRACE_DEBUG 0
 
@@ -91,10 +91,10 @@ static void _signal_handler(int signum)
 
 const char *rfc822_datetime_format(time_t time, char *datetime)
 {
-    int r;
+    int32_t r;
     char *date = asctime(gmtime(&time));
     char mon[8], week[8];
-    int year, day, hour, min, sec;
+    int32_t year, day, hour, min, sec;
     sscanf(date, "%s %s %d %d:%d:%d %d", week, mon, &day, &hour, &min, &sec, &year);
     r = sprintf(datetime, "%s, %02d %s %04d %02d:%02d:%02d GMT",
                  week, day, mon, year, hour, min, sec);
@@ -126,7 +126,7 @@ void rtp_thread(ip_t ipaddr)
     }
     
     uint32_t rtptime = 0;
-    int idr          = 0;
+    int32_t idr          = 0;
     // rtp_header_t header;
     Rtp rtp;
     // rtp.HeaderInit(&header);
@@ -190,7 +190,7 @@ void rtsp_thread(std::string dev)
 
     ip_t ipaddr;
     tcp_t tcp;
-    int client = 0;
+    int32_t client = 0;
     RtspHandler rtsp_handler;
     TcpServer tcp_server;
 
@@ -214,7 +214,7 @@ void rtsp_thread(std::string dev)
         if (client == 0) {
             fd_set fds;
             struct timeval tv;
-            int r;
+            int32_t r;
 
             FD_ZERO(&fds);
             FD_SET(tcp.sock, &fds);
@@ -240,7 +240,7 @@ void rtsp_thread(std::string dev)
         case SETUP:
             rely.tansport.server_port = 45504;
             rtsp_handler.RtspRelyDumps(rely, msg, 2048);
-            g_pause = 1;
+            g_pause = true;
             rtp_thread_test = std::thread(rtp_thread, ipaddr);
             rtp_thread_test.detach();
             // if (rtp_thread_test.joinable()) {
@@ -258,7 +258,7 @@ void rtsp_thread(std::string dev)
             tcp_server.SendMsg(&tcp, client, msg, strlen(msg));
             tcp_server.CloseClient(&tcp, client);
             client  = 0;
-            g_pause = 0;
+            g_pause = false;
             continue;
         default:
             rtsp_handler.RtspRelyDumps(rely, msg, 2048);

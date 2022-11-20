@@ -24,7 +24,7 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-V4l2VideoCapture::V4l2VideoCapture(std::string dev, int width, int height, int fps)
+V4l2VideoCapture::V4l2VideoCapture(std::string dev, int32_t width, int32_t height, int32_t fps)
     : v4l2_device_(dev),
       v4l2_width_(width),
       v4l2_height_(height),
@@ -43,9 +43,9 @@ void V4l2VideoCapture::ErrnoExit(const char *s)
     exit(EXIT_FAILURE);
 }
 
-int V4l2VideoCapture::xioctl(int fd, int request, void *arg)
+int32_t V4l2VideoCapture::xioctl(int32_t fd, int32_t request, void *arg)
 {
-    int r = 0;
+    int32_t r = 0;
     do {
         r = ioctl(fd, request, arg);
     } while (-1 == r && EINTR == errno);
@@ -87,9 +87,8 @@ bool V4l2VideoCapture::CloseCamera()
     return true;
 }
 
-uint64_t V4l2VideoCapture::BuffOneFrame(uint8_t *data, int32_t offset, uint64_t maxsize)
+uint64_t V4l2VideoCapture::BuffOneFrame(uint8_t *data)
 {
-    uint64_t len = 0;
     struct v4l2_buffer buf;
     CLEAR(buf);
 
@@ -109,26 +108,21 @@ uint64_t V4l2VideoCapture::BuffOneFrame(uint8_t *data, int32_t offset, uint64_t 
         }
     }
 
-    //当前帧的长度
-    len = (size_t)buf.bytesused;
-    if (offset + len <= maxsize) {
-        //把一帧数据拷贝到缓冲区
-        memcpy(data + offset, (uint8_t *)(camera_.buffers[buf.index].start), len);
-    }
+    //把一帧数据拷贝到缓冲区
+    memcpy(data, (uint8_t *)(camera_.buffers[buf.index].start), buf.bytesused);
 
     if (-1 == ioctl(camera_.fd, VIDIOC_QBUF, &buf)) {
         ErrnoExit("VIDIOC_QBUF");
     }
 
-    return len;
+    return buf.bytesused;
 }
 
 bool V4l2VideoCapture::StartCapturing()
 {
-    unsigned int i;
     enum v4l2_buf_type type;
 
-    for (i = 0; i < n_buffers_; ++i) {
+    for (uint32_t i = 0; i < n_buffers_; ++i) {
         struct v4l2_buffer buf;
 
         CLEAR(buf);
@@ -230,22 +224,22 @@ bool V4l2VideoCapture::InitMmap()
     return true;
 }
 
-int V4l2VideoCapture::GetWidth()
+int32_t V4l2VideoCapture::GetWidth()
 {
     return camera_.width;
 }
 
-int V4l2VideoCapture::GetHeight()
+int32_t V4l2VideoCapture::GetHeight()
 {
     return camera_.height;
 }
 
-int V4l2VideoCapture::GetFrameLength()
+int32_t V4l2VideoCapture::GetFrameLength()
 {
     return sizeof(uint8_t) * camera_.width * camera_.height * 2;
 }
 
-int V4l2VideoCapture::GetHandle()
+int32_t V4l2VideoCapture::GetHandle()
 {
     return camera_.fd;
 }

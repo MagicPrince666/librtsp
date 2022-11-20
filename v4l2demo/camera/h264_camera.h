@@ -32,10 +32,8 @@
 1024*576*2 = 1179648
 1184*656*2 = 1553408
 */
-//#define FIFO_NAME "/tmp/my_video.h264"
-#define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-#define DelayTime 33 * 1000 //(33us*1000=0.05s 30f/s)
+#define CLEAR(x) memset(&(x), 0, sizeof(x))
 
 class V4l2H264hData
 {
@@ -83,35 +81,28 @@ private:
     void InitFile();
 
     /**
-     * 获取并编码
-     */
-    void RecordAndEncode();
-
-    /**
      * 关闭文件
      */
     void CloseFile();
 
-private:
-    struct cam_data {
-        uint8_t *cam_mbuf; /*缓存区数组5242880=5MB//缓存区数组10485760=10MB//缓存区数组1536000=1.46484375MB,10f*/
-        int wpos;
-        int rpos; /*写与读的位置*/
-    };
+    /**
+     * 获取并编码
+     */
+    void RecordAndEncode();
 
+private:
     V4l2VideoCapture *p_capture_;
-    H264Encoder encoder_;
+    H264Encoder *encoder_;
     bool s_b_running_;
     bool s_pause_;
-    struct cam_data cam_data_buff_;
 
+    uint8_t *camera_buf_;
     uint8_t *h264_buf_;
-    std::string v4l2_device_;
-    uint64_t cam_mbuf_size_;
 
+    std::string v4l2_device_;
     std::string h264_file_name_;
     FILE *h264_fp_;
 
     std::thread video_encode_thread_;
-    std::mutex cam_data_lock_; /*互斥锁*/
+    // std::mutex cam_data_lock_; /*互斥锁*/
 };

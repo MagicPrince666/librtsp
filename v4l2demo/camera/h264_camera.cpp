@@ -39,12 +39,20 @@ V4l2H264hData::~V4l2H264hData()
     if (video_encode_thread_.joinable()) {
         video_encode_thread_.join();
     }
+
     CloseFile();
+
     if (p_capture_) {
         delete p_capture_;
     }
-    delete[] h264_buf_;
-    delete[] cam_data_buff_.cam_mbuf;
+
+    if(h264_buf_) {
+        delete[] h264_buf_;
+    }
+
+    if(h264_buf_) {
+        delete[] camera_buf_;
+    }
 }
 
 void V4l2H264hData::Init()
@@ -52,12 +60,11 @@ void V4l2H264hData::Init()
     p_capture_ = new (std::nothrow) V4l2VideoCapture(v4l2_device_.c_str());
     p_capture_->Init(); // 初始化摄像头
 
-    cam_mbuf_size_          = p_capture_->GetFrameLength();
-    cam_data_buff_.cam_mbuf = new (std::nothrow) uint8_t[cam_mbuf_size_];
+    uint64_t cam_mbuf_size          = p_capture_->GetFrameLength();
+    camera_buf_ = new (std::nothrow) uint8_t[cam_mbuf_size];
 
-    encoder_.CompressBegin(p_capture_->GetWidth(), p_capture_->GetHeight());
-
-    h264_buf_ = new (std::nothrow) uint8_t[sizeof(uint8_t) * cam_mbuf_size_];
+    encoder_ = new (std::nothrow) H264Encoder(p_capture_->GetWidth(), p_capture_->GetHeight());
+    encoder_->CompressInit();
 
     InitFile(); // 存储264文件
 
@@ -66,23 +73,31 @@ void V4l2H264hData::Init()
 
 void V4l2H264hData::RecordAndEncode()
 {
-    int length = p_capture_->BuffOneFrame(cam_data_buff_.cam_mbuf, cam_data_buff_.wpos, cam_mbuf_size_);
+    int32_t length = p_capture_->BuffOneFrame(camera_buf_);
+    spdlog::info("get raw size = {}", length);
 
-    /*H.264压缩视频*/
-    int h264_length = encoder_.CompressFrame(FRAME_TYPE_AUTO, cam_data_buff_.cam_mbuf + cam_data_buff_.rpos, h264_buf_);
-
-    if (h264_length > 0) {
-        RINGBUF.Write(h264_buf_, h264_length);
-        if (h264_fp_) {
-            fwrite(h264_buf_, h264_length, 1, h264_fp_);
-        }
+    if(length <= 0) {
+        return;
     }
 
-    cam_data_buff_.rpos += length;
+    /*H.264压缩视频*/
+    length = encoder_->CompressFrame(FRAME_TYPE_AUTO, camera_buf_, h264_buf_);
+
+    if (length > 0) {
+        RINGBUF.Write(h264_buf_, length);
+        if (h264_fp_) {
+            fwrite(h264_buf_, length, 1, h264_fp_);
+        }
+    } else {
+        spdlog::info("get size after encoder = {}", length);
+    }
 }
 
 void V4l2H264hData::VideoEncodeThread()
 {
+    // 申请H264缓存
+    h264_buf_ = new (std::nothrow) uint8_t[sizeof(uint8_t) * p_capture_->GetFrameLength()];
+
     // 设置缓冲区
     MY_EPOLL.EpollAdd(p_capture_->GetHandle(), std::bind(&V4l2H264hData::RecordAndEncode, this));
     MY_EPOLL.EpollLoop();

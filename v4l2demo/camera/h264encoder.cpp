@@ -4,18 +4,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-H264Encoder::H264Encoder() {}
+H264Encoder::H264Encoder(int32_t width, int32_t height)
+: video_width_(width),
+video_height_(height)
+{}
 
 H264Encoder::~H264Encoder()
 {
     CompressEnd();
 }
 
-int H264Encoder::X264ParamApplyPreset(x264_param_t *param, const char *preset)
+int32_t H264Encoder::X264ParamApplyPreset(x264_param_t *param, const char *preset)
 {
     char *end;
-    int i = strtol(preset, &end, 10);
-    if (*end == 0 && i >= 0 && i < (int)(sizeof(x264_preset_names) / sizeof(*x264_preset_names) - 1))
+    int32_t i = strtol(preset, &end, 10);
+    if (*end == 0 && i >= 0 && i < (int32_t)(sizeof(x264_preset_names) / sizeof(*x264_preset_names) - 1))
         preset = x264_preset_names[i];
 
     if (!strcasecmp(preset, "ultrafast")) {
@@ -96,7 +99,7 @@ int H264Encoder::X264ParamApplyPreset(x264_param_t *param, const char *preset)
     return 0;
 }
 
-void H264Encoder::CompressBegin(int width, int height)
+void H264Encoder::CompressInit()
 {
 
     encode_.param   = new (std::nothrow) x264_param_t[sizeof(x264_param_t)];
@@ -105,8 +108,8 @@ void H264Encoder::CompressBegin(int width, int height)
     x264_param_default(encode_.param); //编码器默认设置
     X264ParamApplyPreset(encode_.param, "ultrafast"); //订制编码器性能
 
-    encode_.param->i_width  = width;  //设置图像宽度
-    encode_.param->i_height = height; //设置图像高度
+    encode_.param->i_width  = video_width_;  //设置图像宽度
+    encode_.param->i_height = video_height_; //设置图像高度
 
     if ((encode_.handle = x264_encoder_open(encode_.param)) == 0) {
         return;
@@ -118,12 +121,11 @@ void H264Encoder::CompressBegin(int width, int height)
     encode_.picture->img.i_plane = 3;
 }
 
-int H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out)
+int32_t H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out)
 {
     x264_picture_t pic_out;
-    int nNal   = 0;
-    int result = 0;
-    int i = 0, j = 0;
+    int32_t nNal   = 0;
+    int32_t result = 0;
     uint8_t *p_out = out;
     encode_.nal    = NULL;
     uint8_t *p422;
@@ -132,12 +134,12 @@ int H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out)
     char *u = (char *)(encode_.picture->img.plane[1]);
     char *v = (char *)(encode_.picture->img.plane[2]);
 
-    int widthStep422 = encode_.param->i_width * 2;
+    int32_t widthStep422 = encode_.param->i_width * 2;
 
-    for (i = 0; i < encode_.param->i_height; i += 2) {
+    for (int32_t i = 0; i < encode_.param->i_height; i += 2) {
         p422 = in + i * widthStep422;
 
-        for (j = 0; j < widthStep422; j += 4) {
+        for (int32_t j = 0; j < widthStep422; j += 4) {
             *(y++) = p422[j];
             *(u++) = p422[j + 1];
             *(y++) = p422[j + 2];
@@ -145,7 +147,7 @@ int H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out)
 
         p422 += widthStep422;
 
-        for (j = 0; j < widthStep422; j += 4) {
+        for (int32_t j = 0; j < widthStep422; j += 4) {
             *(y++) = p422[j];
             *(v++) = p422[j + 3];
             *(y++) = p422[j + 2];
@@ -173,7 +175,7 @@ int H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out)
     }
     encode_.picture->i_pts++;
 
-    for (i = 0; i < nNal; i++) {
+    for (int32_t i = 0; i < nNal; i++) {
         memcpy(p_out, encode_.nal[i].p_payload, encode_.nal[i].i_payload);
         p_out += encode_.nal[i].i_payload;
         result += encode_.nal[i].i_payload;

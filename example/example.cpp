@@ -25,11 +25,10 @@
 
 typedef struct {
     unsigned char *data;
-    int len;
+    int32_t len;
 } file_t;
 
-int g_pause = 0;
-ip_t g_ip;
+bool g_pause = false;
 
 #define BACKTRACE_DEBUG 0
 
@@ -86,10 +85,10 @@ static void _signal_handler(int signum)
 
 const char *rfc822_datetime_format(time_t time, char *datetime)
 {
-    int r;
+    int32_t r;
     char *date = asctime(gmtime(&time));
     char mon[8], week[8];
-    int year, day, hour, min, sec;
+    int32_t year, day, hour, min, sec;
     sscanf(date, "%s %s %d %d:%d:%d %d", week, mon, &day, &hour, &min, &sec, &year);
     r = sprintf(datetime, "%s, %02d %s %04d %02d:%02d:%02d GMT",
                  week, day, mon, year, hour, min, sec);
@@ -106,7 +105,7 @@ uint32_t rtsp_get_reltime(void)
     return ts;
 }
 
-int open_h264_file(char *filename, file_t *file)
+int32_t open_h264_file(char *filename, file_t *file)
 {
     struct stat info;
     stat(filename, &info);
@@ -131,9 +130,8 @@ void close_h264_file(file_t *file)
     }
 }
 
-void rtp_thread(void *args)
+void rtp_thread(ip_t ipaddr)
 {
-    ip_t *ipaddr = &g_ip;
     udp_t udp, rtcp;
 
     UdpServer udp_server;
@@ -148,7 +146,7 @@ void rtp_thread(void *args)
     const char *filename = "test.h264";
     file_t file;
     uint32_t rtptime = 0;
-    int idr          = 0;
+    int32_t idr          = 0;
 
     Rtp rtp;
 
@@ -177,13 +175,13 @@ void rtp_thread(void *args)
                 rtp_packet_t *rtp_ptk = rtp.PacketMalloc(h264_nal->data, h264_nal->len);
                 rtp_packet_t *cur     = rtp_ptk;
                 while (cur) {
-                    udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (unsigned char *)cur->data, cur->len);
+                    udp_server.SendMsg(&udp, ipaddr.ip, ipaddr.port, (unsigned char *)cur->data, cur->len);
                     cur = cur->next;
                 }
                 rtp.PacketFree(rtp_ptk);
             } else if ((h264_nal->type == H264_NAL_SPS || h264_nal->type == H264_NAL_PPS) && !idr) {
                 rtp_packet_t *cur = rtp.PacketMalloc(h264_nal->data, h264_nal->len);
-                udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (unsigned char *)cur->data, cur->len);
+                udp_server.SendMsg(&udp, ipaddr.ip, ipaddr.port, (unsigned char *)cur->data, cur->len);
                 rtp.PacketFree(cur);
             }
             h264_nal = h264_nal->next;
@@ -198,9 +196,9 @@ void rtp_thread(void *args)
 
 void rtsp_thread(void *args)
 {
-    ip_t *ipaddr = (ip_t *)args;
+    ip_t ipaddr;
     tcp_t tcp;
-    int client = 0;
+    int32_t client = 0;
     RtspHandler rtsp_handler;
     TcpServer tcp_server;
     if (tcp_server.Init(&tcp, 8554)) {
@@ -222,7 +220,7 @@ void rtsp_thread(void *args)
         if (client == 0) {
             fd_set fds;
             struct timeval tv;
-            int r;
+            int32_t r;
 
             FD_ZERO(&fds);
             FD_SET(tcp.sock, &fds);
@@ -233,8 +231,8 @@ void rtsp_thread(void *args)
                 continue;
             }
             client = tcp_server.WaitClient(&tcp);
-            sprintf(ipaddr->ip, "%s", inet_ntoa(tcp.addr.sin_addr));
-            ipaddr->port = ntohs(tcp.addr.sin_port);
+            sprintf(ipaddr.ip, "%s", inet_ntoa(tcp.addr.sin_addr));
+            ipaddr.port = ntohs(tcp.addr.sin_port);
             spdlog::info("rtsp client ip:{} port:{}", inet_ntoa(tcp.addr.sin_addr), ntohs(tcp.addr.sin_port));
         }
         char recvbuffer[2048];
@@ -248,15 +246,13 @@ void rtsp_thread(void *args)
         case SETUP:
             rely.tansport.server_port = 45504;
             rtsp_handler.RtspRelyDumps(rely, msg, 2048);
-            sprintf(g_ip.ip, "%s", ipaddr->ip);
-            g_ip.port = rtsp.tansport.client_port;
-            g_pause = 1;
-            rtp_thread_test = std::thread(rtp_thread, &g_ip);
+            g_pause = true;
+            rtp_thread_test = std::thread(rtp_thread, ipaddr);
             rtp_thread_test.detach();
             // if (rtp_thread_test.joinable()) {
             //     rtp_thread_test.join();
             // }
-            spdlog::info("rtp client ip:{} port:{}", g_ip.ip, g_ip.port);
+            spdlog::info("rtp client ip:{} port:{}", ipaddr.ip, ipaddr.port);
             break;
         case DESCRIBE:
             rely.sdp_len = strlen(sdp);
@@ -268,7 +264,7 @@ void rtsp_thread(void *args)
             tcp_server.SendMsg(&tcp, client, msg, strlen(msg));
             tcp_server.CloseClient(&tcp, client);
             client  = 0;
-            g_pause = 0;
+            g_pause = false;
             continue;
         default:
             rtsp_handler.RtspRelyDumps(rely, msg, 2048);
@@ -306,7 +302,7 @@ int main(int argc, char *argv[])
 #endif
     spdlog::info("Use commad: rtsp://{}:8554/live", GetHostIpAddress());
 
-    std::thread rtsp_thread_test(rtsp_thread, &g_ip);
+    std::thread rtsp_thread_test(rtsp_thread, nullptr);
     if (rtsp_thread_test.joinable()) {
         rtsp_thread_test.join();
     }

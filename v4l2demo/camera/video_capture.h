@@ -33,7 +33,7 @@ public:
      * @param maxsize 最大长度
      * @return uint64_t 
      */
-    uint64_t BuffOneFrame(uint8_t* data, int32_t offset, uint64_t maxsize);
+    uint64_t BuffOneFrame(uint8_t* data);
 
     /**
      * 获取帧长度

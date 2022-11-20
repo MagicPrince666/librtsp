@@ -22,7 +22,7 @@ enum frametype {
 class H264Encoder
 {
 public:
-    H264Encoder();
+    H264Encoder(int32_t width, int32_t height);
     ~H264Encoder();
 
     /**
@@ -30,16 +30,16 @@ public:
      * @param width 视频宽度
      * @param height 视频高度
      */
-    void CompressBegin(int width, int height);
+    void CompressInit();
 
     /**
      * @brief 编码一帧
      * @param type 
      * @param in 
      * @param out 
-     * @return int 
+     * @return int32_t 
      */
-    int CompressFrame(frametype type, uint8_t *in, uint8_t *out);
+    int32_t CompressFrame(frametype type, uint8_t *in, uint8_t *out);
 
 private:
     /**
@@ -51,9 +51,9 @@ private:
      * @brief 设置编码器参数
      * @param param 
      * @param preset 
-     * @return int 
+     * @return int32_t 
      */
-    int X264ParamApplyPreset(x264_param_t *param, const char *preset);
+    int32_t X264ParamApplyPreset(x264_param_t *param, const char *preset);
 
 private:
     typedef struct {
@@ -64,5 +64,7 @@ private:
         x264_nal_t *nal;
     } EncoderData;
 
+    int32_t video_width_;
+    int32_t video_height_;
     EncoderData encode_;
 };
