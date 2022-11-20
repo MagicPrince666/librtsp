@@ -15,14 +15,16 @@
 
 #include "h264encoder.h"
 
-#define SET_WIDTH 640
-#define SET_HEIGHT 480
-
 class V4l2VideoCapture
 {
 public:
-    V4l2VideoCapture(std::string dev = "/dev/video0");
+    V4l2VideoCapture(std::string dev = "/dev/video0", int width = 640, int height = 480, int fps = 30);
     ~V4l2VideoCapture();
+
+    /**
+     * @brief 初始化
+     */
+    bool Init();
 
     /**
      * @brief 获取一帧数据
@@ -33,7 +35,10 @@ public:
      */
     uint64_t BuffOneFrame(uint8_t* data, int32_t offset, uint64_t maxsize);
 
-    int FrameLength();
+    /**
+     * 获取帧长度
+    */
+    int GetFrameLength();
 
     /**
      * @brief 获取视频宽度
@@ -48,9 +53,11 @@ public:
     int GetHeight();
 
     /**
-     * @brief 初始化
-     */
-    bool Init();
+     * 获取句柄
+    */
+    int GetHandle();
+
+    
 
 private:
     /**
@@ -103,7 +110,6 @@ private:
     };
 
     struct camera {
-        char *device_name;
         int fd;
         int width;
         int height;
@@ -119,6 +125,9 @@ private:
     };
 
     std::string v4l2_device_;
+    int v4l2_width_;
+    int v4l2_height_;
+    int v4l2_fps_;
     uint32_t n_buffers_ = 0;
     struct camera camera_;
 };

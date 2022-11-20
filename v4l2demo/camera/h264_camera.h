@@ -12,7 +12,7 @@
 #include <mutex>
 #include <thread>
 
-#define BUF_SIZE 614400
+// #define BUF_SIZE 614400
 /*C270 YUV 4:2:2 frame size(char)
 160*120*2  = 38400
 176*144*2  = 50688
@@ -40,18 +40,13 @@
 class V4l2H264hData
 {
 public:
-    V4l2H264hData(std::string dev = "/dev/video0", uint64_t size = BUF_SIZE);
+    V4l2H264hData(std::string dev = "/dev/video0");
     virtual ~V4l2H264hData();
 
     /**
      * @brief 初始化资源
      */
     void Init();
-
-    /**
-     * @brief 开启抓起摄像头视频线程
-     */
-    void VideoCaptureThread();
 
     /**
      * @brief 开启h264编码线程
@@ -73,11 +68,11 @@ public:
 
     /**
      * @brief 给live555用
-     * @param fTo 
-     * @param fMaxSize 
-     * @param fFrameSize 
-     * @param fNumTruncatedBytes 
-     * @return int32_t 
+     * @param fTo
+     * @param fMaxSize
+     * @param fFrameSize
+     * @param fNumTruncatedBytes
+     * @return int32_t
      */
     int32_t getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes);
 
@@ -88,8 +83,13 @@ private:
     void InitFile();
 
     /**
+     * 获取并编码
+     */
+    void RecordAndEncode();
+
+    /**
      * 关闭文件
-    */
+     */
     void CloseFile();
 
 private:
@@ -97,16 +97,13 @@ private:
         uint8_t *cam_mbuf; /*缓存区数组5242880=5MB//缓存区数组10485760=10MB//缓存区数组1536000=1.46484375MB,10f*/
         int wpos;
         int rpos; /*写与读的位置*/
-        // std::cond captureOK; /*线程采集满一个缓冲区时的标志*/
-        // std::cond encodeOK;  /*线程编码完一个缓冲区的标志*/
-        std::mutex lock; /*互斥锁*/
     };
 
     V4l2VideoCapture *p_capture_;
+    H264Encoder encoder_;
     bool s_b_running_;
     bool s_pause_;
-    struct cam_data cam_data_buff_[2];
-    bool buff_full_flag_[2];
+    struct cam_data cam_data_buff_;
 
     uint8_t *h264_buf_;
     std::string v4l2_device_;
@@ -115,6 +112,6 @@ private:
     std::string h264_file_name_;
     FILE *h264_fp_;
 
-    std::thread video_capture_thread_;
     std::thread video_encode_thread_;
+    std::mutex cam_data_lock_; /*互斥锁*/
 };

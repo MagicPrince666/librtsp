@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
+#include <new>
 
 #include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
 #include "spdlog/fmt/ostr.h" // support for user defined types
@@ -23,7 +24,11 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-V4l2VideoCapture::V4l2VideoCapture(std::string dev) : v4l2_device_(dev)
+V4l2VideoCapture::V4l2VideoCapture(std::string dev, int width, int height, int fps)
+    : v4l2_device_(dev),
+      v4l2_width_(width),
+      v4l2_height_(height),
+      v4l2_fps_(fps)
 {
 }
 
@@ -50,39 +55,26 @@ int V4l2VideoCapture::xioctl(int fd, int request, void *arg)
 
 bool V4l2VideoCapture::OpenCamera()
 {
-    camera_.device_name = (char *)v4l2_device_.c_str();
-    camera_.buffers     = nullptr;
-    camera_.width       = SET_WIDTH;
-    camera_.height      = SET_HEIGHT;
-    camera_.fps         = 30; //设置30fps失败
-
     struct stat st;
 
-    if (-1 == stat(camera_.device_name, &st)) {
-        spdlog::error("Cannot identify '{}': {}, {}", camera_.device_name,
-                      errno, strerror(errno));
+    if (-1 == stat(v4l2_device_.c_str(), &st)) {
+        spdlog::error("Cannot identify '{}': {}, {}", v4l2_device_, errno, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     if (!S_ISCHR(st.st_mode)) {
-        spdlog::error("{} is no device", camera_.device_name);
+        spdlog::error("{} is no device", v4l2_device_.c_str());
         exit(EXIT_FAILURE);
     }
 
-    camera_.fd = open(camera_.device_name, O_RDWR, 0); //  | O_NONBLOCK
+    camera_.fd = open(v4l2_device_.c_str(), O_RDWR, 0); //  | O_NONBLOCK
 
     if (-1 == camera_.fd) {
-        spdlog::error("Cannot open '{}': {}, {}", camera_.device_name, errno,
-                      strerror(errno));
+        spdlog::error("Cannot open '{}': {}, {}", v4l2_device_, errno, strerror(errno));
         exit(EXIT_FAILURE);
     }
 
     return true;
-}
-
-int V4l2VideoCapture::FrameLength()
-{
-    return sizeof(uint8_t) * camera_.width * camera_.height * 2;
 }
 
 bool V4l2VideoCapture::CloseCamera()
@@ -161,9 +153,7 @@ bool V4l2VideoCapture::StartCapturing()
 bool V4l2VideoCapture::StopCapturing()
 {
     enum v4l2_buf_type type;
-
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
     if (-1 == xioctl(camera_.fd, VIDIOC_STREAMOFF, &type)) {
         ErrnoExit("VIDIOC_STREAMOFF");
     }
@@ -172,16 +162,14 @@ bool V4l2VideoCapture::StopCapturing()
 
 bool V4l2VideoCapture::UninitCamera()
 {
-    unsigned int i;
-
-    for (i = 0; i < n_buffers_; ++i) {
+    for (uint32_t i = 0; i < n_buffers_; ++i) {
         if (-1 == munmap(camera_.buffers[i].start, camera_.buffers[i].length)) {
             ErrnoExit("munmap");
         }
     }
 
-    free(camera_.buffers);
-    // delete[] camera_.buffers;
+    // free(camera_.buffers);
+    delete[] camera_.buffers;
     return true;
 }
 
@@ -198,8 +186,7 @@ bool V4l2VideoCapture::InitMmap()
     //分配内存
     if (-1 == xioctl(camera_.fd, VIDIOC_REQBUFS, &req)) {
         if (EINVAL == errno) {
-            spdlog::error("{} does not support memory mapping",
-                          camera_.device_name);
+            spdlog::error("{} does not support memory mapping", v4l2_device_);
             exit(EXIT_FAILURE);
         } else {
             ErrnoExit("VIDIOC_REQBUFS");
@@ -207,12 +194,12 @@ bool V4l2VideoCapture::InitMmap()
     }
 
     if (req.count < 2) {
-        spdlog::error("Insufficient buffer memory on {}", camera_.device_name);
+        spdlog::error("Insufficient buffer memory on {}", v4l2_device_);
         exit(EXIT_FAILURE);
     }
 
-    camera_.buffers = (buffer *)calloc(req.count, sizeof(*(camera_.buffers)));
-    // camera_.buffers = new buffer[req.count * sizeof(*(camera_.buffers))];
+    // camera_.buffers = (buffer *)calloc(req.count, sizeof(*(camera_.buffers)));
+    camera_.buffers = new (std::nothrow) buffer[req.count];
 
     if (!camera_.buffers) {
         spdlog::error("Out of memory");
@@ -234,9 +221,7 @@ bool V4l2VideoCapture::InitMmap()
         }
 
         camera_.buffers[n_buffers_].length = buf.length;
-        camera_.buffers[n_buffers_].start  = mmap(NULL /* start anywhere */,
-                                                   buf.length, PROT_READ | PROT_WRITE /* required */,
-                                                   MAP_SHARED /* recommended */, camera_.fd, buf.m.offset);
+        camera_.buffers[n_buffers_].start  = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, camera_.fd, buf.m.offset);
 
         if (MAP_FAILED == camera_.buffers[n_buffers_].start) {
             ErrnoExit("mmap");
@@ -255,30 +240,47 @@ int V4l2VideoCapture::GetHeight()
     return camera_.height;
 }
 
+int V4l2VideoCapture::GetFrameLength()
+{
+    return sizeof(uint8_t) * camera_.width * camera_.height * 2;
+}
+
+int V4l2VideoCapture::GetHandle()
+{
+    return camera_.fd;
+}
+
 bool V4l2VideoCapture::InitCamera()
 {
     struct v4l2_format *fmt = &(camera_.v4l2_fmt);
 
     CLEAR(*fmt);
 
-    fmt->type                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt->fmt.pix.width       = camera_.width;
-    fmt->fmt.pix.height      = camera_.height;
+    fmt->type           = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    fmt->fmt.pix.width  = v4l2_width_;
+    fmt->fmt.pix.height = v4l2_height_;
     // fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV; // yuv422
     fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;   // yuv420 但是我电脑不支持
-    fmt->fmt.pix.field = V4L2_FIELD_INTERLACED; //隔行扫描
+    fmt->fmt.pix.field       = V4L2_FIELD_INTERLACED; //隔行扫描
 
     if (-1 == xioctl(camera_.fd, VIDIOC_S_FMT, fmt)) {
         ErrnoExit("VIDIOC_S_FMT");
     }
+
+    if (-1 == xioctl(camera_.fd, VIDIOC_G_FMT, fmt)) {
+        ErrnoExit("VIDIOC_G_FMT");
+    }
+
+    camera_.width  = fmt->fmt.pix.width;
+    camera_.height = fmt->fmt.pix.height;
 
     struct v4l2_streamparm parm;
     memset(&parm, 0, sizeof(struct v4l2_streamparm));
     parm.type                     = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     parm.parm.capture.capturemode = V4L2_MODE_HIGHQUALITY;
     //  parm.parm.capture.capability = V4L2_CAP_TIMEPERFRAME;
-    parm.parm.capture.timeperframe.denominator = 30; //时间间隔分母
-    parm.parm.capture.timeperframe.numerator   = 1;  //分子
+    parm.parm.capture.timeperframe.denominator = v4l2_fps_; //时间间隔分母
+    parm.parm.capture.timeperframe.numerator   = 1;         //分子
     if (-1 == ioctl(camera_.fd, VIDIOC_S_PARM, &parm)) {
         perror("set param:");
         exit(EXIT_FAILURE);
@@ -289,7 +291,7 @@ bool V4l2VideoCapture::InitCamera()
         ErrnoExit("VIDIOC_G_PARM");
     }
 
-    spdlog::info("get fps = {}", parm.parm.capture.timeperframe.denominator);
+    spdlog::info("width = {}\t height = {}\t fps = {}", fmt->fmt.pix.width, fmt->fmt.pix.height, parm.parm.capture.timeperframe.denominator);
 
     InitMmap();
 

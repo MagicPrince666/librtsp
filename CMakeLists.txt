@@ -49,6 +49,7 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         camera
         h264camera
         ringbuf
+        epoll
         x264
         dl
     )

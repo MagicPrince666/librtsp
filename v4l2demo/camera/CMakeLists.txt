@@ -5,6 +5,7 @@ add_library(camera
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/v4l2demo/ringbuf
+    ${CMAKE_SOURCE_DIR}/v4l2demo/epoll
     ${CMAKE_SOURCE_DIR}/v4l2demo/x264
 )
 
