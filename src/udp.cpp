@@ -24,6 +24,11 @@ int UdpServer::Init(udp_t *udp, int port)
         return -1;
     }
     // setsockopt(udp->sock, SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size));
+
+    int opt = 1;
+    setsockopt(udp->sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(udp->sock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+
     memset(&udp->addr, 0, sizeof(struct sockaddr_in));
     udp->addr.sin_family      = AF_INET;
     udp->addr.sin_addr.s_addr = htonl(INADDR_ANY);
