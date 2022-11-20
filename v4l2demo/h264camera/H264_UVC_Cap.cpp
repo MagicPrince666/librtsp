@@ -82,7 +82,7 @@ int xioctl(int fd, int request, void *arg)
 
 bool H264UvcCap::CreateFile(bool yes)
 {
-    if (yes) { // 不创建文件
+    if (!yes) { // 不创建文件
         return false;
     }
     time_t tt        = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -278,7 +278,7 @@ bool H264UvcCap::Init(void)
 {
     int format = V4L2_PIX_FMT_H264;
 
-    spdlog::info("-----Init H264 Camera-----");
+    spdlog::info("-----Init H264 Camera {}-----", v4l2_device_);
 
     if (!OpenDevice()) {
         return false;
@@ -344,7 +344,8 @@ int64_t H264UvcCap::CapVideo()
     if (rec_fp1_) {
         fwrite(buffers_[buf.index].start, buf.bytesused, 1, rec_fp1_);
     }
-    spdlog::info("-----Get buffer size = {}-----", buf.bytesused);
+
+    spdlog::debug("Get buffer size = {}", buf.bytesused);
 
     // RINGBUF.Write((uint8_t *)buffers_[buf.index].start, buf.bytesused);
 

@@ -130,7 +130,7 @@ void close_h264_file(file_t *file)
     }
 }
 
-void rtp_thread(ip_t ipaddr)
+void rtp_thread(ip_t ipaddr, std::string file_name)
 {
     udp_t udp, rtcp;
 
@@ -143,14 +143,14 @@ void rtp_thread(ip_t ipaddr)
         spdlog::error("udp server init fail.");
         return;
     }
-    const char *filename = "test.h264";
     file_t file;
     uint32_t rtptime = 0;
     int32_t idr          = 0;
 
     Rtp rtp;
 
-    if (open_h264_file((char *)filename, &file) < 0) {
+    spdlog::info("Open file {}", file_name);
+    if (open_h264_file((char *)file_name.c_str(), &file) < 0) {
         return;
     }
 
@@ -194,7 +194,7 @@ void rtp_thread(ip_t ipaddr)
     spdlog::debug("rtp exit");
 }
 
-void rtsp_thread(void *args)
+void rtsp_thread(std::string file_name)
 {
     ip_t ipaddr;
     tcp_t tcp;
@@ -247,7 +247,7 @@ void rtsp_thread(void *args)
             rely.tansport.server_port = 45504;
             rtsp_handler.RtspRelyDumps(rely, msg, 2048);
             g_pause = true;
-            rtp_thread_test = std::thread(rtp_thread, ipaddr);
+            rtp_thread_test = std::thread(rtp_thread, ipaddr, file_name);
             rtp_thread_test.detach();
             // if (rtp_thread_test.joinable()) {
             //     rtp_thread_test.join();
@@ -302,7 +302,12 @@ int main(int argc, char *argv[])
 #endif
     spdlog::info("Use commad: rtsp://{}:8554/live", GetHostIpAddress());
 
-    std::thread rtsp_thread_test(rtsp_thread, nullptr);
+    std::string file = "test.h264";
+    if(argc > 1) {
+        file = (char *)argv[1];
+    }
+
+    std::thread rtsp_thread_test(rtsp_thread, file);
     if (rtsp_thread_test.joinable()) {
         rtsp_thread_test.join();
     }

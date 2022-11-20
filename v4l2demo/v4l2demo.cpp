@@ -299,7 +299,7 @@ int main(int argc, char *argv[])
     if(argc > 1) {
         dev = (char *)argv[1];
     }
-    spdlog::info("Which to select device: {}", dev);
+
     spdlog::info("Use commad: rtsp://{}:8554/live", GetHostIpAddress());
 
     std::thread rtsp_thread_test(rtsp_thread, dev);
