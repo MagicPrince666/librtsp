@@ -66,12 +66,15 @@ class Rtp
 public:
     Rtp();
     ~Rtp();
-    void HeaderInit(rtp_header_t *header);
-    rtp_packet_t *PacketMalloc(rtp_header_t *header, uint8_t *data, uint32_t len);
+
+    rtp_packet_t *PacketMalloc(uint8_t *data, uint32_t len);
     void PacketFree(rtp_packet_t *pkt);
 
 private:
-    rtp_packet_t *RtpH264PacketMalloc(rtp_header_t *header, uint8_t *data, uint32_t len);
-    rtp_packet_t* PacketNalu(rtp_header_t *header, uint8_t *data, uint32_t len);
-    rtp_packet_t *PacketNaluWithFua(rtp_header_t *header, uint8_t nalu_type, uint8_t *data, uint32_t len);
+    rtp_packet_t *RtpH264PacketMalloc(uint8_t *data, uint32_t len);
+    rtp_packet_t* PacketNalu(uint8_t *data, uint32_t len);
+    rtp_packet_t *PacketNaluWithFua(uint8_t nalu_type, uint8_t *data, uint32_t len);
+
+private:
+    rtp_header_t header_;
 };
