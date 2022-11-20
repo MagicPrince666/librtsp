@@ -41,7 +41,7 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     add_subdirectory(v4l2demo/h264camera)
     add_subdirectory(v4l2demo/epoll)
 
-    add_executable(${EXEC_NAME2} v4l2demo/v4l2example.cpp)
+    add_executable(${EXEC_NAME2} v4l2demo/v4l2demo.cpp)
 
     target_link_libraries(${EXEC_NAME2} 
         pthread
