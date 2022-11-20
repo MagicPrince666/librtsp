@@ -25,7 +25,7 @@
 
 #include "ringbuffer.h"
 
-#define SOFT_H264 1
+#define SOFT_H264 0
 #if SOFT_H264
 #include "h264encoder.h"
 #include "video_capture.h"
@@ -185,7 +185,7 @@ void rtsp_thread(std::string dev)
     softh264.Init();
 #else
     H264UvcCap h264_camera(dev);
-    h264_camera.InitH264Camera();
+    h264_camera.Init();
 #endif
 
     ip_t ipaddr;

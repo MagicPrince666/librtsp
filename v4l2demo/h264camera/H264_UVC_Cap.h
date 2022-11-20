@@ -24,7 +24,7 @@ public:
      * @return true 
      * @return false 
      */
-    bool InitH264Camera(void);
+    bool Init(void);
 
     /**
      * @brief 取数据
@@ -69,6 +69,11 @@ private:
      */
     int StartPreviewing(void);
 
+    /**
+     * @brief 抓取H264视频
+     */
+    void VideoCapThread();
+
 private:
     struct buffer {
         void *start;
@@ -83,4 +88,5 @@ private:
     uint32_t video_width_;
     uint32_t video_height_;
     FILE *rec_fp1_;
+    std::thread cat_h264_thread_;
 };

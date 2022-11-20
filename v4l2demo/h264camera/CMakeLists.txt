@@ -3,7 +3,9 @@ add_library(h264camera
     ${h264camera_srcs}
 )
 
-include_directories(${CMAKE_SOURCE_DIR}/v4l2demo/ringbuf
+include_directories(
+    ${CMAKE_SOURCE_DIR}/v4l2demo/ringbuf
+    ${CMAKE_SOURCE_DIR}/v4l2demo/epoll
 )
 
 target_include_directories(h264camera

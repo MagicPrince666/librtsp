@@ -57,8 +57,6 @@ public:
     */
     int GetHandle();
 
-    
-
 private:
     /**
      * @brief 关闭v4l2资源

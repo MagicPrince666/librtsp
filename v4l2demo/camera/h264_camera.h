@@ -106,3 +106,5 @@ private:
     std::thread video_encode_thread_;
     // std::mutex cam_data_lock_; /*互斥锁*/
 };
+
+inline bool FileExists(const std::string& name);

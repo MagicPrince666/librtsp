@@ -35,6 +35,7 @@
 #include "spdlog/fmt/ostr.h" // support for user defined types
 #include "H264_UVC_Cap.h"
 #include "ringbuffer.h"
+#include "epoll.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
@@ -72,7 +73,6 @@ int errnoexit(const char *s)
 int xioctl(int fd, int request, void *arg)
 {
     int r;
-
     do {
         r = ioctl(fd, request, arg);
     } while (-1 == r && EINTR == errno);
@@ -85,14 +85,14 @@ bool H264UvcCap::CreateFile(bool yes)
     if (yes) { // 不创建文件
         return false;
     }
-    // remove("Record.264");
     time_t tt        = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    std::string file = "/tmp/" + std::to_string(tt) + ".264";
-    rec_fp1_         = fopen(file.c_str(), "a+b");
-    if (rec_fp1_ == nullptr) {
-        return false;
+    std::string file = std::to_string(tt) + ".h264";
+    rec_fp1_         = fopen(file.c_str(), "wa+");
+    if (rec_fp1_) {
+        return true;
     }
-    return true;
+    spdlog::error("Create file {} fail!!", file);
+    return false;
 }
 
 bool H264UvcCap::OpenDevice()
@@ -274,9 +274,11 @@ int H264UvcCap::StartPreviewing(void)
     return 0;
 }
 
-bool H264UvcCap::InitH264Camera(void)
+bool H264UvcCap::Init(void)
 {
     int format = V4L2_PIX_FMT_H264;
+
+    spdlog::info("-----Init H264 Camera-----");
 
     if (!OpenDevice()) {
         return false;
@@ -315,11 +317,13 @@ bool H264UvcCap::InitH264Camera(void)
         if (m_BitRate < 0) {
             spdlog::error("XU_H264_Get_BitRate {} Failed", m_BitRate);
         } else {
-            spdlog::info("-----XU_H264_Set_BitRate {}bps----", m_BitRate);
+            spdlog::info("-----XU_H264_Set_BitRate {} bps----", m_BitRate);
         }
     }
 
     CreateFile(true);
+
+    cat_h264_thread_ = std::thread([](H264UvcCap *p_this) { p_this->VideoCapThread(); }, this);
     return true;
 }
 
@@ -340,8 +344,9 @@ int64_t H264UvcCap::CapVideo()
     if (rec_fp1_) {
         fwrite(buffers_[buf.index].start, buf.bytesused, 1, rec_fp1_);
     }
+    spdlog::info("-----Get buffer size = {}-----", buf.bytesused);
 
-    RINGBUF.Write((uint8_t *)buffers_[buf.index].start, buf.bytesused);
+    // RINGBUF.Write((uint8_t *)buffers_[buf.index].start, buf.bytesused);
 
     ret = ioctl(video_->fd, VIDIOC_QBUF, &buf);
 
@@ -351,4 +356,9 @@ int64_t H264UvcCap::CapVideo()
     }
 
     return buf.bytesused;
+}
+
+void H264UvcCap::VideoCapThread() {
+    MY_EPOLL.EpollAdd(video_->fd, std::bind(&H264UvcCap::CapVideo, this));
+    MY_EPOLL.EpollLoop();
 }

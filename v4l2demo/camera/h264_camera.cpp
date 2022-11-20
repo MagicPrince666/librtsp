@@ -31,7 +31,7 @@ V4l2H264hData::V4l2H264hData(std::string dev) : v4l2_device_(dev)
     s_b_running_    = true;
     s_pause_        = false;
     h264_fp_        = nullptr;
-    h264_file_name_ = "test.264";
+    h264_file_name_ = "h264_encoder.h264";
 }
 
 V4l2H264hData::~V4l2H264hData()
@@ -144,8 +144,16 @@ void V4l2H264hData::stopCap()
     spdlog::debug("FetchData stopCap");
 }
 
+inline bool FileExists(const std::string& name) {
+  struct stat buffer;   
+  return (stat (name.c_str(), &buffer) == 0); 
+}
+
 void V4l2H264hData::InitFile()
 {
+    if(FileExists(h264_file_name_)) {
+        remove(h264_file_name_.c_str());
+    }
     h264_fp_ = fopen(h264_file_name_.c_str(), "wa+");
 }
 
