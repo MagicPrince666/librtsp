@@ -145,7 +145,7 @@ void rtp_thread(void *args)
         spdlog::error("udp server init fail.");
         return;
     }
-    const char *filename = "../example/test.h264";
+    const char *filename = "test.h264";
     file_t file;
     uint32_t rtptime = 0;
     int idr          = 0;
@@ -157,7 +157,9 @@ void rtp_thread(void *args)
     if (open_h264_file((char *)filename, &file) < 0) {
         return;
     }
-    h264_nalu_t *nalu = H264FUN.NalPacketMalloc(file.data, file.len);
+
+    H264 h264;
+    h264_nalu_t *nalu = h264.NalPacketMalloc(file.data, file.len);
     spdlog::info("rtp server init.");
 
     while (g_pause) {
@@ -189,7 +191,7 @@ void rtp_thread(void *args)
             h264_nal = h264_nal->next;
         }
     }
-    H264FUN.NalPacketFree(nalu);
+    h264.NalPacketFree(nalu);
     close_h264_file(&file);
     udp_server.Deinit(&udp);
     udp_server.Deinit(&rtcp);

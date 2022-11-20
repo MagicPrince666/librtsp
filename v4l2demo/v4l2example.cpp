@@ -34,11 +34,6 @@
 #include "H264_UVC_Cap.h"
 #endif
 
-typedef struct {
-    unsigned char *data;
-    int len;
-} file_t;
-
 int g_pause = 0;
 
 #define BACKTRACE_DEBUG 0
@@ -115,31 +110,6 @@ uint32_t rtsp_get_reltime(void)
     return ts;
 }
 
-int open_h264_file(char *filename, file_t *file)
-{
-    struct stat info;
-    stat(filename, &info);
-    FILE *fp   = fopen(filename, "rb");
-    if (fp == nullptr) {
-        spdlog::error("file {} open fail", filename);
-        return -1;
-    }
-    file->data = (unsigned char *)malloc(info.st_size);
-    memset(file->data, 0, info.st_size);
-    fread(file->data, 1, info.st_size, fp);
-    file->len = info.st_size;
-    fclose(fp);
-    return 0;
-}
-
-void close_h264_file(file_t *file)
-{
-    if (file->data) {
-        free(file->data);
-        file->data = NULL;
-    }
-}
-
 
 void rtp_thread(ip_t ipaddr)
 {
@@ -154,8 +124,7 @@ void rtp_thread(ip_t ipaddr)
         spdlog::error("udp server init fail.");
         return;
     }
-    const char *filename = "../example/test.h264";
-    file_t file;
+    
     uint32_t rtptime = 0;
     int idr          = 0;
     rtp_header_t header;
@@ -163,14 +132,19 @@ void rtp_thread(ip_t ipaddr)
     rtp.HeaderInit(&header);
     header.seq = 0;
     header.ts  = 0;
-    if (open_h264_file((char *)filename, &file) < 0) {
-        return;
-    }
-    h264_nalu_t *nalu = H264FUN.NalPacketMalloc(file.data, file.len);
+
+    H264 h264;
+    // h264_nalu_t *nalu = h264.NalPacketMalloc(file.data, file.len);
     spdlog::info("rtp server init.");
 
     while (g_pause) {
+        
+        uint64_t len = RINGBUF.Size();
+        uint8_t *h264data = new uint8_t[len];
+        RINGBUF.Read(h264data, len);
+        h264_nalu_t *nalu = h264.NalPacketMalloc(h264data, len);
         h264_nalu_t *h264_nal = nalu;
+
         while (h264_nal && g_pause) {
             if (h264_nal->type == H264_NAL_IDR || h264_nal->type == H264_NAL_PFRAME) {
                 if (rtptime == 0) {
@@ -197,9 +171,10 @@ void rtp_thread(ip_t ipaddr)
             }
             h264_nal = h264_nal->next;
         }
+        h264.NalPacketFree(nalu);
+        delete[] h264data;
     }
-    H264FUN.NalPacketFree(nalu);
-    close_h264_file(&file);
+
     udp_server.Deinit(&udp);
     udp_server.Deinit(&rtcp);
     spdlog::debug("rtp exit");
@@ -207,7 +182,6 @@ void rtp_thread(ip_t ipaddr)
 
 void rtsp_thread(std::string dev)
 {
-    // spdlog::info("Use device: {}", dev);
 #if SOFT_H264
     V4l2H264hData softh264(dev);
     softh264.Init();

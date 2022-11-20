@@ -27,22 +27,22 @@ typedef struct h264_nalu {
     struct h264_nalu *next;
 } h264_nalu_t;
 
-#define H264FUN H264::GetInstance()
+// #define H264FUN H264::GetInstance()
 
 class H264
 {
 public:
+    H264();
     ~H264();
-    static H264& GetInstance() {
-        static H264 instance;
-        return instance;
-    }
+    // static H264& GetInstance() {
+    //     static H264 instance;
+    //     return instance;
+    // }
 
     h264_nalu_t *NalPacketMalloc(uint8_t *buf, int len);
     void NalPacketFree(h264_nalu_t *nal);
 
 private:
-    H264();
     uint8_t *NaluFind(uint8_t *ptr, uint8_t *end);
     uint8_t *SearchStartCode(uint8_t *ptr, uint8_t *end);
     int NalType(uint8_t *ptr);
