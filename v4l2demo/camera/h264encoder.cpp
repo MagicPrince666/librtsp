@@ -11,7 +11,7 @@ video_height_(height)
 
 H264Encoder::~H264Encoder()
 {
-    CompressEnd();
+    UnInit();
 }
 
 int32_t H264Encoder::X264ParamApplyPreset(x264_param_t *param, const char *preset)
@@ -99,7 +99,7 @@ int32_t H264Encoder::X264ParamApplyPreset(x264_param_t *param, const char *prese
     return 0;
 }
 
-void H264Encoder::CompressInit()
+void H264Encoder::Init()
 {
 
     encode_.param   = new (std::nothrow) x264_param_t[sizeof(x264_param_t)];
@@ -119,6 +119,22 @@ void H264Encoder::CompressInit()
                        encode_.param->i_height);
     encode_.picture->img.i_csp   = X264_CSP_I420;
     encode_.picture->img.i_plane = 3;
+}
+
+void H264Encoder::UnInit()
+{
+    if (encode_.picture) {
+        x264_picture_clean(encode_.picture);
+        delete[] encode_.picture;
+        encode_.picture = nullptr;
+    }
+    if (encode_.param) {
+        delete[] encode_.param;
+        encode_.param = nullptr;
+    }
+    if (encode_.handle) {
+        x264_encoder_close(encode_.handle);
+    }
 }
 
 int32_t H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out)
@@ -184,18 +200,3 @@ int32_t H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out)
     return result;
 }
 
-void H264Encoder::CompressEnd()
-{
-    if (encode_.picture) {
-        x264_picture_clean(encode_.picture);
-        delete[] encode_.picture;
-        encode_.picture = nullptr;
-    }
-    if (encode_.param) {
-        delete[] encode_.param;
-        encode_.param = nullptr;
-    }
-    if (encode_.handle) {
-        x264_encoder_close(encode_.handle);
-    }
-}

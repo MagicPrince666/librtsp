@@ -30,7 +30,7 @@ public:
      * @param width 视频宽度
      * @param height 视频高度
      */
-    void CompressInit();
+    void Init();
 
     /**
      * @brief 编码一帧
@@ -45,7 +45,7 @@ private:
     /**
      * @brief 释放内存
      */
-    void CompressEnd();
+    void UnInit();
 
     /**
      * @brief 设置编码器参数

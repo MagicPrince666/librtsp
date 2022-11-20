@@ -63,7 +63,7 @@ void V4l2H264hData::Init()
     camera_buf_ = new (std::nothrow) uint8_t[p_capture_->GetFrameLength()];
 
     encoder_ = new (std::nothrow) H264Encoder(p_capture_->GetWidth(), p_capture_->GetHeight());
-    encoder_->CompressInit();
+    encoder_->Init();
     // 申请H264缓存
     h264_buf_ = new (std::nothrow) uint8_t[sizeof(uint8_t) * p_capture_->GetFrameLength()];
 
