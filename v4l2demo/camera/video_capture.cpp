@@ -181,6 +181,7 @@ bool V4l2VideoCapture::UninitCamera()
     }
 
     free(camera_.buffers);
+    // delete[] camera_.buffers;
     return true;
 }
 
@@ -211,6 +212,7 @@ bool V4l2VideoCapture::InitMmap()
     }
 
     camera_.buffers = (buffer *)calloc(req.count, sizeof(*(camera_.buffers)));
+    // camera_.buffers = new buffer[req.count * sizeof(*(camera_.buffers))];
 
     if (!camera_.buffers) {
         spdlog::error("Out of memory");
