@@ -26,6 +26,8 @@
 #include "h264encoder.h"
 #include "ringbuffer.h"
 
+#define USE_BUF_LIST 0
+
 V4l2H264hData::V4l2H264hData(std::string dev) : v4l2_device_(dev)
 {
     s_b_running_    = true;
@@ -50,7 +52,7 @@ V4l2H264hData::~V4l2H264hData()
         delete[] h264_buf_;
     }
 
-    if(h264_buf_) {
+    if(camera_buf_) {
         delete[] camera_buf_;
     }
 }
@@ -64,8 +66,12 @@ void V4l2H264hData::Init()
 
     encoder_ = new (std::nothrow) H264Encoder(p_capture_->GetWidth(), p_capture_->GetHeight());
     encoder_->Init();
+
+#if USE_BUF_LIST
+#else
     // 申请H264缓存
-    h264_buf_ = new (std::nothrow) uint8_t[sizeof(uint8_t) * p_capture_->GetFrameLength()];
+    h264_buf_ = new (std::nothrow) uint8_t[p_capture_->GetFrameLength()];
+#endif
 
     InitFile(); // 存储264文件
 
@@ -74,23 +80,43 @@ void V4l2H264hData::Init()
 
 void V4l2H264hData::RecordAndEncode()
 {
-    int32_t length = p_capture_->BuffOneFrame(camera_buf_);
+    int32_t len = p_capture_->BuffOneFrame(camera_buf_);
 
-    if(length <= 0) {
+    if(len <= 0) {
         return;
     }
 
+#if USE_BUF_LIST
+    Buffer h264_buf;
+    memset(&h264_buf, 0, sizeof(struct Buffer));
     /*H.264压缩视频*/
-    length = encoder_->CompressFrame(FRAME_TYPE_AUTO, camera_buf_, h264_buf_);
+    encoder_->CompressFrame(FRAME_TYPE_AUTO, camera_buf_, h264_buf.buf_ptr, h264_buf.length);
+
+    if (h264_buf.length > 0) {
+        // RINGBUF.Write(h264_buf.buf_ptr, h264_buf.length);
+        if (h264_fp_) {
+            fwrite(h264_buf.buf_ptr, h264_buf.length, 1, h264_fp_);
+        }
+    } else {
+        spdlog::info("get size after encoder = {}", h264_buf.length);
+    }
+
+    if(h264_buf.buf_ptr) {
+        delete[] h264_buf.buf_ptr;
+    }
+#else
+    uint64_t length = 0;
+    encoder_->CompressFrame(FRAME_TYPE_AUTO, camera_buf_, h264_buf_, length);
 
     if (length > 0) {
-        RINGBUF.Write(h264_buf_, length);
+        // RINGBUF.Write(h264_buf_, h264_buf.length);
         if (h264_fp_) {
             fwrite(h264_buf_, length, 1, h264_fp_);
         }
     } else {
         spdlog::info("get size after encoder = {}", length);
     }
+#endif
 }
 
 void V4l2H264hData::VideoEncodeThread()

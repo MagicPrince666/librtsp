@@ -37,9 +37,9 @@ public:
      * @param type 
      * @param in 
      * @param out 
-     * @return int32_t 
+     * @return bool 
      */
-    int32_t CompressFrame(frametype type, uint8_t *in, uint8_t *out);
+    bool CompressFrame(frametype type, uint8_t *in, uint8_t *out, uint64_t &length);
 
 private:
     /**

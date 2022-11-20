@@ -237,7 +237,7 @@ int32_t V4l2VideoCapture::GetHeight()
 
 int32_t V4l2VideoCapture::GetFrameLength()
 {
-    return sizeof(uint8_t) * camera_.width * camera_.height * 2;
+    return camera_.width * camera_.height * 2;
 }
 
 int32_t V4l2VideoCapture::GetHandle()

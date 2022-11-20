@@ -18,7 +18,7 @@
 class V4l2VideoCapture
 {
 public:
-    V4l2VideoCapture(std::string dev = "/dev/video0", int width = 640, int height = 480, int fps = 30);
+    V4l2VideoCapture(std::string dev = "/dev/video0", int32_t width = 640, int32_t height = 480, int32_t fps = 30);
     ~V4l2VideoCapture();
 
     /**
@@ -38,24 +38,24 @@ public:
     /**
      * 获取帧长度
     */
-    int GetFrameLength();
+    int32_t GetFrameLength();
 
     /**
      * @brief 获取视频宽度
-     * @return int 
+     * @return int32_t 
      */
-    int GetWidth();
+    int32_t GetWidth();
 
     /**
      * @brief 获取视频高度
-     * @return int 
+     * @return int32_t 
      */
-    int GetHeight();
+    int32_t GetHeight();
 
     /**
      * 获取句柄
     */
-    int GetHandle();
+    int32_t GetHandle();
 
 private:
     /**
@@ -99,7 +99,7 @@ private:
     bool InitMmap();
 
     void ErrnoExit(const char *s);
-    int xioctl(int fd, int request, void *arg);
+    int32_t xioctl(int32_t fd, int32_t request, void *arg);
 
 private:
     struct buffer {
@@ -108,13 +108,13 @@ private:
     };
 
     struct camera {
-        int fd;
-        int width;
-        int height;
-        int fps;
-        int display_depth;
-        int image_size;
-        int frame_number;
+        int32_t fd;
+        int32_t width;
+        int32_t height;
+        int32_t fps;
+        int32_t display_depth;
+        int32_t image_size;
+        int32_t frame_number;
         struct v4l2_capability v4l2_cap;
         struct v4l2_cropcap v4l2_cropcap;
         struct v4l2_format v4l2_fmt;
@@ -123,9 +123,9 @@ private:
     };
 
     std::string v4l2_device_;
-    int v4l2_width_;
-    int v4l2_height_;
-    int v4l2_fps_;
+    int32_t v4l2_width_;
+    int32_t v4l2_height_;
+    int32_t v4l2_fps_;
     uint32_t n_buffers_ = 0;
     struct camera camera_;
 };

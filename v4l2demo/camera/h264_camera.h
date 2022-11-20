@@ -11,6 +11,7 @@
 #include "video_capture.h"
 #include <mutex>
 #include <thread>
+#include <list>
 
 // #define BUF_SIZE 614400
 /*C270 YUV 4:2:2 frame size(char)
@@ -91,6 +92,11 @@ private:
     void RecordAndEncode();
 
 private:
+    struct Buffer {
+        uint8_t *buf_ptr;
+        uint64_t length;
+    };
+
     V4l2VideoCapture *p_capture_;
     H264Encoder *encoder_;
     bool s_b_running_;
@@ -104,7 +110,8 @@ private:
     FILE *h264_fp_;
 
     std::thread video_encode_thread_;
-    // std::mutex cam_data_lock_; /*互斥锁*/
+    std::mutex cam_data_lock_; /*互斥锁*/
+    std::list<Buffer> h264_buf_list_;
 };
 
 inline bool FileExists(const std::string& name);

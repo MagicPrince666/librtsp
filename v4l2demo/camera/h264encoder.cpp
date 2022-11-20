@@ -4,10 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
+#include "spdlog/fmt/ostr.h" // support for user defined types
+#include "spdlog/spdlog.h"
+
 H264Encoder::H264Encoder(int32_t width, int32_t height)
-: video_width_(width),
-video_height_(height)
-{}
+    : video_width_(width),
+      video_height_(height)
+{
+}
 
 H264Encoder::~H264Encoder()
 {
@@ -105,7 +110,7 @@ void H264Encoder::Init()
     encode_.param   = new (std::nothrow) x264_param_t[sizeof(x264_param_t)];
     encode_.picture = new (std::nothrow) x264_picture_t[sizeof(x264_picture_t)];
 
-    x264_param_default(encode_.param); //编码器默认设置
+    x264_param_default(encode_.param);                //编码器默认设置
     X264ParamApplyPreset(encode_.param, "ultrafast"); //订制编码器性能
 
     encode_.param->i_width  = video_width_;  //设置图像宽度
@@ -137,12 +142,11 @@ void H264Encoder::UnInit()
     }
 }
 
-int32_t H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out)
+bool H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out, uint64_t &length)
 {
     x264_picture_t pic_out;
     int32_t nNal   = 0;
     int32_t result = 0;
-    uint8_t *p_out = out;
     encode_.nal    = NULL;
     uint8_t *p422;
 
@@ -185,10 +189,21 @@ int32_t H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out)
         break;
     }
 
-    if (x264_encoder_encode(encode_.handle, &(encode_.nal), &nNal, encode_.picture,
-                            &pic_out) < 0) {
-        return -1;
+    int32_t len = x264_encoder_encode(encode_.handle, &(encode_.nal), &nNal, encode_.picture, &pic_out);
+    if (len < 0) {
+        spdlog::error("Encode fail");
+        return false;
     }
+
+    // out = new (std::nothrow) uint8_t[len];
+    // out            = new (std::nothrow) uint8_t[video_width_ * video_height_ * 2];
+    // if(!out) {
+    //     spdlog::error("New buffer error");
+    //     return false;
+    // }
+
+    uint8_t *p_out = out;
+
     encode_.picture->i_pts++;
 
     for (int32_t i = 0; i < nNal; i++) {
@@ -196,7 +211,6 @@ int32_t H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out)
         p_out += encode_.nal[i].i_payload;
         result += encode_.nal[i].i_payload;
     }
-
-    return result;
+    length = result;
+    return true;
 }
-
