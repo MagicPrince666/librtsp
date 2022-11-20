@@ -97,6 +97,7 @@ uint64_t V4l2VideoCapture::BuffOneFrame(uint8_t *data)
 
     // this operator below will change buf.index and (0 <= buf.index <= 3)
     if (-1 == ioctl(camera_.fd, VIDIOC_DQBUF, &buf)) {
+        spdlog::error("VIDIOC_DQBUF {}", strerror(errno));
         switch (errno) {
         case EAGAIN:
             return 0;
@@ -108,6 +109,8 @@ uint64_t V4l2VideoCapture::BuffOneFrame(uint8_t *data)
         }
     }
 
+    uint64_t len = buf.bytesused;
+
     //把一帧数据拷贝到缓冲区
     memcpy(data, (uint8_t *)(camera_.buffers[buf.index].start), buf.bytesused);
 
@@ -115,7 +118,7 @@ uint64_t V4l2VideoCapture::BuffOneFrame(uint8_t *data)
         ErrnoExit("VIDIOC_QBUF");
     }
 
-    return buf.bytesused;
+    return len;
 }
 
 bool V4l2VideoCapture::StartCapturing()

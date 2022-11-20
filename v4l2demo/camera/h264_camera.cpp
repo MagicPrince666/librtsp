@@ -60,11 +60,12 @@ void V4l2H264hData::Init()
     p_capture_ = new (std::nothrow) V4l2VideoCapture(v4l2_device_.c_str());
     p_capture_->Init(); // 初始化摄像头
 
-    uint64_t cam_mbuf_size          = p_capture_->GetFrameLength();
-    camera_buf_ = new (std::nothrow) uint8_t[cam_mbuf_size];
+    camera_buf_ = new (std::nothrow) uint8_t[p_capture_->GetFrameLength()];
 
     encoder_ = new (std::nothrow) H264Encoder(p_capture_->GetWidth(), p_capture_->GetHeight());
     encoder_->CompressInit();
+    // 申请H264缓存
+    h264_buf_ = new (std::nothrow) uint8_t[sizeof(uint8_t) * p_capture_->GetFrameLength()];
 
     InitFile(); // 存储264文件
 
@@ -74,7 +75,6 @@ void V4l2H264hData::Init()
 void V4l2H264hData::RecordAndEncode()
 {
     int32_t length = p_capture_->BuffOneFrame(camera_buf_);
-    spdlog::info("get raw size = {}", length);
 
     if(length <= 0) {
         return;
@@ -95,9 +95,6 @@ void V4l2H264hData::RecordAndEncode()
 
 void V4l2H264hData::VideoEncodeThread()
 {
-    // 申请H264缓存
-    h264_buf_ = new (std::nothrow) uint8_t[sizeof(uint8_t) * p_capture_->GetFrameLength()];
-
     // 设置缓冲区
     MY_EPOLL.EpollAdd(p_capture_->GetHandle(), std::bind(&V4l2H264hData::RecordAndEncode, this));
     MY_EPOLL.EpollLoop();
@@ -141,7 +138,7 @@ int32_t V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSiz
 void V4l2H264hData::stopCap()
 {
     s_b_running_ = false;
-    spdlog::debug("FetchData stopCap");
+    spdlog::info("FetchData stopCap");
 }
 
 inline bool FileExists(const std::string& name) {
