@@ -12,6 +12,7 @@
 #include "h264_xu_ctrls.h"
 #include "v4l2uvc.h"
 #include <iostream>
+#include <thread>
 
 class H264UvcCap
 {
@@ -31,6 +32,26 @@ public:
      * @return int64_t 数据长度
      */
     int64_t CapVideo();
+
+    /**
+     * @brief 开始
+     */
+    void StartCap();
+
+    /**
+     * @brief 停止
+     */
+    void StopCap();
+
+    /**
+     * @brief 给live555用
+     * @param fTo
+     * @param fMaxSize
+     * @param fFrameSize
+     * @param fNumTruncatedBytes
+     * @return int32_t
+     */
+    int32_t getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes);
 
 private:
     /**
@@ -67,7 +88,14 @@ private:
      * @brief 开启预览
      * @return int 
      */
-    int StartPreviewing(void);
+    int StartPreviewing();
+
+    /**
+     * @brief 关闭预览
+     * @return true 
+     * @return false 
+     */
+    bool StopPreviewing();
 
     /**
      * @brief 抓取H264视频

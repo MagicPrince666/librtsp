@@ -12,6 +12,7 @@
 #include <mutex>
 #include <thread>
 #include <list>
+#include <vector>
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
@@ -40,9 +41,14 @@ public:
     bool PauseCap(bool pause);
 
     /**
+     * @brief 开始
+     */
+    void StartCap();
+
+    /**
      * @brief 停止
      */
-    void stopCap();
+    void StopCap();
 
     /**
      * @brief 给live555用
@@ -58,7 +64,7 @@ private:
     /**
      * @brief 打开文件
      */
-    void InitFile();
+    void InitFile(bool yes);
 
     /**
      * 关闭文件
@@ -106,7 +112,7 @@ private:
 
     V4l2VideoCapture *p_capture_;
     H264Encoder *encoder_;
-    bool s_b_running_;
+    bool b_running_;
     bool s_pause_;
 
     uint8_t *camera_buf_;
