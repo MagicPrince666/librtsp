@@ -47,4 +47,13 @@ CC = /Volumes/unix/openwrt/staging_dir/toolchain-arm_cortex-a7+neon-vfpv4_gcc-11
 LD = /Volumes/unix/openwrt/staging_dir/toolchain-arm_cortex-a7+neon-vfpv4_gcc-11.3.0_musl_eabi/bin/arm-openwrt-linux-muslgnueabi-gcc
 AR = /Volumes/unix/openwrt/staging_dir/toolchain-arm_cortex-a7+neon-vfpv4_gcc-11.3.0_musl_eabi/bin/arm-openwrt-linux-muslgnueabi-ar
 RAMLIB = /Volumes/unix/openwrt/staging_dir/toolchain-arm_cortex-a7+neon-vfpv4_gcc-11.3.0_musl_eabi/bin/arm-openwrt-linux-muslgnueabi-ranlib
+
+$ cp libx264.a ../librtsp/v4l2demo/x264/
+$ cp x264.h ../librtsp/v4l2demo/x264/
+$ cp x264_config.h ../librtsp/v4l2demo/x264/
+```
+编译提示找不到uint8_t 之类的问题
+在x264.h加入以下头文件解决
+```
+#include <stdint.h>
 ```
