@@ -22,6 +22,7 @@
 #include <netdb.h> /* struct hostent */
 #include <arpa/inet.h> /* inet_ntop */
 #include <thread>
+#include <atomic>
 
 #include "ringbuffer.h"
 
@@ -34,7 +35,7 @@
 #include "H264_UVC_Cap.h"
 #endif
 
-bool g_pause = false;
+std::atomic<bool> g_pause;
 ip_t g_ip;
 
 #define BACKTRACE_DEBUG 0
@@ -176,7 +177,7 @@ void rtp_thread(void *args)
 
     udp_server.Deinit(&udp);
     udp_server.Deinit(&rtcp);
-    spdlog::debug("rtp exit");
+    spdlog::info("rtp exit");
 }
 
 void rtsp_thread(std::string dev)
@@ -297,7 +298,7 @@ int main(int argc, char *argv[])
     signal(SIGFPE, _signal_handler);  // SIGFPE，数学相关的异常，如被0除，浮点溢出，等等
     signal(SIGABRT, _signal_handler);  // SIGABRT，由调用abort函数产生，进程非正常退出
 #endif
-
+    g_pause = false;
     std::string dev = "/dev/video0";
     if(argc > 1) {
         dev = (char *)argv[1];

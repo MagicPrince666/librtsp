@@ -22,13 +22,14 @@
 #include <netdb.h> /* struct hostent */
 #include <arpa/inet.h> /* inet_ntop */
 #include <thread>
+#include <atomic>
 
 typedef struct {
     unsigned char *data;
     int32_t len;
 } file_t;
 
-bool g_pause = false;
+std::atomic<bool> g_pause;
 ip_t g_ip;
 
 #define BACKTRACE_DEBUG 0
@@ -193,7 +194,7 @@ void rtp_thread(std::string file_name)
     close_h264_file(&file);
     udp_server.Deinit(&udp);
     udp_server.Deinit(&rtcp);
-    spdlog::debug("rtp exit");
+    spdlog::info("rtp exit");
 }
 
 void rtsp_thread(std::string file_name)
@@ -304,6 +305,7 @@ int main(int argc, char *argv[])
     signal(SIGFPE, _signal_handler);  // SIGFPE，数学相关的异常，如被0除，浮点溢出，等等
     signal(SIGABRT, _signal_handler);  // SIGABRT，由调用abort函数产生，进程非正常退出
 #endif
+    g_pause = false;
     spdlog::info("Use commad: rtsp://{}:8554/live", GetHostIpAddress());
 
     std::string file = "test.h264";
