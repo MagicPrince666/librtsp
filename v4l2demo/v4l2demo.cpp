@@ -127,11 +127,10 @@ void rtp_thread(ip_t ipaddr)
     
     uint32_t rtptime = 0;
     int32_t idr          = 0;
-    // rtp_header_t header;
-    Rtp rtp;
-    // rtp.HeaderInit(&header);
 
-    H264 h264;
+    Rtp rtp; // rtp通讯类
+
+    H264 h264;// 好64通讯类
     // h264_nalu_t *nalu = h264.NalPacketMalloc(file.data, file.len);
     spdlog::info("rtp server init.");
 
