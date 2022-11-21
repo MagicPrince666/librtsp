@@ -28,8 +28,6 @@
 
 #define SOFT_H264 1
 #if SOFT_H264
-#include "h264encoder.h"
-#include "video_capture.h"
 #include "h264_camera.h"
 #else
 #include "H264_UVC_Cap.h"
