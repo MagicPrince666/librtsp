@@ -91,6 +91,27 @@ private:
      */
     void RecordAndEncode();
 
+    /**
+     * @brief 获取格式化时间戳
+     * @return std::string
+     */
+    std::string getCurrentTime8();
+
+    /**
+     * @brief 获取文件夹大小
+     * @param dir
+     * @return uint64_t
+     */
+    uint64_t DirSize(const char *dir);
+
+    /**
+     * @brief 删除文件夹下的文件
+     * @param path 文件夹目录
+     * @return true
+     * @return false
+     */
+    bool RmDirFiles(const std::string &path);
+
 private:
     struct Buffer {
         uint8_t *buf_ptr;

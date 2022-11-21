@@ -16,6 +16,16 @@
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <sys/vfs.h>
+
+#include <chrono>
+#include <ctime>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 #include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
 #include "spdlog/fmt/ostr.h" // support for user defined types
@@ -189,4 +199,87 @@ bool V4l2H264hData::PauseCap(bool pause)
 {
     s_pause_ = pause;
     return s_pause_;
+}
+
+std::string V4l2H264hData::getCurrentTime8() {
+    std::time_t result = std::time(nullptr) + 8 * 3600;
+    auto sec           = std::chrono::seconds(result);
+    std::chrono::time_point<std::chrono::system_clock> now(sec);
+    auto timet     = std::chrono::system_clock::to_time_t(now);
+    auto localTime = *std::gmtime(&timet);
+
+    std::stringstream ss;
+    std::string str;
+    ss << std::put_time(&localTime, "%Y.%m.%d-%H.%M.%S");
+    ss >> str;
+
+    return str;
+}
+
+uint64_t V4l2H264hData::DirSize(const char *dir) {
+#ifndef _WIN32
+    DIR *dp;
+    struct dirent *entry;
+    struct stat statbuf;
+    long long int totalSize = 0;
+    if ((dp = opendir(dir)) == NULL) {
+        fprintf(stderr, "Cannot open dir: %s\n", dir);
+        return 0;   //可能是个文件，或者目录不存在
+    }
+
+    //先加上自身目录的大小
+    lstat(dir, &statbuf);
+    totalSize += statbuf.st_size;
+
+    while ((entry = readdir(dp)) != NULL) {
+        char subdir[256];
+        sprintf(subdir, "%s/%s", dir, entry->d_name);
+        lstat(subdir, &statbuf);
+        if (S_ISDIR(statbuf.st_mode)) {
+            if (strcmp(".", entry->d_name) == 0 || strcmp("..", entry->d_name) == 0) {
+                continue;
+            }
+
+            uint64_t subDirSize = DirSize(subdir);
+            totalSize += subDirSize;
+        } else {
+            totalSize += statbuf.st_size;
+        }
+    }
+
+    closedir(dp);
+    return totalSize;
+#else
+    return 0;
+#endif
+}
+
+bool V4l2H264hData::RmDirFiles(const std::string &path) {
+#ifndef _WIN32
+    std::string strPath = path;
+    if (strPath.at(strPath.length() - 1) != '\\' || strPath.at(strPath.length() - 1) != '/') {
+        strPath.append("/");
+    }
+
+    DIR *directory = opendir(strPath.c_str());   //打开这个目录
+    if (directory != NULL) {
+        for (struct dirent *dt = readdir(directory); dt != nullptr;
+             dt                = readdir(directory)) {   //逐个读取目录中的文件到dt
+            //系统有个系统文件，名为“..”和“.”,对它不做处理
+            if (strcmp(dt->d_name, "..") != 0 && strcmp(dt->d_name, ".") != 0) {   //判断是否为系统隐藏文件
+                struct stat st;                                                    //文件的信息
+                std::string fileName;                                              //文件夹中的文件名
+                fileName = strPath + std::string(dt->d_name);
+                stat(fileName.c_str(), &st);
+                if (!S_ISDIR(st.st_mode)) {
+                    // 删除文件即可
+                    remove(fileName.c_str());
+                }
+            }
+        }
+        closedir(directory);
+    }
+
+#endif
+    return true;
 }
