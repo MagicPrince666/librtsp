@@ -29,6 +29,7 @@ typedef struct {
 } file_t;
 
 bool g_pause = false;
+ip_t g_ip;
 
 #define BACKTRACE_DEBUG 0
 
@@ -130,8 +131,9 @@ void close_h264_file(file_t *file)
     }
 }
 
-void rtp_thread(ip_t ipaddr, std::string file_name)
+void rtp_thread(std::string file_name)
 {
+    ip_t* ipaddr = &g_ip;
     udp_t udp, rtcp;
 
     UdpServer udp_server;
@@ -175,13 +177,13 @@ void rtp_thread(ip_t ipaddr, std::string file_name)
                 rtp_packet_t *rtp_ptk = rtp.PacketMalloc(h264_nal->data, h264_nal->len);
                 rtp_packet_t *cur     = rtp_ptk;
                 while (cur) {
-                    udp_server.SendMsg(&udp, ipaddr.ip, ipaddr.port, (unsigned char *)cur->data, cur->len);
+                    udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (unsigned char *)cur->data, cur->len);
                     cur = cur->next;
                 }
                 rtp.PacketFree(rtp_ptk);
             } else if ((h264_nal->type == H264_NAL_SPS || h264_nal->type == H264_NAL_PPS) && !idr) {
                 rtp_packet_t *cur = rtp.PacketMalloc(h264_nal->data, h264_nal->len);
-                udp_server.SendMsg(&udp, ipaddr.ip, ipaddr.port, (unsigned char *)cur->data, cur->len);
+                udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (unsigned char *)cur->data, cur->len);
                 rtp.PacketFree(cur);
             }
             h264_nal = h264_nal->next;
@@ -196,7 +198,7 @@ void rtp_thread(ip_t ipaddr, std::string file_name)
 
 void rtsp_thread(std::string file_name)
 {
-    ip_t ipaddr;
+    ip_t *ipaddr = &g_ip;
     tcp_t tcp;
     int32_t client = 0;
     RtspHandler rtsp_handler;
@@ -231,8 +233,8 @@ void rtsp_thread(std::string file_name)
                 continue;
             }
             client = tcp_server.WaitClient(&tcp);
-            sprintf(ipaddr.ip, "%s", inet_ntoa(tcp.addr.sin_addr));
-            ipaddr.port = ntohs(tcp.addr.sin_port);
+            sprintf(ipaddr->ip, "%s", inet_ntoa(tcp.addr.sin_addr));
+            ipaddr->port = ntohs(tcp.addr.sin_port);
             spdlog::info("rtsp client ip:{} port:{}", inet_ntoa(tcp.addr.sin_addr), ntohs(tcp.addr.sin_port));
         }
         char recvbuffer[2048];
@@ -246,13 +248,15 @@ void rtsp_thread(std::string file_name)
         case SETUP:
             rely.tansport.server_port = 45504;
             rtsp_handler.RtspRelyDumps(rely, msg, 2048);
+            sprintf(g_ip.ip, "%s", ipaddr->ip);
+            g_ip.port = rtsp.tansport.client_port;
             g_pause = true;
-            rtp_thread_test = std::thread(rtp_thread, ipaddr, file_name);
+            rtp_thread_test = std::thread(rtp_thread, file_name);
             rtp_thread_test.detach();
             // if (rtp_thread_test.joinable()) {
             //     rtp_thread_test.join();
             // }
-            spdlog::info("rtp client ip:{} port:{}", ipaddr.ip, ipaddr.port);
+            spdlog::info("rtp client ip:{} port:{}", g_ip.ip, g_ip.port);
             break;
         case DESCRIBE:
             rely.sdp_len = strlen(sdp);
