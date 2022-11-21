@@ -15,6 +15,26 @@
 
 #include "h264encoder.h"
 
+struct Buffer {
+    void *start;
+    size_t length;
+};
+
+struct Camera {
+    int32_t fd;
+    int32_t width;
+    int32_t height;
+    int32_t fps;
+    int32_t display_depth;
+    int32_t image_size;
+    int32_t frame_number;
+    struct v4l2_capability v4l2_cap;
+    struct v4l2_cropcap v4l2_cropcap;
+    struct v4l2_format v4l2_fmt;
+    struct v4l2_crop crop;
+    struct Buffer *buffers;
+};
+
 class V4l2VideoCapture
 {
 public:
@@ -41,21 +61,9 @@ public:
     int32_t GetFrameLength();
 
     /**
-     * @brief 获取视频宽度
-     * @return int32_t 
-     */
-    int32_t GetWidth();
-
-    /**
-     * @brief 获取视频高度
-     * @return int32_t 
-     */
-    int32_t GetHeight();
-
-    /**
-     * 获取句柄
+     * 获取视频格式
     */
-    int32_t GetHandle();
+    struct Camera* GetFormat();
 
 private:
     /**
@@ -102,30 +110,10 @@ private:
     int32_t xioctl(int32_t fd, int32_t request, void *arg);
 
 private:
-    struct buffer {
-        void *start;
-        size_t length;
-    };
-
-    struct camera {
-        int32_t fd;
-        int32_t width;
-        int32_t height;
-        int32_t fps;
-        int32_t display_depth;
-        int32_t image_size;
-        int32_t frame_number;
-        struct v4l2_capability v4l2_cap;
-        struct v4l2_cropcap v4l2_cropcap;
-        struct v4l2_format v4l2_fmt;
-        struct v4l2_crop crop;
-        struct buffer *buffers;
-    };
-
     std::string v4l2_device_;
     int32_t v4l2_width_;
     int32_t v4l2_height_;
     int32_t v4l2_fps_;
     uint32_t n_buffers_ = 0;
-    struct camera camera_;
+    struct Camera camera_;
 };

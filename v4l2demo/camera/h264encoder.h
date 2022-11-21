@@ -8,9 +8,12 @@
  */
 #pragma once
 
-#include "x264.h"
 #include <stdint.h>
 #include <stdio.h>
+
+#include "x264.h"
+
+// #define USE_NV12_FORMAT
 
 enum frametype {
     FRAME_TYPE_P = 0,

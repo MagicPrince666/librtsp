@@ -194,7 +194,7 @@ bool V4l2VideoCapture::InitMmap()
         exit(EXIT_FAILURE);
     }
 
-    camera_.buffers = new (std::nothrow) buffer[req.count];
+    camera_.buffers = new (std::nothrow) Buffer[req.count];
 
     if (!camera_.buffers) {
         spdlog::error("Out of memory");
@@ -225,24 +225,14 @@ bool V4l2VideoCapture::InitMmap()
     return true;
 }
 
-int32_t V4l2VideoCapture::GetWidth()
-{
-    return camera_.width;
-}
-
-int32_t V4l2VideoCapture::GetHeight()
-{
-    return camera_.height;
-}
-
 int32_t V4l2VideoCapture::GetFrameLength()
 {
     return camera_.width * camera_.height * 2;
 }
 
-int32_t V4l2VideoCapture::GetHandle()
+struct Camera* V4l2VideoCapture::GetFormat()
 {
-    return camera_.fd;
+    return &camera_;
 }
 
 bool V4l2VideoCapture::InitCamera()
@@ -254,9 +244,13 @@ bool V4l2VideoCapture::InitCamera()
     fmt->type           = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     fmt->fmt.pix.width  = v4l2_width_;
     fmt->fmt.pix.height = v4l2_height_;
-    // fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV; // yuv422
-    fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;   // yuv420 但是我电脑不支持
+#ifdef USE_NV12_FORMAT
+    fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_NV12; // 12  Y/CbCr 4:2:0
+    fmt->fmt.pix.field       = V4L2_FIELD_ANY;
+#else
+    fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420;   // yuv420
     fmt->fmt.pix.field       = V4L2_FIELD_INTERLACED; //隔行扫描
+#endif
 
     if (-1 == xioctl(camera_.fd, VIDIOC_S_FMT, fmt)) {
         ErrnoExit("VIDIOC_S_FMT");

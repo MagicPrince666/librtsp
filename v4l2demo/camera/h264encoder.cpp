@@ -106,7 +106,6 @@ int32_t H264Encoder::X264ParamApplyPreset(x264_param_t *param, const char *prese
 
 void H264Encoder::Init()
 {
-
     encode_.param   = new (std::nothrow) x264_param_t[sizeof(x264_param_t)];
     encode_.picture = new (std::nothrow) x264_picture_t[sizeof(x264_picture_t)];
 
@@ -119,10 +118,15 @@ void H264Encoder::Init()
     if ((encode_.handle = x264_encoder_open(encode_.param)) == 0) {
         return;
     }
-
+#ifdef USE_NV12_FORMAT
+    x264_picture_alloc(encode_.picture, X264_CSP_NV12, encode_.param->i_width,
+                       encode_.param->i_height);
+    encode_.picture->img.i_csp   = X264_CSP_NV12;
+#else
     x264_picture_alloc(encode_.picture, X264_CSP_I420, encode_.param->i_width,
                        encode_.param->i_height);
     encode_.picture->img.i_csp   = X264_CSP_I420;
+#endif
     encode_.picture->img.i_plane = 3;
 }
 

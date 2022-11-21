@@ -1,17 +1,6 @@
 # librtsp  
 RTSP协议库
 
-
-
-* 编译  
-
-> make  
-
-* 运行  
-> cd example && ./demo  
->
-> **rtsp服务默认端口设置为8554，客户端需要指定端口，比如服务器IP:192.168.1.2, 那么RTSP地址为:rtsp://192.168.1.2:8554/live，测试程序会循环推送H264文件内容**  
-
 # 编译全志H3
 ```
 $ mkdir build
@@ -48,13 +37,19 @@ $ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_darwin.cmake -DCMAKE_BUILD_TYPE=D
 $ v4l2-ctl --list-devices
 $ v4l2-ctl --all
 $ v4l2-ctl -d /dev/video0 --all
+$ v4l2-ctl -d /dev/video0 --list-formats-ext
 ```
 
 # 编译x264
 ```
-./configure --host=arm-linux --disable-asm --prefix=$PWD/install
+$ git clone https://code.videolan.org/videolan/x264.git
+$ ./configure --host=arm-linux --disable-asm --prefix=$PWD/install
 CC = /Volumes/unix/openwrt/staging_dir/toolchain-arm_cortex-a7+neon-vfpv4_gcc-11.3.0_musl_eabi/bin/arm-openwrt-linux-muslgnueabi-gcc
 LD = /Volumes/unix/openwrt/staging_dir/toolchain-arm_cortex-a7+neon-vfpv4_gcc-11.3.0_musl_eabi/bin/arm-openwrt-linux-muslgnueabi-gcc
 AR = /Volumes/unix/openwrt/staging_dir/toolchain-arm_cortex-a7+neon-vfpv4_gcc-11.3.0_musl_eabi/bin/arm-openwrt-linux-muslgnueabi-ar
 RAMLIB = /Volumes/unix/openwrt/staging_dir/toolchain-arm_cortex-a7+neon-vfpv4_gcc-11.3.0_musl_eabi/bin/arm-openwrt-linux-muslgnueabi-ranlib
+
+$ cp libx264.a ../librtsp/v4l2demo/x264/
+$ cp x264.h ../librtsp/v4l2demo/x264/
+$ cp x264_config.h ../librtsp/v4l2demo/x264/
 ```

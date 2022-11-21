@@ -1,7 +1,7 @@
 /*****************************************************************************
  * x264.h: x264 public header
  *****************************************************************************
- * Copyright (C) 2003-2020 x264 project
+ * Copyright (C) 2003-2022 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
  *          Loren Merritt <lorenm@u.washington.edu>
@@ -28,8 +28,6 @@
 #ifndef X264_X264_H
 #define X264_X264_H
 
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,7 +45,7 @@ extern "C" {
 
 #include "x264_config.h"
 
-#define X264_BUILD 161
+#define X264_BUILD 164
 
 #ifdef _WIN32
 #   define X264_DLL_IMPORT __declspec(dllimport)
@@ -487,6 +485,31 @@ typedef struct x264_param_t
     /* frame packing arrangement flag */
     int i_frame_packing;
 
+    /* mastering display SEI: Primary and white point chromaticity coordinates
+       in 0.00002 increments. Brightness units are 0.0001 cd/m^2. */
+    struct
+    {
+        int b_mastering_display;    /* enable writing this SEI */
+        int i_green_x;
+        int i_green_y;
+        int i_blue_x;
+        int i_blue_y;
+        int i_red_x;
+        int i_red_y;
+        int i_white_x;
+        int i_white_y;
+        int64_t i_display_max;
+        int64_t i_display_min;
+    } mastering_display;
+
+    /* content light level SEI */
+    struct
+    {
+        int b_cll;                  /* enable writing this SEI */
+        int i_max_cll;
+        int i_max_fall;
+    } content_light_level;
+
     /* alternative transfer SEI */
     int i_alternative_transfer;
 
@@ -498,7 +521,7 @@ typedef struct x264_param_t
     int i_sps_id;               /* SPS and PPS id number */
     int b_vfr_input;            /* VFR input.  If 1, use timebase and timestamps for ratecontrol purposes.
                                  * If 0, use fps only. */
-    int b_pulldown;             /* use explicity set timebase for CFR */
+    int b_pulldown;             /* use explicitly set timebase for CFR */
     uint32_t i_fps_num;
     uint32_t i_fps_den;
     uint32_t i_timebase_num;    /* Timebase numerator */

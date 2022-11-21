@@ -22,6 +22,7 @@
 #include <netdb.h> /* struct hostent */
 #include <arpa/inet.h> /* inet_ntop */
 #include <thread>
+#include <atomic>
 
 #include "ringbuffer.h"
 
@@ -34,7 +35,8 @@
 #include "H264_UVC_Cap.h"
 #endif
 
-bool g_pause = false;
+std::atomic<bool> g_pause;
+ip_t g_ip;
 
 #define BACKTRACE_DEBUG 0
 
@@ -111,8 +113,9 @@ uint32_t rtsp_get_reltime(void)
 }
 
 
-void rtp_thread(ip_t ipaddr)
+void rtp_thread(void *args)
 {
+    ip_t* ipaddr = &g_ip;
     udp_t udp, rtcp;
 
     UdpServer udp_server;
@@ -127,11 +130,10 @@ void rtp_thread(ip_t ipaddr)
     
     uint32_t rtptime = 0;
     int32_t idr          = 0;
-    // rtp_header_t header;
-    Rtp rtp;
-    // rtp.HeaderInit(&header);
 
-    H264 h264;
+    Rtp rtp; // rtp通讯类
+
+    H264 h264;// 好64通讯类
     // h264_nalu_t *nalu = h264.NalPacketMalloc(file.data, file.len);
     spdlog::info("rtp server init.");
 
@@ -158,13 +160,13 @@ void rtp_thread(ip_t ipaddr)
                 rtp_packet_t *rtp_ptk = rtp.PacketMalloc(h264_nal->data, h264_nal->len);
                 rtp_packet_t *cur     = rtp_ptk;
                 while (cur) {
-                    udp_server.SendMsg(&udp, ipaddr.ip, ipaddr.port, (unsigned char *)cur->data, cur->len);
+                    udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (unsigned char *)cur->data, cur->len);
                     cur = cur->next;
                 }
                 rtp.PacketFree(rtp_ptk);
             } else if ((h264_nal->type == H264_NAL_SPS || h264_nal->type == H264_NAL_PPS) && !idr) {
                 rtp_packet_t *cur = rtp.PacketMalloc(h264_nal->data, h264_nal->len);
-                udp_server.SendMsg(&udp, ipaddr.ip, ipaddr.port, (unsigned char *)cur->data, cur->len);
+                udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (unsigned char *)cur->data, cur->len);
                 rtp.PacketFree(cur);
             }
             h264_nal = h264_nal->next;
@@ -175,7 +177,7 @@ void rtp_thread(ip_t ipaddr)
 
     udp_server.Deinit(&udp);
     udp_server.Deinit(&rtcp);
-    spdlog::debug("rtp exit");
+    spdlog::info("rtp exit");
 }
 
 void rtsp_thread(std::string dev)
@@ -188,7 +190,7 @@ void rtsp_thread(std::string dev)
     h264_camera.Init();
 #endif
 
-    ip_t ipaddr;
+    ip_t *ipaddr = &g_ip;
     tcp_t tcp;
     int32_t client = 0;
     RtspHandler rtsp_handler;
@@ -225,8 +227,8 @@ void rtsp_thread(std::string dev)
                 continue;
             }
             client = tcp_server.WaitClient(&tcp);
-            sprintf(ipaddr.ip, "%s", inet_ntoa(tcp.addr.sin_addr));
-            ipaddr.port = ntohs(tcp.addr.sin_port);
+            sprintf(ipaddr->ip, "%s", inet_ntoa(tcp.addr.sin_addr));
+            ipaddr->port = ntohs(tcp.addr.sin_port);
             spdlog::info("rtsp client ip:{} port:{}", inet_ntoa(tcp.addr.sin_addr), ntohs(tcp.addr.sin_port));
         }
         char recvbuffer[2048];
@@ -240,13 +242,15 @@ void rtsp_thread(std::string dev)
         case SETUP:
             rely.tansport.server_port = 45504;
             rtsp_handler.RtspRelyDumps(rely, msg, 2048);
+            sprintf(g_ip.ip, "%s", ipaddr->ip);
+            g_ip.port = rtsp.tansport.client_port;
             g_pause = true;
             rtp_thread_test = std::thread(rtp_thread, ipaddr);
             rtp_thread_test.detach();
             // if (rtp_thread_test.joinable()) {
             //     rtp_thread_test.join();
             // }
-            spdlog::info("rtp client ip:{} port:{}", ipaddr.ip, ipaddr.port);
+            spdlog::info("rtp client ip:{} port:{}", g_ip.ip, g_ip.port);
             break;
         case DESCRIBE:
             rely.sdp_len = strlen(sdp);
@@ -294,7 +298,7 @@ int main(int argc, char *argv[])
     signal(SIGFPE, _signal_handler);  // SIGFPE，数学相关的异常，如被0除，浮点溢出，等等
     signal(SIGABRT, _signal_handler);  // SIGABRT，由调用abort函数产生，进程非正常退出
 #endif
-
+    g_pause = false;
     std::string dev = "/dev/video0";
     if(argc > 1) {
         dev = (char *)argv[1];
