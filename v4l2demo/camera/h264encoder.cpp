@@ -150,8 +150,7 @@ bool H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out, uint6
 {
     x264_picture_t pic_out;
     int32_t nNal   = 0;
-    int32_t result = 0;
-    encode_.nal    = NULL;
+    encode_.nal    = nullptr;
     uint8_t *p422;
 
     char *y = (char *)(encode_.picture->img.plane[0]);
@@ -199,15 +198,8 @@ bool H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out, uint6
         return false;
     }
 
-    // out = new (std::nothrow) uint8_t[len];
-    // out            = new (std::nothrow) uint8_t[video_width_ * video_height_ * 2];
-    // if(!out) {
-    //     spdlog::error("New buffer error");
-    //     return false;
-    // }
-
     uint8_t *p_out = out;
-
+    int32_t result = 0;
     encode_.picture->i_pts++;
 
     for (int32_t i = 0; i < nNal; i++) {

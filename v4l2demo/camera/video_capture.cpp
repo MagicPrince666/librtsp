@@ -5,6 +5,7 @@
 #include <fcntl.h> /* low-level i/o */
 #include <linux/videodev2.h>
 #include <malloc.h>
+#include <new>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +15,6 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-#include <new>
 
 #include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
 #include "spdlog/fmt/ostr.h" // support for user defined types
@@ -227,7 +227,7 @@ int32_t V4l2VideoCapture::GetFrameLength()
     return camera_.width * camera_.height * 2;
 }
 
-struct Camera* V4l2VideoCapture::GetFormat()
+struct Camera *V4l2VideoCapture::GetFormat()
 {
     return &camera_;
 }
@@ -245,7 +245,7 @@ bool V4l2VideoCapture::InitCamera()
     fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_NV12; // 12  Y/CbCr 4:2:0
     fmt->fmt.pix.field       = V4L2_FIELD_ANY;
 #else
-    fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;   // 16  YUV 4:2:2
+    fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;     // 16  YUV 4:2:2
     fmt->fmt.pix.field       = V4L2_FIELD_INTERLACED; //隔行扫描
 #endif
 
@@ -264,9 +264,8 @@ bool V4l2VideoCapture::InitCamera()
     memset(&parm, 0, sizeof(struct v4l2_streamparm));
     parm.type                     = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     parm.parm.capture.capturemode = V4L2_MODE_HIGHQUALITY;
-    //  parm.parm.capture.capability = V4L2_CAP_TIMEPERFRAME;
     parm.parm.capture.timeperframe.denominator = camera_.fps; //时间间隔分母
-    parm.parm.capture.timeperframe.numerator   = 1;         //分子
+    parm.parm.capture.timeperframe.numerator   = 1;           //分子
     if (-1 == ioctl(camera_.fd, VIDIOC_S_PARM, &parm)) {
         perror("set param:");
         exit(EXIT_FAILURE);
@@ -277,16 +276,16 @@ bool V4l2VideoCapture::InitCamera()
         ErrnoExit("VIDIOC_G_PARM");
     }
 
-    spdlog::info("width = {}\t height = {}\t fps = {}", fmt->fmt.pix.width, fmt->fmt.pix.height, parm.parm.capture.timeperframe.denominator);
+    spdlog::info("Device = {}\t width = {}\t height = {}\t fps = {}",
+                 v4l2_device_, fmt->fmt.pix.width, fmt->fmt.pix.height,
+                 parm.parm.capture.timeperframe.denominator);
 
     InitMmap();
-
     return true;
 }
 
 bool V4l2VideoCapture::Init()
 {
-    spdlog::info("V4l2VideoCapture init device: {}", v4l2_device_);
     bool ret = false;
     ret |= OpenCamera();
     ret |= InitCamera();

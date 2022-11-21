@@ -130,7 +130,7 @@ void V4l2H264hData::RecordAndEncode()
                 fwrite(h264_buf_, length, 1, h264_fp_);
             }
         } else {
-            spdlog::info("get size after encoder = {}", length);
+            spdlog::error("get size after encoder = {}", length);
         }
     }
 #endif
@@ -150,7 +150,6 @@ int32_t V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSiz
         return 0;
     }
 
-#if 1
     if (RINGBUF.Empty()) {
         usleep(100); //等待数据
         fFrameSize         = 0;
@@ -159,22 +158,6 @@ int32_t V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSiz
     fFrameSize = RINGBUF.Write((uint8_t *)fTo, fMaxSize);
 
     fNumTruncatedBytes = 0;
-#else
-    fFrameSize         = 0;
-    fNumTruncatedBytes = 0;
-#endif
-    // //拷贝视频到live555缓存
-    // if(len < fMaxSize)
-    // {
-    // 	fFrameSize = len;
-    // 	fNumTruncatedBytes = 0;
-    // }
-    // else
-    // {
-    // 	fNumTruncatedBytes = len - fMaxSize;
-    // 	fFrameSize = fMaxSize;
-    // }
-
     return fFrameSize;
 }
 
