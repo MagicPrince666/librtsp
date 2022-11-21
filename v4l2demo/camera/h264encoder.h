@@ -13,6 +13,8 @@
 
 #include "x264.h"
 
+// #define USE_NV12_FORMAT
+
 enum frametype {
     FRAME_TYPE_P = 0,
     FRAME_TYPE_IDR,

@@ -37,6 +37,7 @@ $ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_darwin.cmake -DCMAKE_BUILD_TYPE=D
 $ v4l2-ctl --list-devices
 $ v4l2-ctl --all
 $ v4l2-ctl -d /dev/video0 --all
+$ v4l2-ctl -d /dev/video0 --list-formats-ext
 ```
 
 # 编译x264
@@ -51,9 +52,4 @@ RAMLIB = /Volumes/unix/openwrt/staging_dir/toolchain-arm_cortex-a7+neon-vfpv4_gc
 $ cp libx264.a ../librtsp/v4l2demo/x264/
 $ cp x264.h ../librtsp/v4l2demo/x264/
 $ cp x264_config.h ../librtsp/v4l2demo/x264/
-```
-编译提示找不到uint8_t 之类的问题
-在x264.h加入以下头文件解决
-```
-#include <stdint.h>
 ```

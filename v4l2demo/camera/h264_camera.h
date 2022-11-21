@@ -13,27 +13,6 @@
 #include <thread>
 #include <list>
 
-// #define BUF_SIZE 614400
-/*C270 YUV 4:2:2 frame size(char)
-160*120*2  = 38400
-176*144*2  = 50688
-320*176*2  = 112640
-320*240*2  = 153600
-352*288*2  = 202752
-432*240*2  = 207360
-544*288*2  = 313344
-640*360*2  = 460800
-640*480*2  = 614400
-752*416*2  = 625664
-800*448*2  = 716800
-800*600*2  = 960000
-864*480*2  = 829440
-960*544*2  = 1044480
-960*720*2  = 1382400
-1024*576*2 = 1179648
-1184*656*2 = 1553408
-*/
-
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
 class V4l2H264hData
@@ -112,6 +91,13 @@ private:
      */
     bool RmDirFiles(const std::string &path);
 
+    /**
+     * @brief 获取文件夹下所有文件
+     * @param path 目标文件夹
+     * @return std::vector<std::string> 文件集合
+     */
+    std::vector<std::string> GetFilesFromPath(std::string path);
+
 private:
     struct Buffer {
         uint8_t *buf_ptr;
@@ -132,6 +118,7 @@ private:
     std::thread video_encode_thread_;
     std::mutex cam_data_lock_; /*互斥锁*/
     std::list<Buffer> h264_buf_list_;
+    struct Camera *video_format_;
 };
 
 inline bool FileExists(const std::string& name);

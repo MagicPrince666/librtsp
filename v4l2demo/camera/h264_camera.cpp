@@ -71,9 +71,11 @@ void V4l2H264hData::Init()
     p_capture_ = new (std::nothrow) V4l2VideoCapture(v4l2_device_.c_str());
     p_capture_->Init(); // 初始化摄像头
 
+    video_format_ = p_capture_->GetFormat();
+
     camera_buf_ = new (std::nothrow) uint8_t[p_capture_->GetFrameLength()];
 
-    encoder_ = new (std::nothrow) H264Encoder(p_capture_->GetWidth(), p_capture_->GetHeight());
+    encoder_ = new (std::nothrow) H264Encoder(video_format_->width, video_format_->height);
     encoder_->Init();
 
 #if USE_BUF_LIST
@@ -114,16 +116,22 @@ void V4l2H264hData::RecordAndEncode()
         delete[] h264_buf.buf_ptr;
     }
 #else
-    uint64_t length = 0;
-    encoder_->CompressFrame(FRAME_TYPE_AUTO, camera_buf_, h264_buf_, length);
-
-    if (length > 0) {
-        // RINGBUF.Write(h264_buf_, h264_buf.length);
+    
+    if(video_format_->v4l2_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_H264) {
         if (h264_fp_) {
-            fwrite(h264_buf_, length, 1, h264_fp_);
+            fwrite(camera_buf_, len, 1, h264_fp_);
         }
     } else {
-        spdlog::info("get size after encoder = {}", length);
+        uint64_t length = 0;
+        encoder_->CompressFrame(FRAME_TYPE_AUTO, camera_buf_, h264_buf_, length);
+        if (length > 0) {
+            // RINGBUF.Write(h264_buf_, h264_buf.length);
+            if (h264_fp_) {
+                fwrite(h264_buf_, length, 1, h264_fp_);
+            }
+        } else {
+            spdlog::info("get size after encoder = {}", length);
+        }
     }
 #endif
 }
@@ -131,7 +139,7 @@ void V4l2H264hData::RecordAndEncode()
 void V4l2H264hData::VideoEncodeThread()
 {
     // 设置缓冲区
-    MY_EPOLL.EpollAdd(p_capture_->GetHandle(), std::bind(&V4l2H264hData::RecordAndEncode, this));
+    MY_EPOLL.EpollAdd(video_format_->fd, std::bind(&V4l2H264hData::RecordAndEncode, this));
     MY_EPOLL.EpollLoop();
 }
 
@@ -282,4 +290,43 @@ bool V4l2H264hData::RmDirFiles(const std::string &path) {
 
 #endif
     return true;
+}
+
+std::vector<std::string> V4l2H264hData::GetFilesFromPath(std::string path)
+{
+    std::vector<std::string> files;
+	// check the parameter !
+	if( path.empty() ) {
+		return files;
+	}
+	// check if dir_name is a valid dir
+	struct stat s;
+	lstat( path.c_str(), &s );
+	if( ! S_ISDIR( s.st_mode ) ) {
+		return files;
+	}
+
+	struct dirent * filename;    // return value for readdir()
+	DIR * dir;                   // return value for opendir()
+	dir = opendir( path.c_str() );
+	if( NULL == dir ) {
+		return files;
+	}
+
+	/* read all the files in the dir ~ */
+	while( ( filename = readdir(dir) ) != NULL ) {
+		// get rid of "." and ".."
+		if( strcmp( filename->d_name , "." ) == 0 ||
+			strcmp( filename->d_name , "..") == 0 ) {
+			continue;
+        }
+        std::string full_path = path + filename->d_name;
+        struct stat s;
+        lstat( full_path.c_str(), &s );
+        if( S_ISDIR( s.st_mode ) ) {
+            continue;
+        }
+        files.push_back(full_path);
+	}
+	return files;
 }
