@@ -12,9 +12,8 @@ include_directories(${CMAKE_SOURCE_DIR}/v4l2demo/x264/h3)
 link_directories(${CMAKE_SOURCE_DIR}/v4l2demo/x264/h3)
 
 # 工具链地址
-SET(TOOLCHAIN_DIR  "/Volumes/unix/openwrt/staging_dir/toolchain-arm_cortex-a7+neon-vfpv4_gcc-11.3.0_musl_eabi/bin/")
-SET(STAGING_DIR  "/Volumes/unix/openwrt/staging_dir")
+SET(TOOLCHAIN_DIR  "/home/prince/xos/output/host/bin/")
 
 # sunxi h3
-SET(CMAKE_C_COMPILER ${TOOLCHAIN_DIR}arm-openwrt-linux-muslgnueabi-gcc)
-SET(CMAKE_CXX_COMPILER ${TOOLCHAIN_DIR}arm-openwrt-linux-muslgnueabi-g++)
+SET(CMAKE_C_COMPILER ${TOOLCHAIN_DIR}arm-neo-linux-gnueabihf-gcc)
+SET(CMAKE_CXX_COMPILER ${TOOLCHAIN_DIR}arm-neo-linux-gnueabihf-g++)

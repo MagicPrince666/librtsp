@@ -17,7 +17,7 @@
 class H264UvcCap
 {
 public:
-    H264UvcCap(std::string dev = "/dev/video0", uint32_t width  = 1280, uint32_t height = 720);
+    H264UvcCap(std::string dev = "/dev/video2", uint32_t width  = 1280, uint32_t height = 720);
     ~H264UvcCap();
 
     /**

@@ -300,6 +300,8 @@ bool H264UvcCap::Init(void)
         return false;
     }
 
+    StartPreviewing();
+
     struct tm *tdate;
     time_t curdate;
     tdate = localtime(&curdate);
@@ -370,15 +372,16 @@ int64_t H264UvcCap::CapVideo()
 int32_t H264UvcCap::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
 {
     if (!capturing_) {
-        spdlog::warn("V4l2H264hData::getData s_b_running_ = false");
+        spdlog::warn("V4l2H264hData::getData capturing_ = false");
         return 0;
     }
 
     if (RINGBUF.Empty()) {
-        usleep(100); //等待数据
         fFrameSize         = 0;
         fNumTruncatedBytes = 0;
+        return 0;
     }
+
     fFrameSize = RINGBUF.Read((uint8_t *)fTo, fMaxSize);
 
     fNumTruncatedBytes = 0;
