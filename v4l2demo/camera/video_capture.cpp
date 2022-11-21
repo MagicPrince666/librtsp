@@ -24,11 +24,8 @@
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-V4l2VideoCapture::V4l2VideoCapture(std::string dev, int32_t width, int32_t height, int32_t fps)
-    : v4l2_device_(dev),
-      v4l2_width_(width),
-      v4l2_height_(height),
-      v4l2_fps_(fps)
+V4l2VideoCapture::V4l2VideoCapture(std::string dev)
+    : v4l2_device_(dev)
 {
 }
 
@@ -242,8 +239,8 @@ bool V4l2VideoCapture::InitCamera()
     CLEAR(*fmt);
 
     fmt->type           = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt->fmt.pix.width  = v4l2_width_;
-    fmt->fmt.pix.height = v4l2_height_;
+    fmt->fmt.pix.width  = camera_.width;
+    fmt->fmt.pix.height = camera_.height;
 #ifdef USE_NV12_FORMAT
     fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_NV12; // 12  Y/CbCr 4:2:0
     fmt->fmt.pix.field       = V4L2_FIELD_ANY;
@@ -268,7 +265,7 @@ bool V4l2VideoCapture::InitCamera()
     parm.type                     = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     parm.parm.capture.capturemode = V4L2_MODE_HIGHQUALITY;
     //  parm.parm.capture.capability = V4L2_CAP_TIMEPERFRAME;
-    parm.parm.capture.timeperframe.denominator = v4l2_fps_; //时间间隔分母
+    parm.parm.capture.timeperframe.denominator = camera_.fps; //时间间隔分母
     parm.parm.capture.timeperframe.numerator   = 1;         //分子
     if (-1 == ioctl(camera_.fd, VIDIOC_S_PARM, &parm)) {
         perror("set param:");

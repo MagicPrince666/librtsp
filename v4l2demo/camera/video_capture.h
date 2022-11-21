@@ -21,10 +21,10 @@ struct Buffer {
 };
 
 struct Camera {
-    int32_t fd;
-    int32_t width;
-    int32_t height;
-    int32_t fps;
+    int32_t fd = -1;
+    int32_t width = 640;
+    int32_t height = 480;
+    int32_t fps = 15;
     int32_t display_depth;
     int32_t image_size;
     int32_t frame_number;
@@ -38,7 +38,7 @@ struct Camera {
 class V4l2VideoCapture
 {
 public:
-    V4l2VideoCapture(std::string dev = "/dev/video0", int32_t width = 640, int32_t height = 480, int32_t fps = 30);
+    V4l2VideoCapture(std::string dev = "/dev/video0");
     ~V4l2VideoCapture();
 
     /**
@@ -111,9 +111,6 @@ private:
 
 private:
     std::string v4l2_device_;
-    int32_t v4l2_width_;
-    int32_t v4l2_height_;
-    int32_t v4l2_fps_;
     uint32_t n_buffers_ = 0;
     struct Camera camera_;
 };
