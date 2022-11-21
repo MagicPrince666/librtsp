@@ -210,7 +210,7 @@ std::string V4l2H264hData::getCurrentTime8() {
 
     std::stringstream ss;
     std::string str;
-    ss << std::put_time(&localTime, "%Y.%m.%d-%H.%M.%S");
+    ss << std::put_time(&localTime, "%Y_%m_%d_%H_%M_%S");
     ss >> str;
 
     return str;
