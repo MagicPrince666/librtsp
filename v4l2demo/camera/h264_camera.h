@@ -127,7 +127,6 @@ private:
     uint8_t *h264_buf_;
 
     std::string v4l2_device_;
-    std::string h264_file_name_;
     FILE *h264_fp_;
 
     std::thread video_encode_thread_;

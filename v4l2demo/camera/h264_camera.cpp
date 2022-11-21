@@ -43,7 +43,6 @@ V4l2H264hData::V4l2H264hData(std::string dev) : v4l2_device_(dev)
     s_b_running_    = true;
     s_pause_        = false;
     h264_fp_        = nullptr;
-    h264_file_name_ = "h264_encoder.h264";
 }
 
 V4l2H264hData::~V4l2H264hData()
@@ -184,10 +183,11 @@ inline bool FileExists(const std::string& name) {
 
 void V4l2H264hData::InitFile()
 {
-    if(FileExists(h264_file_name_)) {
-        remove(h264_file_name_.c_str());
+    std::string h264_file_name = getCurrentTime8() + ".h264";
+    if(FileExists(h264_file_name)) {
+        remove(h264_file_name.c_str());
     }
-    h264_fp_ = fopen(h264_file_name_.c_str(), "wa+");
+    h264_fp_ = fopen(h264_file_name.c_str(), "wa+");
 }
 
 void V4l2H264hData::CloseFile()
