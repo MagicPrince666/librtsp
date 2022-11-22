@@ -30,19 +30,19 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "spdlog/spdlog.h"
+#include "H264_UVC_Cap.h"
+#include "epoll.h"
+#include "ringbuffer.h"
 #include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
 #include "spdlog/fmt/ostr.h" // support for user defined types
-#include "H264_UVC_Cap.h"
-#include "ringbuffer.h"
-#include "epoll.h"
+#include "spdlog/spdlog.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
 H264UvcCap::H264UvcCap(std::string dev, uint32_t width, uint32_t height)
-: v4l2_device_(dev),
-video_width_(width),
-video_height_(height)
+    : v4l2_device_(dev),
+      video_width_(width),
+      video_height_(height)
 {
     capturing_ = false;
     buffers_   = nullptr;
@@ -369,6 +369,38 @@ int64_t H264UvcCap::CapVideo()
     return buf.bytesused;
 }
 
+int32_t H264UvcCap::BitRateSetting(int32_t rate)
+{
+    int32_t ret = -1;
+    spdlog::info("write to the setting");
+    if (!capturing_) //未有客户端接入
+    {
+        if (video_->fd > 0) { //未初始化不能访问
+            ret = XU_Init_Ctrl(video_->fd);
+        }
+        if (ret < 0) {
+            spdlog::info("XU_H264_Set_BitRate Failed");
+        } else {
+            double m_BitRate = 0.0;
+
+            if (XU_H264_Set_BitRate(video_->fd, rate) < 0) {
+                spdlog::info("XU_H264_Set_BitRate Failed");
+            }
+
+            XU_H264_Get_BitRate(video_->fd, &m_BitRate);
+            if (m_BitRate < 0) {
+                spdlog::info("XU_H264_Get_BitRate Failed");
+            }
+
+            spdlog::info("----m_BitRate:{}----", m_BitRate);
+        }
+    } else {
+        spdlog::info("camera no init\n");
+        return -1;
+    }
+    return ret;
+}
+
 int32_t H264UvcCap::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
 {
     if (!capturing_) {
@@ -390,7 +422,7 @@ int32_t H264UvcCap::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, 
 
 void H264UvcCap::StartCap()
 {
-    if(!capturing_) {
+    if (!capturing_) {
         MY_EPOLL.EpollAdd(video_->fd, std::bind(&H264UvcCap::CapVideo, this));
     }
     capturing_ = true;
@@ -398,13 +430,14 @@ void H264UvcCap::StartCap()
 
 void H264UvcCap::StopCap()
 {
-    if(capturing_) {
+    if (capturing_) {
         MY_EPOLL.EpollDel(video_->fd);
     }
     capturing_ = false;
 }
 
-void H264UvcCap::VideoCapThread() {
+void H264UvcCap::VideoCapThread()
+{
     StartCap();
     MY_EPOLL.EpollLoop();
 }

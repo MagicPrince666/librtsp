@@ -44,6 +44,13 @@ public:
     void StopCap();
 
     /**
+     * @brief 设置码率
+     * @param rate 
+     * @return int32_t 
+     */
+    int32_t BitRateSetting(int32_t rate);
+
+    /**
      * @brief 给live555用
      * @param fTo
      * @param fMaxSize
