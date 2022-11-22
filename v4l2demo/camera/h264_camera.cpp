@@ -54,7 +54,6 @@ V4l2H264hData::~V4l2H264hData()
     CloseFile();
 
     if (p_capture_) {
-        // p_capture_->V4l2Close(); // 关闭摄像头
         delete p_capture_;
     }
 

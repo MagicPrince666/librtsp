@@ -21,48 +21,49 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA    #
 #                                                                              #
 *******************************************************************************/
+#pragma once
+
+#include <linux/videodev2.h>
 
 #define NB_BUFFER 16
 #define DHT_SIZE 420
 
 #ifndef V4L2_CID_SHARPNESS
-#define V4L2_CID_SHARPNESS			(V4L2_CID_BASE+27)
+#define V4L2_CID_SHARPNESS (V4L2_CID_BASE + 27)
 #endif
 
 struct vdIn {
-  int fd;
-  char *videodevice;
-  char *status;
-  char *pictName;
-  struct v4l2_capability cap;
-  struct v4l2_format fmt;
-  struct v4l2_buffer buf;
-  struct v4l2_requestbuffers rb;
-  void *mem[NB_BUFFER];
-  unsigned char *tmpbuffer;
-  unsigned char *framebuffer;
-  int isstreaming;
-  int grabmethod;
-  __u32 width;
-  __u32 height;
-  __u32 formatIn;
-  __u32 formatOut;
-  __u32 framesizeIn;
-  __u32 signalquit;
-  __u32 toggleAvi;
-  __u32 getPict;
-
+    int fd;
+    char *videodevice;
+    char *status;
+    char *pictName;
+    struct v4l2_capability cap;
+    struct v4l2_format fmt;
+    struct v4l2_buffer buf;
+    struct v4l2_requestbuffers rb;
+    void *mem[NB_BUFFER];
+    unsigned char *tmpbuffer;
+    unsigned char *framebuffer;
+    int isstreaming;
+    int grabmethod;
+    __u32 width;
+    __u32 height;
+    __u32 formatIn;
+    __u32 formatOut;
+    __u32 framesizeIn;
+    __u32 signalquit;
+    __u32 toggleAvi;
+    __u32 getPict;
 };
 
-int
-  init_videoIn (struct vdIn *vd, char *device, int width, int height,
-		int format, int grabmethod);
-int uvcGrab (struct vdIn *vd);
-int close_v4l2 (struct vdIn *vd);
+int init_videoIn(struct vdIn *vd, char *device, int width, int height,
+                 int format, int grabmethod);
+int uvcGrab(struct vdIn *vd);
+int close_v4l2(struct vdIn *vd);
 
-int v4l2GetControl (int fd, int control);
-int v4l2SetControl (int fd, int control, int value);
-int v4l2UpControl (int fd, int control);
-int v4l2DownControl (int fd, int control);
-int v4l2ToggleControl (int fd, int control);
-int v4l2ResetControl (int fd, int control);
+int v4l2GetControl(int fd, int control);
+int v4l2SetControl(int fd, int control, int value);
+int v4l2UpControl(int fd, int control);
+int v4l2DownControl(int fd, int control);
+int v4l2ToggleControl(int fd, int control);
+int v4l2ResetControl(int fd, int control);

@@ -27,7 +27,7 @@
 #include "ringbuffer.h"
 #include "epoll.h"
 
-#define SOFT_H264 1
+#define SOFT_H264 0
 #if SOFT_H264
 #include "h264_camera.h"
 #else
@@ -182,6 +182,7 @@ void rtp_thread(std::string dev)
 #if SOFT_H264
     softh264.StopCap();
 #else
+    h264_camera.StopCap();
 #endif
     udp_server.Deinit(&udp);
     udp_server.Deinit(&rtcp);

@@ -52,15 +52,21 @@ H264UvcCap::H264UvcCap(std::string dev, uint32_t width, uint32_t height)
 
 H264UvcCap::~H264UvcCap()
 {
+    if (cat_h264_thread_.joinable()) {
+        cat_h264_thread_.join();
+    }
+
     if (rec_fp1_) {
         fclose(rec_fp1_);
     }
-    StopCap();
+
+    if(buffers_) {
+        delete buffers_;
+    }
+
     if (video_) {
-        if (video_->fd) {
-            close(video_->fd);
-        }
         close_v4l2(video_);
+        delete video_;
     }
 }
 
@@ -109,7 +115,7 @@ bool H264UvcCap::OpenDevice()
         return false;
     }
 
-    video_     = (struct vdIn *)calloc(1, sizeof(struct vdIn));
+    video_     = new (std::nothrow) vdIn;
     video_->fd = open(v4l2_device_.c_str(), O_RDWR);
 
     if (-1 == video_->fd) {
@@ -142,7 +148,7 @@ int H264UvcCap::InitMmap(void)
         return -1;
     }
 
-    buffers_ = (buffer *)calloc(req.count, sizeof(*buffers_));
+    buffers_ = new (std::nothrow) buffer[req.count];
 
     if (!buffers_) {
         spdlog::error("Out of memory");
@@ -157,8 +163,9 @@ int H264UvcCap::InitMmap(void)
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index  = n_buffers_;
 
-        if (-1 == xioctl(video_->fd, VIDIOC_QUERYBUF, &buf))
+        if (-1 == xioctl(video_->fd, VIDIOC_QUERYBUF, &buf)) {
             return errnoexit("VIDIOC_QUERYBUF");
+        }
 
         buffers_[n_buffers_].length = buf.length;
         buffers_[n_buffers_].start =
@@ -168,8 +175,9 @@ int H264UvcCap::InitMmap(void)
                  MAP_SHARED,
                  video_->fd, buf.m.offset);
 
-        if (MAP_FAILED == buffers_[n_buffers_].start)
+        if (MAP_FAILED == buffers_[n_buffers_].start) {
             return errnoexit("mmap");
+        }
     }
 
     return 0;
@@ -290,8 +298,6 @@ bool H264UvcCap::Init(void)
 {
     int format = V4L2_PIX_FMT_H264;
 
-    spdlog::info("-----Init H264 Camera {}-----", v4l2_device_);
-
     if (!OpenDevice()) {
         return false;
     }
@@ -334,6 +340,8 @@ bool H264UvcCap::Init(void)
     CreateFile(false);
 
     cat_h264_thread_ = std::thread([](H264UvcCap *p_this) { p_this->VideoCapThread(); }, this);
+
+    spdlog::info("-----Init H264 Camera {}-----", v4l2_device_);
     return true;
 }
 
@@ -434,6 +442,7 @@ void H264UvcCap::StopCap()
         MY_EPOLL.EpollDel(video_->fd);
     }
     capturing_ = false;
+    spdlog::info("H264UvcCap StopCap");
 }
 
 void H264UvcCap::VideoCapThread()
