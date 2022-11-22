@@ -58,6 +58,10 @@ V4l2H264hData::~V4l2H264hData()
         delete p_capture_;
     }
 
+    if(encoder_) {
+        delete[] encoder_;
+    }
+
     if(h264_buf_) {
         delete[] h264_buf_;
     }
