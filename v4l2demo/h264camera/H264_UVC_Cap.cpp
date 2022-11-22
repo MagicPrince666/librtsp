@@ -65,7 +65,9 @@ H264UvcCap::~H264UvcCap()
     }
 
     if (video_) {
-        close_v4l2(video_);
+        if(video_->fd) {
+            close(video_->fd);
+        }
         delete video_;
     }
 }

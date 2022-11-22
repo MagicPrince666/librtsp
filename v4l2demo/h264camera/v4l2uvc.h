@@ -56,14 +56,29 @@ struct vdIn {
     __u32 getPict;
 };
 
-int init_videoIn(struct vdIn *vd, char *device, int width, int height,
-                 int format, int grabmethod);
-int uvcGrab(struct vdIn *vd);
-int close_v4l2(struct vdIn *vd);
+class V4l2Capture
+{
+public:
+  V4l2Capture();
+  ~V4l2Capture();
+  int InitV4l2(struct vdIn *vd);
+  int CloseV4l2(struct vdIn *vd);
 
-int v4l2GetControl(int fd, int control);
-int v4l2SetControl(int fd, int control, int value);
-int v4l2UpControl(int fd, int control);
-int v4l2DownControl(int fd, int control);
-int v4l2ToggleControl(int fd, int control);
-int v4l2ResetControl(int fd, int control);
+private:
+  int InitVideoIn(struct vdIn *vd, char *device, int width, int height,
+                 int format, int grabmethod);
+  int VideoDisable(struct vdIn *vd);
+  int VideoEnable(struct vdIn *vd);
+  int UvcGrab(struct vdIn *vd);
+  int IsV4l2Control(int fd, int control, struct v4l2_queryctrl *queryctrl);
+
+  int v4l2GetControl(int fd, int control);
+  int v4l2SetControl(int fd, int control, int value);
+  int v4l2UpControl(int fd, int control);
+  int v4l2DownControl(int fd, int control);
+  int v4l2ToggleControl(int fd, int control);
+  int v4l2ResetControl(int fd, int control);
+
+private:
+  int debug_;
+};

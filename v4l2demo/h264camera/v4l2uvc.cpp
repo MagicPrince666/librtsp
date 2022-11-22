@@ -22,20 +22,20 @@
 #                                                                              #
 *******************************************************************************/
 
-#include "v4l2uvc.h"
+
 #include "debug.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/videodev2.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <stdint.h>
 
-static int debug = 0;
+#include "v4l2uvc.h"
 
 static unsigned char dht_data[DHT_SIZE] = {
     0xff, 0xc4, 0x01, 0xa2, 0x00, 0x00, 0x01, 0x05, 0x01, 0x01, 0x01, 0x01,
@@ -74,9 +74,16 @@ static unsigned char dht_data[DHT_SIZE] = {
     0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0xda, 0xe2, 0xe3, 0xe4, 0xe5, 0xe6, 0xe7,
     0xe8, 0xe9, 0xea, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa};
 
-static int init_v4l2(struct vdIn *vd);
+V4l2Capture::V4l2Capture()
+{
+  debug_ = 0;
+}
 
-int init_videoIn(struct vdIn *vd, char *device, int width, int height,
+V4l2Capture::~V4l2Capture()
+{
+}
+
+int V4l2Capture::InitVideoIn(struct vdIn *vd, char *device, int width, int height,
                  int format, int grabmethod)
 {
 
@@ -103,7 +110,7 @@ int init_videoIn(struct vdIn *vd, char *device, int width, int height,
     vd->height     = height;
     vd->formatIn   = format;
     vd->grabmethod = grabmethod;
-    if (init_v4l2(vd) < 0) {
+    if (InitV4l2(vd) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, " Init v4L2 failed !! exit fatal \n");
         goto error;
         ;
@@ -138,8 +145,7 @@ error:
     return -1;
 }
 
-static int
-init_v4l2(struct vdIn *vd)
+int V4l2Capture::InitV4l2(struct vdIn *vd)
 {
     int i;
     int ret = 0;
@@ -216,9 +222,10 @@ init_v4l2(struct vdIn *vd)
             TestAp_Printf(TESTAP_DBG_ERR, "Unable to query buffer (%d).\n", errno);
             goto fatal;
         }
-        if (debug)
+        if (debug_) {
             TestAp_Printf(TESTAP_DBG_FLOW, "length: %u offset: %u\n", vd->buf.length,
                           vd->buf.m.offset);
+        }
         vd->mem[i] = mmap(0 /* start anywhere */,
                           vd->buf.length, PROT_READ, MAP_SHARED, vd->fd,
                           vd->buf.m.offset);
@@ -226,8 +233,9 @@ init_v4l2(struct vdIn *vd)
             TestAp_Printf(TESTAP_DBG_ERR, "Unable to map buffer (%d)\n", errno);
             goto fatal;
         }
-        if (debug)
+        if (debug_) {
             TestAp_Printf(TESTAP_DBG_FLOW, "Buffer mapped at address %p.\n", vd->mem[i]);
+        }
     }
     /* Queue the buffers. */
     for (i = 0; i < NB_BUFFER; ++i) {
@@ -247,8 +255,7 @@ fatal:
     return -1;
 }
 
-static int
-video_enable(struct vdIn *vd)
+int V4l2Capture::VideoEnable(struct vdIn *vd)
 {
     int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     int ret;
@@ -262,8 +269,7 @@ video_enable(struct vdIn *vd)
     return 0;
 }
 
-static int
-video_disable(struct vdIn *vd)
+int V4l2Capture::VideoDisable(struct vdIn *vd)
 {
     int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     int ret;
@@ -277,15 +283,14 @@ video_disable(struct vdIn *vd)
     return 0;
 }
 
-
-int uvcGrab(struct vdIn *vd)
+int V4l2Capture::UvcGrab(struct vdIn *vd)
 {
     int ret;
     //#define HEADERFRAME1 0xaf
     uint8_t HEADERFRAME1 = 0xaf;
 
     if (!vd->isstreaming) {
-        if (video_enable(vd)) {
+        if (VideoEnable(vd)) {
             goto err;
         }
     }
@@ -309,8 +314,9 @@ int uvcGrab(struct vdIn *vd)
         memcpy(vd->tmpbuffer, vd->mem[vd->buf.index], HEADERFRAME1);
         memcpy(vd->tmpbuffer + HEADERFRAME1, dht_data, DHT_SIZE);
         memcpy(vd->tmpbuffer + HEADERFRAME1 + DHT_SIZE, vd->mem[vd->buf.index] + HEADERFRAME1, (vd->buf.bytesused - HEADERFRAME1));
-        if (debug)
+        if (debug_) {
             TestAp_Printf(TESTAP_DBG_FLOW, "bytes in used %d \n", vd->buf.bytesused);
+        }
         break;
 
     case V4L2_PIX_FMT_YUYV:
@@ -338,12 +344,12 @@ err:
     return -1;
 }
 
-int close_v4l2(struct vdIn *vd)
+int V4l2Capture::CloseV4l2(struct vdIn *vd)
 {
     int i;
 
     if (vd->isstreaming) {
-        video_disable(vd);
+        VideoDisable(vd);
     }
 
     /* If the memory maps are not released the device will remain opened even
@@ -380,8 +386,7 @@ int close_v4l2(struct vdIn *vd)
 }
 
 /* return >= 0 ok otherwhise -1 */
-static int
-isv4l2Control(int fd, int control, struct v4l2_queryctrl *queryctrl)
+int V4l2Capture::IsV4l2Control(int fd, int control, struct v4l2_queryctrl *queryctrl)
 {
     int err = 0;
 
@@ -400,13 +405,13 @@ isv4l2Control(int fd, int control, struct v4l2_queryctrl *queryctrl)
     return -1;
 }
 
-int v4l2GetControl(int fd, int control)
+int V4l2Capture::v4l2GetControl(int fd, int control)
 {
     struct v4l2_queryctrl queryctrl;
     struct v4l2_control control_s;
     int err;
 
-    if (isv4l2Control(fd, control, &queryctrl) < 0) {
+    if (IsV4l2Control(fd, control, &queryctrl) < 0) {
         return -1;
     }
     control_s.id = control;
@@ -417,14 +422,14 @@ int v4l2GetControl(int fd, int control)
     return control_s.value;
 }
 
-int v4l2SetControl(int fd, int control, int value)
+int V4l2Capture::v4l2SetControl(int fd, int control, int value)
 {
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
     int min, max;
     int err;
 
-    if (isv4l2Control(fd, control, &queryctrl) < 0) {
+    if (IsV4l2Control(fd, control, &queryctrl) < 0) {
         return -1;
     }
     min = queryctrl.minimum;
@@ -442,14 +447,14 @@ int v4l2SetControl(int fd, int control, int value)
     return 0;
 }
 
-int v4l2UpControl(int fd, int control)
+int V4l2Capture::v4l2UpControl(int fd, int control)
 {
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
     int max, current, step;
     int err;
 
-    if (isv4l2Control(fd, control, &queryctrl) < 0) {
+    if (IsV4l2Control(fd, control, &queryctrl) < 0) {
         return -1;
     }
     //  min = queryctrl.minimum;
@@ -469,14 +474,14 @@ int v4l2UpControl(int fd, int control)
     return control_s.value;
 }
 
-int v4l2DownControl(int fd, int control)
+int V4l2Capture::v4l2DownControl(int fd, int control)
 {
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
     int min, current, step;
     int err;
 
-    if (isv4l2Control(fd, control, &queryctrl) < 0) {
+    if (IsV4l2Control(fd, control, &queryctrl) < 0) {
         return -1;
     }
     min = queryctrl.minimum;
@@ -496,14 +501,14 @@ int v4l2DownControl(int fd, int control)
     return control_s.value;
 }
 
-int v4l2ToggleControl(int fd, int control)
+int V4l2Capture::v4l2ToggleControl(int fd, int control)
 {
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
     int current;
     int err;
 
-    if (isv4l2Control(fd, control, &queryctrl) != 1) {
+    if (IsV4l2Control(fd, control, &queryctrl) != 1) {
         return -1;
     }
     current         = v4l2GetControl(fd, control);
@@ -516,14 +521,14 @@ int v4l2ToggleControl(int fd, int control)
     return control_s.value;
 }
 
-int v4l2ResetControl(int fd, int control)
+int V4l2Capture::v4l2ResetControl(int fd, int control)
 {
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
     int val_def;
     int err;
 
-    if (isv4l2Control(fd, control, &queryctrl) < 0) {
+    if (IsV4l2Control(fd, control, &queryctrl) < 0) {
         return -1;
     }
     val_def         = queryctrl.default_value;
