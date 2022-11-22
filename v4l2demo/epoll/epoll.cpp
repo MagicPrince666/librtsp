@@ -68,6 +68,9 @@ int Epoll::EpollDel(int fd)
 
 bool Epoll::EpoolQuit()
 {
+    for (auto lfd : listeners_) {
+        EpollDel(lfd.first);
+    }
     epoll_loop_ = false;
     return true;
 }
@@ -87,8 +90,7 @@ int Epoll::EpollLoop()
 #endif
 
         if (nfds == -1) {
-            ::perror("loop");
-            //::exit(1);
+            EpoolQuit();
         }
 
         // if (nfds == 0) {

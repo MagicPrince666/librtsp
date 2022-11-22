@@ -25,6 +25,7 @@
 #include <atomic>
 
 #include "ringbuffer.h"
+#include "epoll.h"
 
 #define SOFT_H264 1
 #if SOFT_H264
@@ -111,7 +112,7 @@ uint32_t rtsp_get_reltime(void)
 }
 
 
-void rtp_thread(void *args)
+void rtp_thread(std::string dev)
 {
     ip_t* ipaddr = &g_ip;
     udp_t udp, rtcp;
@@ -130,13 +131,19 @@ void rtp_thread(void *args)
     int32_t idr          = 0;
 
     Rtp rtp; // rtp通讯类
-
     H264 h264;// 好64通讯类
-    // h264_nalu_t *nalu = h264.NalPacketMalloc(file.data, file.len);
+
     spdlog::info("rtp server init.");
 
+#if SOFT_H264
+    V4l2H264hData softh264(dev);
+    softh264.Init();
+#else
+    H264UvcCap h264_camera(dev);
+    h264_camera.Init();
+#endif
+
     while (g_pause) {
-        
         uint64_t len = RINGBUF.Size();
         uint8_t *h264data = new uint8_t[len];
         RINGBUF.Read(h264data, len);
@@ -172,7 +179,10 @@ void rtp_thread(void *args)
         h264.NalPacketFree(nalu);
         delete[] h264data;
     }
-
+#if SOFT_H264
+    softh264.StopCap();
+#else
+#endif
     udp_server.Deinit(&udp);
     udp_server.Deinit(&rtcp);
     spdlog::info("rtp exit");
@@ -180,14 +190,6 @@ void rtp_thread(void *args)
 
 void rtsp_thread(std::string dev)
 {
-#if SOFT_H264
-    V4l2H264hData softh264(dev);
-    softh264.Init();
-#else
-    H264UvcCap h264_camera(dev);
-    h264_camera.Init();
-#endif
-
     ip_t *ipaddr = &g_ip;
     tcp_t tcp;
     int32_t client = 0;
@@ -208,7 +210,7 @@ void rtsp_thread(std::string dev)
                      "a=recvonly\n"
                      "m=video 0 RTP/AVP 97\n"
                      "a=rtpmap:97 H264/90000\n";
-    std::thread rtp_thread_test;
+    std::thread rtp_thread_create;
 
     while (true) {
         if (client == 0) {
@@ -243,10 +245,10 @@ void rtsp_thread(std::string dev)
             sprintf(g_ip.ip, "%s", ipaddr->ip);
             g_ip.port = rtsp.tansport.client_port;
             g_pause = true;
-            rtp_thread_test = std::thread(rtp_thread, ipaddr);
-            rtp_thread_test.detach();
-            // if (rtp_thread_test.joinable()) {
-            //     rtp_thread_test.join();
+            rtp_thread_create = std::thread(rtp_thread, dev);
+            rtp_thread_create.detach();
+            // if (rtp_thread_create.joinable()) {
+            //     rtp_thread_create.join();
             // }
             spdlog::info("rtp client ip:{} port:{}", g_ip.ip, g_ip.port);
             break;
@@ -305,12 +307,13 @@ int main(int argc, char *argv[])
     spdlog::info("Use commad: rtsp://{}:8554/live", GetHostIpAddress());
 
     std::thread rtsp_thread_test(rtsp_thread, dev);
-    if (rtsp_thread_test.joinable()) {
-        rtsp_thread_test.join();
-    }
+    rtsp_thread_test.detach();
+    // if (rtsp_thread_test.joinable()) {
+    //     rtsp_thread_test.join();
+    // }
 
     while (1) {
-        sleep(1);
+        MY_EPOLL.EpollLoop();
     }
 
     return 0;

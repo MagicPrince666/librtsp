@@ -439,5 +439,10 @@ void H264UvcCap::StopCap()
 void H264UvcCap::VideoCapThread()
 {
     StartCap();
-    MY_EPOLL.EpollLoop();
+    while(1) {
+        if (!capturing_) {
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
 }
