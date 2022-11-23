@@ -19,6 +19,7 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <new>
 
 #define Default_fwLen 13
 const uint8_t Default_fwData[Default_fwLen] = {
@@ -291,9 +292,19 @@ H264XuCtrls::H264XuCtrls(int fd) : video_fd_(fd)
     H264_fmt_    = nullptr;
     current_fps_ = 24;
     chip_id_     = CHIP_NONE;
+    i_h264_format_count_ = 0;
 }
 
-H264XuCtrls::~H264XuCtrls() {}
+H264XuCtrls::~H264XuCtrls() {
+    if(H264_fmt_) {
+        for (int32_t i = 0; i < i_h264_format_count_; i++) {
+            if(H264_fmt_[i].FrPay) {
+                delete[] H264_fmt_[i].FrPay;
+            }
+        }
+        delete[] H264_fmt_;
+    }
+}
 
 int H264XuCtrls::XuSetCur(uint8_t xu_unit, uint8_t xu_selector, uint16_t xu_size, uint8_t *xu_data)
 {
@@ -508,19 +519,17 @@ int H264XuCtrls::XuCtrlReadChipID()
 
 int H264XuCtrls::H264GetFormat()
 {
-    TestAp_Printf(TESTAP_DBG_FLOW, "H264GetFormat ==>\n");
     int i, j;
-    int iH264FormatCount = 0;
     int success          = 1;
 
-    uint8_t *fwData = NULL;
+    uint8_t *fwData = nullptr;
     uint16_t fwLen  = 0;
 
     // Init H264 XU Ctrl Format
     if (XuH264InitFormat() < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, " H264 XU Ctrl Format failed , use default Format\n");
         fwLen  = Default_fwLen;
-        fwData = (uint8_t *)calloc(fwLen, sizeof(uint8_t));
+        fwData = new (std::nothrow) uint8_t[fwLen];
         memcpy(fwData, Default_fwData, fwLen);
         goto Skip_XU_GetFormat;
     }
@@ -532,7 +541,7 @@ int H264XuCtrls::H264GetFormat()
     }
     TestAp_Printf(TESTAP_DBG_FLOW, "fwLen = 0x%x\n", fwLen);
     // alloc memory
-    fwData = (uint8_t *)calloc(fwLen, sizeof(uint8_t));
+    fwData = new (std::nothrow) uint8_t[fwLen];
 
     if (XuH264GetFormatData(fwData, fwLen) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, " XU Get Format Data failed !\n");
@@ -540,12 +549,12 @@ int H264XuCtrls::H264GetFormat()
 
 Skip_XU_GetFormat:
     // Get H.264 format count
-    iH264FormatCount = H264CountFormat(fwData, fwLen);
+    i_h264_format_count_ = H264CountFormat(fwData, fwLen);
 
-    TestAp_Printf(TESTAP_DBG_FLOW, "H264GetFormat ==> FormatCount : %d \n", iH264FormatCount);
+    TestAp_Printf(TESTAP_DBG_FLOW, "H264GetFormat ==> FormatCount : %d \n", i_h264_format_count_);
 
-    if (iH264FormatCount > 0) {
-        H264_fmt_ = (struct H264Format *)malloc(sizeof(struct H264Format) * iH264FormatCount);
+    if (i_h264_format_count_ > 0) {
+        H264_fmt_ = new (std::nothrow) H264Format[i_h264_format_count_];
     } else {
         TestAp_Printf(TESTAP_DBG_ERR, "Get Resolution Data Failed\n");
     }
@@ -554,7 +563,7 @@ Skip_XU_GetFormat:
     success = H264ParseFormat(fwData, fwLen, H264_fmt_);
 
     if (success) {
-        for (i = 0; i < iH264FormatCount; i++) {
+        for (i = 0; i < i_h264_format_count_; i++) {
             TestAp_Printf(TESTAP_DBG_FLOW, "Format index: %d --- (%d x %d) ---\n", i + 1, H264_fmt_[i].wWidth, H264_fmt_[i].wHeight);
             for (j = 0; j < H264_fmt_[i].fpsCnt; j++) {
                 if (chip_id_ == CHIP_RER9420) {
@@ -567,8 +576,8 @@ Skip_XU_GetFormat:
     }
 
     if (fwData) {
-        free(fwData);
-        fwData = NULL;
+        delete[] fwData;
+        fwData = nullptr;
     }
 
     TestAp_Printf(TESTAP_DBG_FLOW, "H264GetFormat <== \n");
@@ -579,9 +588,7 @@ Skip_XU_GetFormat:
 int H264XuCtrls::H264CountFormat(uint8_t *Data, int len)
 {
     int fmtCnt = 0;
-    //	int fpsCnt = 0;
     int cur_len = 0;
-    //	int cur_fmtid = 0;
     int cur_fpsNum = 0;
 
     if (Data == NULL || len == 0) {
@@ -614,8 +621,6 @@ int H264XuCtrls::H264CountFormat(uint8_t *Data, int len)
 
 int H264XuCtrls::H264ParseFormat(uint8_t *Data, int len, struct H264Format *fmt)
 {
-    TestAp_Printf(TESTAP_DBG_FLOW, "H264ParseFormat ==>\n");
-    //	int fpsCnt = 0;
     int cur_len    = 0;
     int cur_fmtid  = 0;
     int cur_fpsNum = 0;
@@ -638,9 +643,9 @@ int H264XuCtrls::H264ParseFormat(uint8_t *Data, int len, struct H264Format *fmt)
         cur_fpsNum = Data[cur_len + 4];
 
         if (chip_id_ == CHIP_RER9420) {
-            fmt[cur_fmtid].FrPay = (uint32_t *)malloc(sizeof(uint32_t) * cur_fpsNum);
+            fmt[cur_fmtid].FrPay = new (std::nothrow) uint32_t[cur_fpsNum];
         } else if ((chip_id_ == CHIP_RER9421) || (chip_id_ == CHIP_RER9422)) {
-            fmt[cur_fmtid].FrPay = (uint32_t *)malloc(sizeof(uint32_t) * cur_fpsNum * 2);
+            fmt[cur_fmtid].FrPay = new (std::nothrow) uint32_t[cur_fpsNum * 2];
         }
 
         for (i = 0; i < cur_fpsNum; i++) {
@@ -650,7 +655,6 @@ int H264XuCtrls::H264ParseFormat(uint8_t *Data, int len, struct H264Format *fmt)
                                           (uint32_t)Data[cur_len + 9 + i * 4 + 2] << 8 |
                                           (uint32_t)Data[cur_len + 9 + i * 4 + 3];
 
-                // TestAp_Printf(TESTAP_DBG_FLOW, "fmt[cur_fmtid].FrPay[%d]: 0x%08x \n", i, fmt[cur_fmtid].FrPay[i]);
             } else if ((chip_id_ == CHIP_RER9421) || (chip_id_ == CHIP_RER9422)) {
                 fmt[cur_fmtid].FrPay[i * 2]     = (uint32_t)Data[cur_len + 9 + i * 6] << 8 | (uint32_t)Data[cur_len + 9 + i * 6 + 1];
                 fmt[cur_fmtid].FrPay[i * 2 + 1] = (uint32_t)Data[cur_len + 9 + i * 6 + 2] << 24 |
@@ -675,32 +679,19 @@ int H264XuCtrls::H264ParseFormat(uint8_t *Data, int len, struct H264Format *fmt)
         return 0;
     }
 
-    TestAp_Printf(TESTAP_DBG_FLOW, "H264ParseFormat <==\n");
     return 1;
 }
 
 int H264XuCtrls::H264GetFps(uint32_t FrPay)
 {
     int fps = 0;
-
     if (chip_id_ == CHIP_RER9420) {
-        // TestAp_Printf(TESTAP_DBG_FLOW, "H264GetFps==> FrPay = 0x%04x\n", (FrPay & 0xFFFF0000)>>16);
-
         uint16_t frH = (FrPay & 0xFF000000) >> 16;
         uint16_t frL = (FrPay & 0x00FF0000) >> 16;
         uint16_t fr  = (frH | frL);
-
-        // TestAp_Printf(TESTAP_DBG_FLOW, "FrPay: 0x%x -> fr = 0x%x\n",FrPay,fr);
-
         fps = ((uint32_t)10000000 / fr) >> 8;
-
-        // TestAp_Printf(TESTAP_DBG_FLOW, "fps : %d\n", fps);
     } else if ((chip_id_ == CHIP_RER9421) || (chip_id_ == CHIP_RER9422)) {
-        // TestAp_Printf(TESTAP_DBG_FLOW, "H264GetFps==> Fr = 0x%04x\n", (uint16_t)FrPay);
-
         fps = ((uint32_t)10000000 / (uint16_t)FrPay) >> 8;
-
-        // TestAp_Printf(TESTAP_DBG_FLOW, "fps : %d\n", fps);
     }
 
     return fps;
@@ -708,7 +699,6 @@ int H264XuCtrls::H264GetFps(uint32_t FrPay)
 
 int H264XuCtrls::XuH264InitFormat()
 {
-    TestAp_Printf(TESTAP_DBG_FLOW, "XuH264InitFormat ==>\n");
     int i                = 0;
     int ret              = 0;
     int err              = 0;
@@ -882,7 +872,7 @@ int H264XuCtrls::XuH264GetFormatData(uint8_t *fwData, uint16_t fwLen)
 int H264XuCtrls::XuH264SetFormat(struct Cur_H264Format fmt)
 {
     // Need to get H264 format first
-    if (H264_fmt_ == NULL) {
+    if (H264_fmt_ == nullptr) {
         TestAp_Printf(TESTAP_DBG_FLOW, "RERVISION_UVC_TestAP @XuH264SetFormat : Do XU_H264_GetFormat before setting H264 format\n");
         return -EINVAL;
     }

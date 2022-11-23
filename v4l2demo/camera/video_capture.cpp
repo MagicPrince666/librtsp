@@ -4,7 +4,6 @@
 #include <errno.h>
 #include <fcntl.h> /* low-level i/o */
 #include <linux/videodev2.h>
-#include <malloc.h>
 #include <new>
 #include <stdio.h>
 #include <stdlib.h>

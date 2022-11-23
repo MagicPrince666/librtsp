@@ -208,6 +208,7 @@ private:
     };
 
     struct H264Format *H264_fmt_;
+    int32_t i_h264_format_count_;
     uint8_t current_fps_;
     uint32_t chip_id_;
     int32_t video_fd_;
