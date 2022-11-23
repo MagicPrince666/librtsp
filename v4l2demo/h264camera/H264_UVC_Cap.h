@@ -83,6 +83,13 @@ private:
     int InitMmap(void);
 
     /**
+     * @brief 解除mmap映射
+     * @return true 
+     * @return false 
+     */
+    bool UninitMmap();
+
+    /**
      * @brief 初始化设备参数
      * @param width 宽度
      * @param height 高度

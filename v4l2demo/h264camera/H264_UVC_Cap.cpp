@@ -49,6 +49,7 @@ H264UvcCap::H264UvcCap(std::string dev, uint32_t width, uint32_t height)
     n_buffers_     = 0;
     rec_fp1_       = nullptr;
     h264_xu_ctrls_ = nullptr;
+    video_ = nullptr;
 }
 
 H264UvcCap::~H264UvcCap()
@@ -56,14 +57,13 @@ H264UvcCap::~H264UvcCap()
     if (cat_h264_thread_.joinable()) {
         cat_h264_thread_.join();
     }
+    spdlog::info("{} close camera", __FUNCTION__);
 
     if (rec_fp1_) {
         fclose(rec_fp1_);
     }
 
-    if (buffers_) {
-        delete buffers_;
-    }
+    UninitMmap();
 
     if (h264_xu_ctrls_) {
         delete h264_xu_ctrls_;
@@ -110,6 +110,7 @@ bool H264UvcCap::CreateFile(bool yes)
 
 bool H264UvcCap::OpenDevice()
 {
+    spdlog::info("Open device {}", v4l2_device_);
     struct stat st;
 
     if (-1 == stat(v4l2_device_.c_str(), &st)) {
@@ -134,6 +135,7 @@ bool H264UvcCap::OpenDevice()
 
 int H264UvcCap::InitMmap(void)
 {
+    spdlog::info("Init mmap");
     struct v4l2_requestbuffers req;
 
     CLEAR(req);
@@ -190,8 +192,27 @@ int H264UvcCap::InitMmap(void)
     return 0;
 }
 
+bool H264UvcCap::UninitMmap()
+{
+    if(!buffers_) {
+        return false;
+    }
+
+    for (uint32_t i = 0; i < n_buffers_; ++i) {
+        if (-1 == munmap(buffers_[i].start, buffers_[i].length)) {
+            errnoexit("munmap");
+        }
+        buffers_[i].start = nullptr;
+    }
+
+    delete[] buffers_;
+    buffers_ = nullptr;
+    return true;
+}
+
 int H264UvcCap::InitDevice(int width, int height, int format)
 {
+    spdlog::info("{} width = {} height = {} format = {}", __FUNCTION__, width, height, format);
     struct v4l2_capability cap;
     struct v4l2_cropcap cropcap;
     struct v4l2_crop crop;
@@ -269,6 +290,7 @@ int H264UvcCap::InitDevice(int width, int height, int format)
 
 int H264UvcCap::StartPreviewing()
 {
+    spdlog::info("Start Previewing");
     uint32_t i;
     enum v4l2_buf_type type;
 
