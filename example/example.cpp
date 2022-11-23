@@ -25,7 +25,7 @@
 #include <atomic>
 
 typedef struct {
-    unsigned char *data;
+    uint8_t *data;
     int32_t len;
 } file_t;
 
@@ -116,7 +116,7 @@ int32_t open_h264_file(char *filename, file_t *file)
         spdlog::error("file {} open fail", filename);
         return -1;
     }
-    file->data = (unsigned char *)malloc(info.st_size);
+    file->data = new (std::nothrow) uint8_t[info.st_size];
     memset(file->data, 0, info.st_size);
     fread(file->data, 1, info.st_size, fp);
     file->len = info.st_size;
@@ -127,8 +127,8 @@ int32_t open_h264_file(char *filename, file_t *file)
 void close_h264_file(file_t *file)
 {
     if (file->data) {
-        free(file->data);
-        file->data = NULL;
+        delete[] file->data;
+        file->data = nullptr;
     }
 }
 
@@ -178,13 +178,13 @@ void rtp_thread(std::string file_name)
                 rtp_packet_t *rtp_ptk = rtp.PacketMalloc(h264_nal->data, h264_nal->len);
                 rtp_packet_t *cur     = rtp_ptk;
                 while (cur) {
-                    udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (unsigned char *)cur->data, cur->len);
+                    udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (uint8_t *)cur->data, cur->len);
                     cur = cur->next;
                 }
                 rtp.PacketFree(rtp_ptk);
             } else if ((h264_nal->type == H264_NAL_SPS || h264_nal->type == H264_NAL_PPS) && !idr) {
                 rtp_packet_t *cur = rtp.PacketMalloc(h264_nal->data, h264_nal->len);
-                udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (unsigned char *)cur->data, cur->len);
+                udp_server.SendMsg(&udp, ipaddr->ip, ipaddr->port, (uint8_t *)cur->data, cur->len);
                 rtp.PacketFree(cur);
             }
             h264_nal = h264_nal->next;

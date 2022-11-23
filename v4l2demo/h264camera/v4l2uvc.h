@@ -42,8 +42,8 @@ struct vdIn {
     struct v4l2_buffer buf;
     struct v4l2_requestbuffers rb;
     void *mem[NB_BUFFER];
-    unsigned char *tmpbuffer;
-    unsigned char *framebuffer;
+    uint8_t *tmpbuffer;
+    uint8_t *framebuffer;
     int isstreaming;
     int grabmethod;
     __u32 width;
