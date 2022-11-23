@@ -20,17 +20,17 @@ $ mkdir build
 $ cd build
 $ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_f1c100s.cmake ..
 ```
-# 编译主机
+# 编译本机
 ```
 $ mkdir build
 $ cd build
-$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_host.cmake -DCMAKE_BUILD_TYPE=Debug ..
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_host.cmake ..
 ```
 # 编译MacOs
 ```
 $ mkdir build
 $ cd build
-$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_darwin.cmake -DCMAKE_BUILD_TYPE=Debug ..
+$ cmake -DCMAKE_TOOLCHAIN_FILE=cmake/build_for_darwin.cmake ..
 ```
 # 获取摄像头信息
 ```
@@ -54,22 +54,25 @@ $ cp x264.h ../librtsp/v4l2demo/x264/
 $ cp x264_config.h ../librtsp/v4l2demo/x264/
 ```
 
-
-
 # Donation
+
+码农不易 尊重劳动
+
+作者：大魔王leo
+
+功能：rtsp视频服务, 基于cijliu的librtsp重写的C++版本[原仓库地址](https://github.com/cijliu/librtsp.git), 支持v4l2 YUV 4:2:2 格式摄像头，以及可以输出H264的UVC摄像头
+
+QQ：846863428
+
+TEL: 15220187476
+
+email: 846863428@qq.com
+
+修改时间 ：2022-11-23
+
 If you find my work useful and you want to encourage the development of more free resources, you can do it by donating…
 
 觉得不错给鼓励一下
-
-```
-码农不易 尊重劳动
-作者：大魔王leo
-功能：rtsp视频服务, 基于cijliu的librtsp重写的C++版本[原仓库地址](https://github.com/cijliu/librtsp.git), 支持v4l2 YUV 4:2:2 格式摄像头，以及可以输出H264的UVC摄像头
-QQ：846863428
-TEL: 15220187476
-email: 846863428@qq.com
-修改时间 ：2022-11-23
-```
 
 ![alipay](docs/alipay.jpg)
 ![wechat](docs/wechat.png)
