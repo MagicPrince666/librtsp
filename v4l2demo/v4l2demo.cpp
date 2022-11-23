@@ -27,7 +27,7 @@
 #include "ringbuffer.h"
 #include "epoll.h"
 
-#define SOFT_H264 0
+#define SOFT_H264 1
 #if SOFT_H264
 #include "h264_camera.h"
 #else
