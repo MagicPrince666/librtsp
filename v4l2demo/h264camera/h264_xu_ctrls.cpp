@@ -20,8 +20,6 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-int Dbg_Param = 0x1f;
-
 #define Default_fwLen 13
 const uint8_t Default_fwData[Default_fwLen] = {
     0x05, 0x00, 0x02, 0xD0, 0x01, // W=1280, H=720, NumOfFrmRate=1
