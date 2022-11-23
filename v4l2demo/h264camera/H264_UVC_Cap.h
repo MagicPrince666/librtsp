@@ -116,7 +116,7 @@ private:
     };
     struct buffer *buffers_;
     struct vdIn *video_;
-    H264XuCtrls h264_xu_ctrls_;
+    H264XuCtrls *h264_xu_ctrls_;
 
     bool capturing_;
     uint32_t n_buffers_;

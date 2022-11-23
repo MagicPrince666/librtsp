@@ -44,10 +44,11 @@ H264UvcCap::H264UvcCap(std::string dev, uint32_t width, uint32_t height)
       video_width_(width),
       video_height_(height)
 {
-    capturing_ = false;
-    buffers_   = nullptr;
-    n_buffers_ = 0;
-    rec_fp1_   = nullptr;
+    capturing_     = false;
+    buffers_       = nullptr;
+    n_buffers_     = 0;
+    rec_fp1_       = nullptr;
+    h264_xu_ctrls_ = nullptr;
 }
 
 H264UvcCap::~H264UvcCap()
@@ -60,12 +61,16 @@ H264UvcCap::~H264UvcCap()
         fclose(rec_fp1_);
     }
 
-    if(buffers_) {
+    if (buffers_) {
         delete buffers_;
     }
 
+    if (h264_xu_ctrls_) {
+        delete h264_xu_ctrls_;
+    }
+
     if (video_) {
-        if(video_->fd) {
+        if (video_->fd) {
             close(video_->fd);
         }
         delete video_;
@@ -237,16 +242,19 @@ int H264UvcCap::InitDevice(int width, int height, int format)
     fmt.fmt.pix.pixelformat = format;
     fmt.fmt.pix.field       = V4L2_FIELD_ANY;
 
-    if (-1 == xioctl(video_->fd, VIDIOC_S_FMT, &fmt))
+    if (-1 == xioctl(video_->fd, VIDIOC_S_FMT, &fmt)) {
         return errnoexit("VIDIOC_S_FMT");
+    }
 
     min = fmt.fmt.pix.width * 2;
 
-    if (fmt.fmt.pix.bytesperline < min)
+    if (fmt.fmt.pix.bytesperline < min) {
         fmt.fmt.pix.bytesperline = min;
+    }
     min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
-    if (fmt.fmt.pix.sizeimage < min)
+    if (fmt.fmt.pix.sizeimage < min) {
         fmt.fmt.pix.sizeimage = min;
+    }
 
     struct v4l2_streamparm parm;
     memset(&parm, 0, sizeof parm);
@@ -310,32 +318,32 @@ bool H264UvcCap::Init(void)
 
     StartPreviewing();
 
+    h264_xu_ctrls_ = new H264XuCtrls(video_->fd);
+
     struct tm *tdate;
     time_t curdate;
     tdate = localtime(&curdate);
-    h264_xu_ctrls_.XU_OSD_Set_CarcamCtrl(video_->fd, 0, 0, 0);
-    if (h264_xu_ctrls_.XU_OSD_Set_RTC(video_->fd, tdate->tm_year + 1900, tdate->tm_mon + 1, tdate->tm_mday, tdate->tm_hour, tdate->tm_min, tdate->tm_sec) < 0) {
+    h264_xu_ctrls_->XuOsdSetCarcamCtrl(0, 0, 0);
+    if (h264_xu_ctrls_->XuOsdSetRTC(tdate->tm_year + 1900, tdate->tm_mon + 1, tdate->tm_mday, tdate->tm_hour, tdate->tm_min, tdate->tm_sec) < 0) {
         spdlog::warn("XU_OSD_Set_RTC_fd = {} Failed", video_->fd);
     }
-    if (h264_xu_ctrls_.XU_OSD_Set_Enable(video_->fd, 1, 1) < 0) {
+    if (h264_xu_ctrls_->XuOsdSetEnable(1, 1) < 0) {
         spdlog::warn("XU_OSD_Set_Enable_fd = {} Failed", video_->fd);
     }
 
-    int ret = h264_xu_ctrls_.XuInitCtrl(video_->fd);
+    int ret = h264_xu_ctrls_->XuInitCtrl();
     if (ret < 0) {
-        spdlog::error("XU_H264_Set_BitRate Failed");
+        spdlog::error("XuH264SetBitRate Failed");
     } else {
         double m_BitRate = 4096 * 1024;
         //设置码率
-        if (h264_xu_ctrls_.XU_H264_Set_BitRate(video_->fd, m_BitRate) < 0) {
-            spdlog::error("XU_H264_Set_BitRate {} Failed", m_BitRate);
+        if (h264_xu_ctrls_->XuH264SetBitRate(m_BitRate) < 0) {
+            spdlog::error("XuH264SetBitRate {} Failed", m_BitRate);
         }
 
-        h264_xu_ctrls_.XU_H264_Get_BitRate(video_->fd, &m_BitRate);
+        h264_xu_ctrls_->XuH264GetBitRate(&m_BitRate);
         if (m_BitRate < 0) {
-            spdlog::error("XU_H264_Get_BitRate {} Failed", m_BitRate);
-        } else {
-            spdlog::info("-----XU_H264_Set_BitRate {} bps----", m_BitRate);
+            spdlog::error("XuH264GetBitRate {} Failed", m_BitRate);
         }
     }
 
@@ -386,20 +394,20 @@ int32_t H264UvcCap::BitRateSetting(int32_t rate)
     if (!capturing_) //未有客户端接入
     {
         if (video_->fd > 0) { //未初始化不能访问
-            ret = h264_xu_ctrls_.XuInitCtrl(video_->fd);
+            ret = h264_xu_ctrls_->XuInitCtrl();
         }
         if (ret < 0) {
-            spdlog::info("XU_H264_Set_BitRate Failed");
+            spdlog::info("XuH264SetBitRate Failed");
         } else {
             double m_BitRate = (double)rate;
 
-            if (h264_xu_ctrls_.XU_H264_Set_BitRate(video_->fd, m_BitRate) < 0) {
-                spdlog::info("XU_H264_Set_BitRate Failed");
+            if (h264_xu_ctrls_->XuH264SetBitRate(m_BitRate) < 0) {
+                spdlog::info("XuH264SetBitRate Failed");
             }
 
-            h264_xu_ctrls_.XU_H264_Get_BitRate(video_->fd, &m_BitRate);
+            h264_xu_ctrls_->XuH264GetBitRate(&m_BitRate);
             if (m_BitRate < 0) {
-                spdlog::info("XU_H264_Get_BitRate Failed");
+                spdlog::info("XuH264GetBitRate Failed");
             }
 
             spdlog::info("----m_BitRate:{}----", m_BitRate);
@@ -450,7 +458,7 @@ void H264UvcCap::StopCap()
 void H264UvcCap::VideoCapThread()
 {
     StartCap();
-    while(1) {
+    while (1) {
         if (!capturing_) {
             break;
         }
