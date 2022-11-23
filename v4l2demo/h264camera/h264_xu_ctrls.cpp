@@ -24,7 +24,6 @@ struct H264Format *gH264fmt = nullptr;
 int Dbg_Param = 0x1f;
 
 unsigned char m_CurrentFPS      = 24;
-unsigned char m_CurrentFPS_9422 = 30;
 unsigned int chip_id            = CHIP_NONE;
 
 #define Default_fwLen 13
@@ -40,8 +39,6 @@ const unsigned char Default_fwData[Default_fwLen] = {
 #define RERVISION_RER9422_SERIES_CHIPID 0x92
 #define RERVISION_RER9422_DDR_64M 0x00
 #define RERVISION_RER9422_DDR_16M 0x03
-
-extern int video_get_framerate(int dev, int *framerate);
 
 static struct uvc_xu_control_info rervision_xu_sys_ctrls[] =
     {
@@ -300,7 +297,12 @@ static struct uvc_xu_control_mapping rervision_xu_usr_mappings[] =
          11,
          0,
          V4L2_CTRL_TYPE_INTEGER,
-         UVC_CTRL_DATA_TYPE_UNSIGNED}};
+         UVC_CTRL_DATA_TYPE_UNSIGNED}
+    };
+
+H264XuCtrls::H264XuCtrls() {}
+
+H264XuCtrls::~H264XuCtrls() {}
 
 int XU_Set_Cur(int fd, __u8 xu_unit, __u8 xu_selector, __u16 xu_size, __u8 *xu_data)
 {
@@ -350,7 +352,6 @@ int XU_Get_Cur(int fd, __u8 xu_unit, __u8 xu_selector, __u16 xu_size, __u8 *xu_d
 
 int XU_Ctrl_Add(int fd, struct uvc_xu_control_info *info, struct uvc_xu_control_mapping *map)
 {
-    //	int i=0;
     int err = 0;
 
     /* try to add controls listed */
@@ -502,10 +503,12 @@ int XU_Ctrl_ReadChipID(int fd)
             return err;
         }
 
-        if (xu_data[2] == RERVISION_RER9422_DDR_64M)
+        if (xu_data[2] == RERVISION_RER9422_DDR_64M) {
             chip_id = CHIP_RER9422;
-        else if (xu_data[2] == RERVISION_RER9422_DDR_16M)
+        }
+        else if (xu_data[2] == RERVISION_RER9422_DDR_16M) {
             chip_id = CHIP_RER9421;
+        }
     }
 
     TestAp_Printf(TESTAP_DBG_FLOW, "ChipID = %d\n", chip_id);
@@ -551,9 +554,9 @@ Skip_XU_GetFormat:
 
     TestAp_Printf(TESTAP_DBG_FLOW, "H264_GetFormat ==> FormatCount : %d \n", iH264FormatCount);
 
-    if (iH264FormatCount > 0)
+    if (iH264FormatCount > 0) {
         gH264fmt = (struct H264Format *)malloc(sizeof(struct H264Format) * iH264FormatCount);
-    else {
+    } else {
         TestAp_Printf(TESTAP_DBG_ERR, "Get Resolution Data Failed\n");
     }
 
@@ -591,8 +594,9 @@ int H264_CountFormat(unsigned char *Data, int len)
     //	int cur_fmtid = 0;
     int cur_fpsNum = 0;
 
-    if (Data == NULL || len == 0)
+    if (Data == NULL || len == 0) {
         return 0;
+    }
 
     // count Format numbers
     while (cur_len < len) {
@@ -750,8 +754,9 @@ int XU_H264_InitFormat(int fd)
         return err;
     }
 
-    for (i = 0; i < xu_size; i++)
+    for (i = 0; i < xu_size; i++) {
         TestAp_Printf(TESTAP_DBG_FLOW, " Get Data[%d] = 0x%x\n", i, xu_data[i]);
+    }
     TestAp_Printf(TESTAP_DBG_FLOW, " ubH264Idx_S1 = %d\n", xu_data[5]);
 
     TestAp_Printf(TESTAP_DBG_FLOW, "XU_H264_InitFormat <== Success\n");
@@ -850,14 +855,16 @@ int XU_H264_GetFormatData(int fd, unsigned char *fwData, unsigned short fwLen)
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) >= 0) {
         // Read all H.264 format data
         for (loop = 0; loop < LoopCnt; loop++) {
-            for (i = 0; i < 11; i++)
+            for (i = 0; i < 11; i++) {
                 xu_data[i] = 0; // clean data
+            }
 
             TestAp_Printf(TESTAP_DBG_FLOW, "--> Loop : %d <--\n", loop);
 
             if ((err = XU_Get_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) >= 0) {
-                for (i = 0; i < 11; i++)
+                for (i = 0; i < 11; i++) {
                     TestAp_Printf(TESTAP_DBG_FLOW, " Data[%d] = 0x%x\n", i, xu_data[i]);
+                }
 
                 // Copy Data
                 if (Copyleft >= 11) {
@@ -927,8 +934,9 @@ int XU_H264_SetFormat(int fd, struct Cur_H264Format fmt)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Set_FMT ==> Switch cmd : ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -959,8 +967,9 @@ int XU_H264_SetFormat(int fd, struct Cur_H264Format fmt)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Set_FMT ==> ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -970,8 +979,9 @@ int XU_H264_SetFormat(int fd, struct Cur_H264Format fmt)
 
         if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
             TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Set_FMT____2 ==> ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-            if (err == EINVAL)
+            if (err == EINVAL) {
                 TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+            }
             return err;
         }
     }
@@ -983,7 +993,6 @@ int XU_H264_SetFormat(int fd, struct Cur_H264Format fmt)
 int XU_H264_Get_Mode(int fd, int *Mode)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XU_H264_Get_Mode ==>\n");
-    //	int i = 0;
     int ret           = 0;
     int err           = 0;
     __u8 ctrldata[11] = {0};
@@ -1010,16 +1019,18 @@ int XU_H264_Get_Mode(int fd, int *Mode)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Get_Mode ==> Switch cmd : ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
     // Get mode
     if ((err = XU_Get_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Get_Mode ==> ioctl(UVCIOC_CTRL_GET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1061,8 +1072,9 @@ int XU_H264_Set_Mode(int fd, int Mode)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Set_Mode ==> Switch cmd : ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1071,8 +1083,9 @@ int XU_H264_Set_Mode(int fd, int Mode)
     xu_data[0] = Mode;
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Set_Mode ==> ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1110,22 +1123,25 @@ int XU_H264_Get_QP_Limit(int fd, int *QP_Min, int *QP_Max)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Get_QP_Limit ==> Switch cmd : ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
     memset(xu_data, 0, xu_size);
     // Get QP value
     if ((err = XU_Get_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Get_QP_Limit ==> ioctl(UVCIOC_CTRL_GET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
     TestAp_Printf(TESTAP_DBG_FLOW, "   == XU_H264_Get_QP_Limit Success == \n");
-    for (i = 0; i < 2; i++)
+    for (i = 0; i < 2; i++) {
         TestAp_Printf(TESTAP_DBG_FLOW, "      Get data[%d] : 0x%x\n", i, xu_data[i]);
+    }
 
     *QP_Min = xu_data[0];
     *QP_Max = xu_data[1];
@@ -1169,16 +1185,18 @@ int XU_H264_Get_QP(int fd, int *QP_Val)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_FLOW, "XU_H264_Get_QP ==> Switch cmd : ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_FLOW, "Invalid arguments\n");
+        }
         return err;
     }
 
     // Get QP value
     if ((err = XU_Get_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Get_QP ==> ioctl(UVCIOC_CTRL_GET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1220,8 +1238,9 @@ int XU_H264_Set_QP(int fd, int QP_Val)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Get_QP ==> Switch cmd : ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1230,8 +1249,9 @@ int XU_H264_Set_QP(int fd, int QP_Val)
     xu_data[0] = QP_Val;
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Set_QP ==> ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1273,8 +1293,9 @@ int XU_H264_Get_BitRate(int fd, double *BitRate)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Get_BitRate ==> Switch cmd : ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1282,24 +1303,27 @@ int XU_H264_Get_BitRate(int fd, double *BitRate)
     memset(xu_data, 0, xu_size);
     if ((err = XU_Get_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Get_BitRate ==> ioctl(UVCIOC_CTRL_GET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
     TestAp_Printf(TESTAP_DBG_FLOW, "   == XU_H264_Get_BitRate Success == \n");
 
     if (chip_id == CHIP_RER9420) {
-        for (i = 0; i < 2; i++)
+        for (i = 0; i < 2; i++) {
             TestAp_Printf(TESTAP_DBG_FLOW, "      Get data[%d] : 0x%x\n", i, xu_data[i]);
+        }
 
         BitRate_CtrlNum = (xu_data[0] << 8) | (xu_data[1]);
 
         // Bit Rate = BitRate_Ctrl_Num*512*fps*8 /1000(Kbps)
         *BitRate = (double)(BitRate_CtrlNum * 512.0 * m_CurrentFPS * 8) / 1024.0;
     } else if ((chip_id == CHIP_RER9421) || (chip_id == CHIP_RER9422)) {
-        for (i = 0; i < 3; i++)
+        for (i = 0; i < 3; i++) {
             TestAp_Printf(TESTAP_DBG_FLOW, "      Get data[%d] : 0x%x\n", i, xu_data[i]);
+        }
 
         BitRate_CtrlNum = (xu_data[0] << 16) | (xu_data[1] << 8) | (xu_data[2]);
 
@@ -1342,8 +1366,9 @@ int XU_H264_Set_BitRate(int fd, double BitRate)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Set_BitRate ==> Switch cmd : ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1362,8 +1387,9 @@ int XU_H264_Set_BitRate(int fd, double BitRate)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Set_BitRate ==> ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1403,8 +1429,9 @@ int XU_H264_Set_IFRAME(int fd)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Set_IFRAME ==> Switch cmd : ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1413,8 +1440,9 @@ int XU_H264_Set_IFRAME(int fd)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Set_IFRAME ==> ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1445,8 +1473,9 @@ int XU_H264_Get_SEI(int fd, unsigned char *SEI)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Get_SEI ==> Switch cmd : ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1454,8 +1483,9 @@ int XU_H264_Get_SEI(int fd, unsigned char *SEI)
     memset(xu_data, 0, xu_size);
     if ((err = XU_Get_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Get_SEI ==> ioctl(UVCIOC_CTRL_GET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 
@@ -1490,8 +1520,9 @@ int XU_H264_Set_SEI(int fd, unsigned char SEI)
 
     if ((err = XU_Set_Cur(fd, xu_unit, xu_selector, xu_size, xu_data)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "XU_H264_Set_SEI ==> Switch cmd : ioctl(UVCIOC_CTRL_SET) FAILED (%i)\n", err);
-        if (err == EINVAL)
+        if (err == EINVAL) {
             TestAp_Printf(TESTAP_DBG_ERR, "Invalid arguments\n");
+        }
         return err;
     }
 

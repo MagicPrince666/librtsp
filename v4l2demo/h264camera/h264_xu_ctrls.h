@@ -179,14 +179,18 @@ typedef enum {
 #define UVCIOC_CTRL_SET _IOW('U', 4, struct uvc_xu_control)
 #endif
 
-// extern unsigned int chip_id;
 class H264XuCtrls
 {
 public:
+    H264XuCtrls();
+    ~H264XuCtrls();
+private:
 };
 
 int XU_Init_Ctrl(int fd);
 int XU_Ctrl_ReadChipID(int fd);
+
+int video_get_framerate(int dev, int *framerate);
 
 int H264_GetFormat(int fd);
 int H264_CountFormat(unsigned char *Data, int len);
