@@ -74,5 +74,7 @@ If you find my work useful and you want to encourage the development of more fre
 
 觉得不错给鼓励一下
 
+**拿人家代码不star不fork的都是耍流氓**
+
 ![alipay](docs/alipay.jpg)
 ![wechat](docs/wechat.png)
