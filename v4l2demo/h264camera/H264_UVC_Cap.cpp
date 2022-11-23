@@ -313,25 +313,25 @@ bool H264UvcCap::Init(void)
     struct tm *tdate;
     time_t curdate;
     tdate = localtime(&curdate);
-    XU_OSD_Set_CarcamCtrl(video_->fd, 0, 0, 0);
-    if (XU_OSD_Set_RTC(video_->fd, tdate->tm_year + 1900, tdate->tm_mon + 1, tdate->tm_mday, tdate->tm_hour, tdate->tm_min, tdate->tm_sec) < 0) {
+    h264_xu_ctrls_.XU_OSD_Set_CarcamCtrl(video_->fd, 0, 0, 0);
+    if (h264_xu_ctrls_.XU_OSD_Set_RTC(video_->fd, tdate->tm_year + 1900, tdate->tm_mon + 1, tdate->tm_mday, tdate->tm_hour, tdate->tm_min, tdate->tm_sec) < 0) {
         spdlog::warn("XU_OSD_Set_RTC_fd = {} Failed", video_->fd);
     }
-    if (XU_OSD_Set_Enable(video_->fd, 1, 1) < 0) {
+    if (h264_xu_ctrls_.XU_OSD_Set_Enable(video_->fd, 1, 1) < 0) {
         spdlog::warn("XU_OSD_Set_Enable_fd = {} Failed", video_->fd);
     }
 
-    int ret = XU_Init_Ctrl(video_->fd);
+    int ret = h264_xu_ctrls_.XuInitCtrl(video_->fd);
     if (ret < 0) {
         spdlog::error("XU_H264_Set_BitRate Failed");
     } else {
         double m_BitRate = 4096 * 1024;
         //设置码率
-        if (XU_H264_Set_BitRate(video_->fd, m_BitRate) < 0) {
+        if (h264_xu_ctrls_.XU_H264_Set_BitRate(video_->fd, m_BitRate) < 0) {
             spdlog::error("XU_H264_Set_BitRate {} Failed", m_BitRate);
         }
 
-        XU_H264_Get_BitRate(video_->fd, &m_BitRate);
+        h264_xu_ctrls_.XU_H264_Get_BitRate(video_->fd, &m_BitRate);
         if (m_BitRate < 0) {
             spdlog::error("XU_H264_Get_BitRate {} Failed", m_BitRate);
         } else {
@@ -386,18 +386,18 @@ int32_t H264UvcCap::BitRateSetting(int32_t rate)
     if (!capturing_) //未有客户端接入
     {
         if (video_->fd > 0) { //未初始化不能访问
-            ret = XU_Init_Ctrl(video_->fd);
+            ret = h264_xu_ctrls_.XuInitCtrl(video_->fd);
         }
         if (ret < 0) {
             spdlog::info("XU_H264_Set_BitRate Failed");
         } else {
-            double m_BitRate = 0.0;
+            double m_BitRate = (double)rate;
 
-            if (XU_H264_Set_BitRate(video_->fd, rate) < 0) {
+            if (h264_xu_ctrls_.XU_H264_Set_BitRate(video_->fd, m_BitRate) < 0) {
                 spdlog::info("XU_H264_Set_BitRate Failed");
             }
 
-            XU_H264_Get_BitRate(video_->fd, &m_BitRate);
+            h264_xu_ctrls_.XU_H264_Get_BitRate(video_->fd, &m_BitRate);
             if (m_BitRate < 0) {
                 spdlog::info("XU_H264_Get_BitRate Failed");
             }

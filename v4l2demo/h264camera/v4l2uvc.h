@@ -61,6 +61,7 @@ class V4l2Capture
 public:
   V4l2Capture();
   ~V4l2Capture();
+
   int InitV4l2(struct vdIn *vd);
   int CloseV4l2(struct vdIn *vd);
 

@@ -17,8 +17,6 @@
 #include <linux/uvcvideo.h>
 #endif
 
-#define CARCAM_PROJECT 1
-
 /*
  * Dynamic controls
  */
@@ -184,145 +182,142 @@ class H264XuCtrls
 public:
     H264XuCtrls();
     ~H264XuCtrls();
+
+    int XuInitCtrl(int fd);
+
+    int XU_OSD_Set_CarcamCtrl(int fd, unsigned char SpeedEn, unsigned char CoordinateEn, unsigned char CoordinateCtrl);
+    int XU_OSD_Get_CarcamCtrl(int fd, unsigned char *SpeedEn, unsigned char *CoordinateEn, unsigned char *CoordinateCtrl);
+    int XU_OSD_Set_Speed(int fd, unsigned int Speed);
+    int XU_OSD_Get_Speed(int fd, unsigned int *Speed);
+    int XU_OSD_Set_Coordinate1(int fd, unsigned char Direction, unsigned char *Vaule);
+    int XU_OSD_Set_Coordinate2(int fd, unsigned char Direction, unsigned char Vaule1, unsigned long Vaule2, unsigned char Vaule3, unsigned long Vaule4);
+    int XU_OSD_Get_Coordinate1(int fd, unsigned char *Direction, unsigned char *Vaule);
+    int XU_OSD_Get_Coordinate2(int fd, unsigned char *Direction, unsigned char *Vaule1, unsigned long *Vaule2, unsigned char *Vaule3, unsigned long *Vaule4);
+
+    int XU_OSD_Set_RTC(int fd, unsigned int year, unsigned char month, unsigned char day, unsigned char hour, unsigned char minute, unsigned char second);
+    int XU_OSD_Set_Enable(int fd, unsigned char Enable_Line, unsigned char Enable_Block);
+    int XU_OSD_Get_Enable(int fd, unsigned char *Enable_Line, unsigned char *Enable_Block);
+    int XU_H264_Get_BitRate(int fd, double *BitRate);
+    int XU_H264_Set_BitRate(int fd, double BitRate);
+
 private:
+    int XU_Ctrl_ReadChipID(int fd);
+    int video_get_framerate(int dev, int *framerate);
+    int H264_GetFormat(int fd);
+    int H264_CountFormat(unsigned char *Data, int len);
+    int H264_ParseFormat(unsigned char *Data, int len, struct H264Format *fmt);
+    int H264_GetFPS(unsigned int FrPay);
+
+    int XU_Set(int fd, struct uvc_xu_control xctrl);
+    int XU_Get(int fd, struct uvc_xu_control *xctrl);
+
+    int XU_Set_Cur(int fd, __u8 xu_unit, __u8 xu_selector, __u16 xu_size, __u8 *xu_data);
+    int XU_Get_Cur(int fd, __u8 xu_unit, __u8 xu_selector, __u16 xu_size, __u8 *xu_data);
+
+    int XU_H264_InitFormat(int fd);
+    int XU_H264_GetFormatLength(int fd, unsigned short *fwLen);
+    int XU_H264_GetFormatData(int fd, unsigned char *fwData, unsigned short fwLen);
+    int XU_H264_SetFormat(int fd, struct Cur_H264Format fmt);
+
+    int XU_H264_Get_QP_Limit(int fd, int *QP_Min, int *QP_Max);
+    int XU_H264_Get_Mode(int fd, int *Mode);
+    int XU_H264_Set_Mode(int fd, int Mode);
+
+    int XU_H264_Get_QP(int fd, int *QP_Val);
+    int XU_H264_Set_QP(int fd, int QP_Val);
+
+    int XU_H264_Set_IFRAME(int fd);
+
+    int XU_H264_Get_SEI(int fd, unsigned char *SEI);
+    int XU_H264_Set_SEI(int fd, unsigned char SEI);
+
+    int XU_H264_Get_GOP(int fd, unsigned int *GOP);
+    int XU_H264_Set_GOP(int fd, unsigned int GOP);
+
+    int XU_Asic_Read(int fd, unsigned int Addr, unsigned char *AsicData);
+    int XU_Asic_Write(int fd, unsigned int Addr, unsigned char AsicData);
+
+    int XU_Multi_Get_status(int fd, struct Multistream_Info *status);
+    int XU_Multi_Get_Info(int fd, struct Multistream_Info *Info);
+    int XU_Multi_Set_Type(int fd, unsigned int format);
+
+    int XU_Multi_Set_Enable(int fd, unsigned char enable);
+    int XU_Multi_Get_Enable(int fd, unsigned char *enable);
+
+    int XU_Multi_Set_BitRate(int fd, unsigned int StreamID, unsigned int BitRate);
+    int XU_Multi_Get_BitRate(int fd, unsigned int StreamID, unsigned int *BitRate);
+    int XU_Multi_Set_QP(int fd, unsigned int StreamID, unsigned int QP_Val);
+    int XU_Multi_Get_QP(int fd, unsigned int StreamID, unsigned int *QP_val);
+    int XU_Multi_Set_H264Mode(int fd, unsigned int StreamID, unsigned int Mode);
+    int XU_Multi_Get_H264Mode(int fd, unsigned int StreamID, unsigned int *Mode);
+    int XU_Multi_Set_SubStream_FrameRate(int fd, unsigned int sub_fps);
+    int XU_Multi_Get_SubStream_FrameRate(int fd, unsigned int *sub_fps);
+    int XU_Multi_Set_SubStream_GOP(int fd, unsigned int sub_gop);
+    int XU_Multi_Get_SubStream_GOP(int fd, unsigned int *sub_gop);
+
+    int XU_OSD_Timer_Ctrl(int fd, unsigned char enable);
+
+    int XU_OSD_Get_RTC(int fd, unsigned int *year, unsigned char *month, unsigned char *day, unsigned char *hour, unsigned char *minute, unsigned char *second);
+
+    int XU_OSD_Set_Size(int fd, unsigned char LineSize, unsigned char BlockSize);
+    int XU_OSD_Get_Size(int fd, unsigned char *LineSize, unsigned char *BlockSize);
+
+    int XU_OSD_Set_Color(int fd, unsigned char FontColor, unsigned char BorderColor);
+    int XU_OSD_Get_Color(int fd, unsigned char *FontColor, unsigned char *BorderColor);
+
+    int XU_Ctrl_Add(int fd, struct uvc_xu_control_info *info, struct uvc_xu_control_mapping *map);
+
+    int XU_OSD_Set_AutoScale(int fd, unsigned char Enable_Line, unsigned char Enable_Block);
+    int XU_OSD_Get_AutoScale(int fd, unsigned char *Enable_Line, unsigned char *Enable_Block);
+
+    int XU_OSD_Set_Start_Position(int fd, unsigned char OSD_Type, unsigned int RowStart, unsigned int ColStart);
+    int XU_OSD_Get_Start_Position(int fd, unsigned int *LineRowStart, unsigned int *LineColStart, unsigned int *BlockRowStart, unsigned int *BlockColStart);
+
+    int XU_OSD_Set_Multi_Size(int fd, unsigned char Stream0, unsigned char Stream1, unsigned char Stream2);
+    int XU_OSD_Get_Multi_Size(int fd, unsigned char *Stream0, unsigned char *Stream1, unsigned char *Stream2);
+
+    int XU_OSD_Set_MS_Start_Position(int fd, unsigned char StreamID, unsigned char RowStart, unsigned char ColStart);
+    int XU_OSD_Get_MS_Start_Position(int fd, unsigned char *S0_Row, unsigned char *S0_Col, unsigned char *S1_Row, unsigned char *S1_Col, unsigned char *S2_Row, unsigned char *S2_Col);
+
+    int XU_OSD_Set_String(int fd, unsigned char group, char *String);
+    int XU_OSD_Get_String(int fd, unsigned char group, char *String);
+
+    int XU_MD_Set_Mode(int fd, unsigned char Enable);
+    int XU_MD_Get_Mode(int fd, unsigned char *Enable);
+
+    int XU_MD_Set_Threshold(int fd, unsigned int MD_Threshold);
+    int XU_MD_Get_Threshold(int fd, unsigned int *MD_Threshold);
+
+    int XU_MD_Set_Mask(int fd, unsigned char *Mask);
+    int XU_MD_Get_Mask(int fd, unsigned char *Mask);
+
+    int XU_MD_Set_RESULT(int fd, unsigned char *Result);
+    int XU_MD_Get_RESULT(int fd, unsigned char *Result);
+
+    int XU_MJPG_Set_Bitrate(int fd, unsigned int MJPG_Bitrate);
+    int XU_MJPG_Get_Bitrate(int fd, unsigned int *MJPG_Bitrate);
+
+    int XU_IMG_Set_Mirror(int fd, unsigned char Mirror);
+    int XU_IMG_Get_Mirror(int fd, unsigned char *Mirror);
+
+    int XU_IMG_Set_Flip(int fd, unsigned char Flip);
+    int XU_IMG_Get_Flip(int fd, unsigned char *Flip);
+
+    int XU_IMG_Set_Color(int fd, unsigned char Color);
+    int XU_IMG_Get_Color(int fd, unsigned char *Color);
+    // H.264 XU -----
+
+    int XU_GPIO_Ctrl_Set(int fd, unsigned char GPIO_En, unsigned char GPIO_Value);
+    int XU_GPIO_Ctrl_Get(int fd, unsigned char *GPIO_En, unsigned char *GPIO_OutputValue, unsigned char *GPIO_InputValue);
+
+    int XU_Frame_Drop_En_Set(int fd, unsigned char Stream1_En, unsigned char Stream2_En);
+    int XU_Frame_Drop_En_Get(int fd, unsigned char *Stream1_En, unsigned char *Stream2_En);
+    int XU_Frame_Drop_Ctrl_Set(int fd, unsigned char Stream1_fps, unsigned char Stream2_fps);
+    int XU_Frame_Drop_Ctrl_Get(int fd, unsigned char *Stream1_fps, unsigned char *Stream2_fps);
+    int XU_SF_Read(int fd, unsigned int Addr, unsigned char *pData, unsigned int Length);
 };
 
-int XU_Init_Ctrl(int fd);
-int XU_Ctrl_ReadChipID(int fd);
 
-int video_get_framerate(int dev, int *framerate);
 
-int H264_GetFormat(int fd);
-int H264_CountFormat(unsigned char *Data, int len);
-int H264_ParseFormat(unsigned char *Data, int len, struct H264Format *fmt);
-int H264_GetFPS(unsigned int FrPay);
 
-// H.264 XU +++++
-
-int XU_Set(int fd, struct uvc_xu_control xctrl);
-int XU_Get(int fd, struct uvc_xu_control *xctrl);
-
-int XU_Set_Cur(int fd, __u8 xu_unit, __u8 xu_selector, __u16 xu_size, __u8 *xu_data);
-int XU_Get_Cur(int fd, __u8 xu_unit, __u8 xu_selector, __u16 xu_size, __u8 *xu_data);
-
-int XU_H264_InitFormat(int fd);
-int XU_H264_GetFormatLength(int fd, unsigned short *fwLen);
-int XU_H264_GetFormatData(int fd, unsigned char *fwData, unsigned short fwLen);
-int XU_H264_SetFormat(int fd, struct Cur_H264Format fmt);
-
-int XU_H264_Get_QP_Limit(int fd, int *QP_Min, int *QP_Max);
-int XU_H264_Get_Mode(int fd, int *Mode);
-int XU_H264_Set_Mode(int fd, int Mode);
-
-int XU_H264_Get_QP(int fd, int *QP_Val);
-int XU_H264_Set_QP(int fd, int QP_Val);
-
-int XU_H264_Get_BitRate(int fd, double *BitRate);
-int XU_H264_Set_BitRate(int fd, double BitRate);
-
-int XU_H264_Set_IFRAME(int fd);
-
-int XU_H264_Get_SEI(int fd, unsigned char *SEI);
-int XU_H264_Set_SEI(int fd, unsigned char SEI);
-
-int XU_H264_Get_GOP(int fd, unsigned int *GOP);
-int XU_H264_Set_GOP(int fd, unsigned int GOP);
-
-int XU_Asic_Read(int fd, unsigned int Addr, unsigned char *AsicData);
-int XU_Asic_Write(int fd, unsigned int Addr, unsigned char AsicData);
-
-#if (CARCAM_PROJECT == 0)
-int XU_Multi_Get_status(int fd, struct Multistream_Info *status);
-int XU_Multi_Get_Info(int fd, struct Multistream_Info *Info);
-int XU_Multi_Set_Type(int fd, unsigned int format);
-
-int XU_Multi_Set_Enable(int fd, unsigned char enable);
-int XU_Multi_Get_Enable(int fd, unsigned char *enable);
-
-int XU_Multi_Set_BitRate(int fd, unsigned int StreamID, unsigned int BitRate);
-int XU_Multi_Get_BitRate(int fd, unsigned int StreamID, unsigned int *BitRate);
-int XU_Multi_Set_QP(int fd, unsigned int StreamID, unsigned int QP_Val);
-int XU_Multi_Get_QP(int fd, unsigned int StreamID, unsigned int *QP_val);
-int XU_Multi_Set_H264Mode(int fd, unsigned int StreamID, unsigned int Mode);
-int XU_Multi_Get_H264Mode(int fd, unsigned int StreamID, unsigned int *Mode);
-int XU_Multi_Set_SubStream_FrameRate(int fd, unsigned int sub_fps);
-int XU_Multi_Get_SubStream_FrameRate(int fd, unsigned int *sub_fps);
-int XU_Multi_Set_SubStream_GOP(int fd, unsigned int sub_gop);
-int XU_Multi_Get_SubStream_GOP(int fd, unsigned int *sub_gop);
-#endif
-
-int XU_OSD_Timer_Ctrl(int fd, unsigned char enable);
-int XU_OSD_Set_RTC(int fd, unsigned int year, unsigned char month, unsigned char day, unsigned char hour, unsigned char minute, unsigned char second);
-int XU_OSD_Get_RTC(int fd, unsigned int *year, unsigned char *month, unsigned char *day, unsigned char *hour, unsigned char *minute, unsigned char *second);
-
-int XU_OSD_Set_Size(int fd, unsigned char LineSize, unsigned char BlockSize);
-int XU_OSD_Get_Size(int fd, unsigned char *LineSize, unsigned char *BlockSize);
-
-int XU_OSD_Set_Color(int fd, unsigned char FontColor, unsigned char BorderColor);
-int XU_OSD_Get_Color(int fd, unsigned char *FontColor, unsigned char *BorderColor);
-
-int XU_OSD_Set_Enable(int fd, unsigned char Enable_Line, unsigned char Enable_Block);
-int XU_OSD_Get_Enable(int fd, unsigned char *Enable_Line, unsigned char *Enable_Block);
-
-int XU_OSD_Set_AutoScale(int fd, unsigned char Enable_Line, unsigned char Enable_Block);
-int XU_OSD_Get_AutoScale(int fd, unsigned char *Enable_Line, unsigned char *Enable_Block);
-
-int XU_OSD_Set_Start_Position(int fd, unsigned char OSD_Type, unsigned int RowStart, unsigned int ColStart);
-int XU_OSD_Get_Start_Position(int fd, unsigned int *LineRowStart, unsigned int *LineColStart, unsigned int *BlockRowStart, unsigned int *BlockColStart);
-
-#if (CARCAM_PROJECT == 0)
-int XU_OSD_Set_Multi_Size(int fd, unsigned char Stream0, unsigned char Stream1, unsigned char Stream2);
-int XU_OSD_Get_Multi_Size(int fd, unsigned char *Stream0, unsigned char *Stream1, unsigned char *Stream2);
-
-int XU_OSD_Set_MS_Start_Position(int fd, unsigned char StreamID, unsigned char RowStart, unsigned char ColStart);
-int XU_OSD_Get_MS_Start_Position(int fd, unsigned char *S0_Row, unsigned char *S0_Col, unsigned char *S1_Row, unsigned char *S1_Col, unsigned char *S2_Row, unsigned char *S2_Col);
-
-int XU_OSD_Set_String(int fd, unsigned char group, char *String);
-int XU_OSD_Get_String(int fd, unsigned char group, char *String);
-#endif
-
-int XU_MD_Set_Mode(int fd, unsigned char Enable);
-int XU_MD_Get_Mode(int fd, unsigned char *Enable);
-
-int XU_MD_Set_Threshold(int fd, unsigned int MD_Threshold);
-int XU_MD_Get_Threshold(int fd, unsigned int *MD_Threshold);
-
-int XU_MD_Set_Mask(int fd, unsigned char *Mask);
-int XU_MD_Get_Mask(int fd, unsigned char *Mask);
-
-int XU_MD_Set_RESULT(int fd, unsigned char *Result);
-int XU_MD_Get_RESULT(int fd, unsigned char *Result);
-
-int XU_MJPG_Set_Bitrate(int fd, unsigned int MJPG_Bitrate);
-int XU_MJPG_Get_Bitrate(int fd, unsigned int *MJPG_Bitrate);
-
-int XU_IMG_Set_Mirror(int fd, unsigned char Mirror);
-int XU_IMG_Get_Mirror(int fd, unsigned char *Mirror);
-
-int XU_IMG_Set_Flip(int fd, unsigned char Flip);
-int XU_IMG_Get_Flip(int fd, unsigned char *Flip);
-
-int XU_IMG_Set_Color(int fd, unsigned char Color);
-int XU_IMG_Get_Color(int fd, unsigned char *Color);
-// H.264 XU -----
-
-int XU_GPIO_Ctrl_Set(int fd, unsigned char GPIO_En, unsigned char GPIO_Value);
-int XU_GPIO_Ctrl_Get(int fd, unsigned char *GPIO_En, unsigned char *GPIO_OutputValue, unsigned char *GPIO_InputValue);
-
-int XU_Frame_Drop_En_Set(int fd, unsigned char Stream1_En, unsigned char Stream2_En);
-int XU_Frame_Drop_En_Get(int fd, unsigned char *Stream1_En, unsigned char *Stream2_En);
-int XU_Frame_Drop_Ctrl_Set(int fd, unsigned char Stream1_fps, unsigned char Stream2_fps);
-int XU_Frame_Drop_Ctrl_Get(int fd, unsigned char *Stream1_fps, unsigned char *Stream2_fps);
-int XU_SF_Read(int fd, unsigned int Addr, unsigned char *pData, unsigned int Length);
-
-#if (CARCAM_PROJECT == 1)
-int XU_OSD_Set_CarcamCtrl(int fd, unsigned char SpeedEn, unsigned char CoordinateEn, unsigned char CoordinateCtrl);
-int XU_OSD_Get_CarcamCtrl(int fd, unsigned char *SpeedEn, unsigned char *CoordinateEn, unsigned char *CoordinateCtrl);
-int XU_OSD_Set_Speed(int fd, unsigned int Speed);
-int XU_OSD_Get_Speed(int fd, unsigned int *Speed);
-int XU_OSD_Set_Coordinate1(int fd, unsigned char Direction, unsigned char *Vaule);
-int XU_OSD_Set_Coordinate2(int fd, unsigned char Direction, unsigned char Vaule1, unsigned long Vaule2, unsigned char Vaule3, unsigned long Vaule4);
-int XU_OSD_Get_Coordinate1(int fd, unsigned char *Direction, unsigned char *Vaule);
-int XU_OSD_Get_Coordinate2(int fd, unsigned char *Direction, unsigned char *Vaule1, unsigned long *Vaule2, unsigned char *Vaule3, unsigned long *Vaule4);
-#endif
 
