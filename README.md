@@ -53,3 +53,21 @@ $ cp libx264.a ../librtsp/v4l2demo/x264/
 $ cp x264.h ../librtsp/v4l2demo/x264/
 $ cp x264_config.h ../librtsp/v4l2demo/x264/
 ```
+
+```
+码农不易 尊重劳动
+作者：大魔王leo
+功能：
+QQ：846863428
+TEL: 15220187476
+email: 846863428@qq.com
+修改时间 ：2022-11-23
+```
+
+# Donation
+If you find my work useful and you want to encourage the development of more free resources, you can do it by donating…
+
+觉得不错给鼓励一下
+
+![alipay](docs/alipay.jpg)
+![wechat](docs/wechat.png)
