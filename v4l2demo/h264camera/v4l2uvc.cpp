@@ -313,7 +313,7 @@ int V4l2Capture::UvcGrab(struct vdIn *vd)
         //   memcpy(vd->tmpbuffer, vd->mem[vd->buf.index], vd->buf.bytesused);
         memcpy(vd->tmpbuffer, vd->mem[vd->buf.index], HEADERFRAME1);
         memcpy(vd->tmpbuffer + HEADERFRAME1, dht_data, DHT_SIZE);
-        memcpy(vd->tmpbuffer + HEADERFRAME1 + DHT_SIZE, vd->mem[vd->buf.index] + HEADERFRAME1, (vd->buf.bytesused - HEADERFRAME1));
+        memcpy(vd->tmpbuffer + HEADERFRAME1 + DHT_SIZE, (uint8_t *)(vd->mem[vd->buf.index]) + HEADERFRAME1, (vd->buf.bytesused - HEADERFRAME1));
         if (debug_) {
             TestAp_Printf(TESTAP_DBG_FLOW, "bytes in used %d \n", vd->buf.bytesused);
         }
