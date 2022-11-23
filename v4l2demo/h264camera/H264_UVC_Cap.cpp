@@ -49,7 +49,7 @@ H264UvcCap::H264UvcCap(std::string dev, uint32_t width, uint32_t height)
     n_buffers_     = 0;
     rec_fp1_       = nullptr;
     h264_xu_ctrls_ = nullptr;
-    video_ = nullptr;
+    video_         = nullptr;
 }
 
 H264UvcCap::~H264UvcCap()
@@ -78,15 +78,15 @@ H264UvcCap::~H264UvcCap()
     RINGBUF.Reset();
 }
 
-int errnoexit(const char *s)
+int32_t errnoexit(const char *s)
 {
     spdlog::error("{} error {}, {}", s, errno, strerror(errno));
     return -1;
 }
 
-int xioctl(int fd, int request, void *arg)
+int32_t xioctl(int32_t fd, int32_t request, void *arg)
 {
-    int r;
+    int32_t r;
     do {
         r = ioctl(fd, request, arg);
     } while (-1 == r && EINTR == errno);
@@ -134,7 +134,7 @@ bool H264UvcCap::OpenDevice()
     return true;
 }
 
-int H264UvcCap::InitMmap(void)
+int32_t H264UvcCap::InitMmap(void)
 {
     spdlog::info("Init mmap");
     struct v4l2_requestbuffers req;
@@ -195,7 +195,7 @@ int H264UvcCap::InitMmap(void)
 
 bool H264UvcCap::UninitMmap()
 {
-    if(!buffers_) {
+    if (!buffers_) {
         return false;
     }
 
@@ -211,14 +211,14 @@ bool H264UvcCap::UninitMmap()
     return true;
 }
 
-int H264UvcCap::InitDevice(int width, int height, int format)
+int32_t H264UvcCap::InitDevice(int32_t width, int32_t height, int32_t format)
 {
     spdlog::info("{} width = {} height = {} format = {}", __FUNCTION__, width, height, format);
     struct v4l2_capability cap;
     struct v4l2_cropcap cropcap;
     struct v4l2_crop crop;
     struct v4l2_format fmt;
-    unsigned int min;
+    uint32_t min;
 
     if (-1 == xioctl(video_->fd, VIDIOC_QUERYCAP, &cap)) {
         if (EINVAL == errno) {
@@ -289,13 +289,12 @@ int H264UvcCap::InitDevice(int width, int height, int format)
     return InitMmap();
 }
 
-int H264UvcCap::StartPreviewing()
+int32_t H264UvcCap::StartPreviewing()
 {
     spdlog::info("Start Previewing");
-    uint32_t i;
     enum v4l2_buf_type type;
 
-    for (i = 0; i < n_buffers_; ++i) {
+    for (uint32_t i = 0; i < n_buffers_; ++i) {
         struct v4l2_buffer buf;
         CLEAR(buf);
 
@@ -329,7 +328,7 @@ bool H264UvcCap::StopPreviewing()
 
 bool H264UvcCap::Init(void)
 {
-    int format = V4L2_PIX_FMT_H264;
+    int32_t format = V4L2_PIX_FMT_H264;
 
     if (!OpenDevice()) {
         return false;
@@ -354,7 +353,7 @@ bool H264UvcCap::Init(void)
         spdlog::warn("XU_OSD_Set_Enable_fd = {} Failed", video_->fd);
     }
 
-    int ret = h264_xu_ctrls_->XuInitCtrl();
+    int32_t ret = h264_xu_ctrls_->XuInitCtrl();
     if (ret < 0) {
         spdlog::error("XuH264SetBitRate Failed");
     } else {
@@ -386,7 +385,7 @@ int64_t H264UvcCap::CapVideo()
     buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
 
-    int ret = ioctl(video_->fd, VIDIOC_DQBUF, &buf);
+    int32_t ret = ioctl(video_->fd, VIDIOC_DQBUF, &buf);
     if (ret < 0) {
         spdlog::error("Unable to dequeue buffer!");
         return -1;

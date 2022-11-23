@@ -1,16 +1,16 @@
 /**
  * @file h264_xu_ctrls.h
  * @author 黄李全 (846863428@qq.com)
- * @brief 
+ * @brief
  * @version 0.1
  * @date 2022-11-23
  * @copyright Copyright (c) {2021} 个人版权所有
  */
 #pragma once
 
-#include <stdint.h>
 #include <linux/version.h>
 #include <linux/videodev2.h>
+#include <stdint.h>
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 0, 0)
 #include <linux/uvcvideo.h>
 #endif
@@ -156,26 +156,26 @@ struct uvc_xu_control {
 class H264XuCtrls
 {
 public:
-    H264XuCtrls(int fd);
+    H264XuCtrls(int32_t fd);
     ~H264XuCtrls();
 
-    int XuInitCtrl();
+    int32_t XuInitCtrl();
 
-    int XuOsdSetCarcamCtrl(uint8_t SpeedEn, uint8_t CoordinateEn, uint8_t CoordinateCtrl);
-    int XuOsdGetCarcamCtrl(uint8_t *SpeedEn, uint8_t *CoordinateEn, uint8_t *CoordinateCtrl);
-    int XuOsdSetSpeed(uint32_t Speed);
-    int XuOsdGetSpeed(uint32_t *Speed);
+    int32_t XuOsdSetCarcamCtrl(uint8_t SpeedEn, uint8_t CoordinateEn, uint8_t CoordinateCtrl);
+    int32_t XuOsdGetCarcamCtrl(uint8_t *SpeedEn, uint8_t *CoordinateEn, uint8_t *CoordinateCtrl);
+    int32_t XuOsdSetSpeed(uint32_t Speed);
+    int32_t XuOsdGetSpeed(uint32_t *Speed);
 
-    int XuOsdSetCoordinate1(uint8_t Direction, uint8_t *Vaule);
-    int XuOsdSetCoordinate2(uint8_t Direction, uint8_t Vaule1, unsigned long Vaule2, uint8_t Vaule3, unsigned long Vaule4);
-    int XuOsdGetCoordinate1(uint8_t *Direction, uint8_t *Vaule);
-    int XuOsdGetCoordinate2(uint8_t *Direction, uint8_t *Vaule1, unsigned long *Vaule2, uint8_t *Vaule3, unsigned long *Vaule4);
+    int32_t XuOsdSetCoordinate1(uint8_t Direction, uint8_t *Vaule);
+    int32_t XuOsdSetCoordinate2(uint8_t Direction, uint8_t Vaule1, unsigned long Vaule2, uint8_t Vaule3, unsigned long Vaule4);
+    int32_t XuOsdGetCoordinate1(uint8_t *Direction, uint8_t *Vaule);
+    int32_t XuOsdGetCoordinate2(uint8_t *Direction, uint8_t *Vaule1, unsigned long *Vaule2, uint8_t *Vaule3, unsigned long *Vaule4);
 
-    int XuOsdSetRTC(uint32_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second);
-    int XuOsdSetEnable(uint8_t Enable_Line, uint8_t Enable_Block);
-    int XuOsdGetEnable(uint8_t *Enable_Line, uint8_t *Enable_Block);
-    int XuH264GetBitRate(double *BitRate);
-    int XuH264SetBitRate(double BitRate);
+    int32_t XuOsdSetRTC(uint32_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second);
+    int32_t XuOsdSetEnable(uint8_t Enable_Line, uint8_t Enable_Block);
+    int32_t XuOsdGetEnable(uint8_t *Enable_Line, uint8_t *Enable_Block);
+    int32_t XuH264GetBitRate(double *BitRate);
+    int32_t XuH264SetBitRate(double BitRate);
 
 private:
     typedef enum {
@@ -186,10 +186,10 @@ private:
     } CHIP_RER942X;
 
     struct Cur_H264Format {
-        int FmtId;
+        int32_t FmtId;
         uint16_t wWidth;
         uint16_t wHeight;
-        int FrameRateId;
+        int32_t FrameRateId;
         uint8_t framerate;
         uint32_t FrameSize;
     };
@@ -202,7 +202,7 @@ private:
     struct H264Format {
         uint16_t wWidth;
         uint16_t wHeight;
-        int fpsCnt;
+        int32_t fpsCnt;
         uint32_t FrameSize;
         uint32_t *FrPay; // FrameInterval[0|1]Payloadsize[2|3]
     };
@@ -214,96 +214,96 @@ private:
     int32_t video_fd_;
 
 private:
-    int XuCtrlReadChipID();
-    int XuCtrlAdd(struct uvc_xu_control_info *info, struct uvc_xu_control_mapping *map);
-    int H264GetFormat();
-    int H264CountFormat(uint8_t *Data, int len);
-    int H264ParseFormat(uint8_t *Data, int len, struct H264Format *fmt);
-    int H264GetFps(uint32_t FrPay);
+    int32_t XuCtrlReadChipID();
+    int32_t XuCtrlAdd(struct uvc_xu_control_info *info, struct uvc_xu_control_mapping *map);
+    int32_t H264GetFormat();
+    int32_t H264CountFormat(uint8_t *Data, int32_t len);
+    int32_t H264ParseFormat(uint8_t *Data, int32_t len, struct H264Format *fmt);
+    int32_t H264GetFps(uint32_t FrPay);
 
-    int XuSet(struct uvc_xu_control xctrl);
-    int XuGet(struct uvc_xu_control *xctrl);
-    int XuSetCur(uint8_t xu_unit, uint8_t xu_selector, uint16_t xu_size, uint8_t *xu_data);
-    int XuGetCur(uint8_t xu_unit, uint8_t xu_selector, uint16_t xu_size, uint8_t *xu_data);
+    int32_t XuSet(struct uvc_xu_control xctrl);
+    int32_t XuGet(struct uvc_xu_control *xctrl);
+    int32_t XuSetCur(uint8_t xu_unit, uint8_t xu_selector, uint16_t xu_size, uint8_t *xu_data);
+    int32_t XuGetCur(uint8_t xu_unit, uint8_t xu_selector, uint16_t xu_size, uint8_t *xu_data);
 
-    int XuH264InitFormat();
-    int XuH264GetFormatLength(uint16_t *fwLen);
-    int XuH264GetFormatData(uint8_t *fwData, uint16_t fwLen);
-    int XuH264SetFormat(struct Cur_H264Format fmt);
-    int XuH264GetMode(int *Mode);
-    int XuH264SetMode(int Mode);
-    int XuH264GetQPLimit(int *QP_Min, int *QP_Max);
-    int XuH264GetQP(int *QP_Val);
-    int XuH264SetQP(int QP_Val);
-    int XuH264SetIFrame();
-    int XuH264GetSEI(uint8_t *SEI);
-    int XuH264SetSEI(uint8_t SEI);
-    int XuH264GetGOP(uint32_t *GOP);
-    int XuH264SetGOP(uint32_t GOP);
+    int32_t XuH264InitFormat();
+    int32_t XuH264GetFormatLength(uint16_t *fwLen);
+    int32_t XuH264GetFormatData(uint8_t *fwData, uint16_t fwLen);
+    int32_t XuH264SetFormat(struct Cur_H264Format fmt);
+    int32_t XuH264GetMode(int32_t *Mode);
+    int32_t XuH264SetMode(int32_t Mode);
+    int32_t XuH264GetQPLimit(int32_t *QP_Min, int32_t *QP_Max);
+    int32_t XuH264GetQP(int32_t *QP_Val);
+    int32_t XuH264SetQP(int32_t QP_Val);
+    int32_t XuH264SetIFrame();
+    int32_t XuH264GetSEI(uint8_t *SEI);
+    int32_t XuH264SetSEI(uint8_t SEI);
+    int32_t XuH264GetGOP(uint32_t *GOP);
+    int32_t XuH264SetGOP(uint32_t GOP);
 
-    int XuAsicRead(uint32_t Addr, uint8_t *AsicData);
-    int XuAsicWrite(uint32_t Addr, uint8_t AsicData);
+    int32_t XuAsicRead(uint32_t Addr, uint8_t *AsicData);
+    int32_t XuAsicWrite(uint32_t Addr, uint8_t AsicData);
 
-    int XuMultiGetStatus(struct Multistream_Info *status);
-    int XuMultiGetInfo(struct Multistream_Info *Info);
-    int XuMultiSetType(uint32_t format);
-    int XuMultiSetEnable(uint8_t enable);
-    int XuMultiGetEnable(uint8_t *enable);
-    int XuMultiSetBitRate(uint32_t StreamID, uint32_t BitRate);
-    int XuMultiGetBitRate(uint32_t StreamID, uint32_t *BitRate);
-    int XuMultiSetQP(uint32_t StreamID, uint32_t QP_Val);
-    int XuMultiGetQP(uint32_t StreamID, uint32_t *QP_val);
-    int XuMultiSetH264Mode(uint32_t StreamID, uint32_t Mode);
-    int XuMultiGetH264Mode(uint32_t StreamID, uint32_t *Mode);
-    int XuMultiSetSubStreamFrameRate(uint32_t sub_fps);
-    int XuMultiSetSubStreamGOP(uint32_t sub_gop);
-    int XuMultiGetSubStreamGOP(uint32_t *sub_gop);
+    int32_t XuMultiGetStatus(struct Multistream_Info *status);
+    int32_t XuMultiGetInfo(struct Multistream_Info *Info);
+    int32_t XuMultiSetType(uint32_t format);
+    int32_t XuMultiSetEnable(uint8_t enable);
+    int32_t XuMultiGetEnable(uint8_t *enable);
+    int32_t XuMultiSetBitRate(uint32_t StreamID, uint32_t BitRate);
+    int32_t XuMultiGetBitRate(uint32_t StreamID, uint32_t *BitRate);
+    int32_t XuMultiSetQP(uint32_t StreamID, uint32_t QP_Val);
+    int32_t XuMultiGetQP(uint32_t StreamID, uint32_t *QP_val);
+    int32_t XuMultiSetH264Mode(uint32_t StreamID, uint32_t Mode);
+    int32_t XuMultiGetH264Mode(uint32_t StreamID, uint32_t *Mode);
+    int32_t XuMultiSetSubStreamFrameRate(uint32_t sub_fps);
+    int32_t XuMultiSetSubStreamGOP(uint32_t sub_gop);
+    int32_t XuMultiGetSubStreamGOP(uint32_t *sub_gop);
 
-    int XuOsdTimerCtrl(uint8_t enable);
-    int XuOsdGetRTC(uint32_t *year, uint8_t *month, uint8_t *day, uint8_t *hour, uint8_t *minute, uint8_t *second);
-    int XuOsdSetSize(uint8_t LineSize, uint8_t BlockSize);
-    int XuOsdGetSize(uint8_t *LineSize, uint8_t *BlockSize);
-    int XuOsdSetColor(uint8_t FontColor, uint8_t BorderColor);
-    int XuOsdGetColor(uint8_t *FontColor, uint8_t *BorderColor);
-    int XuOsdSetAutoScale(uint8_t Enable_Line, uint8_t Enable_Block);
-    int XuOsdGetAutoScale(uint8_t *Enable_Line, uint8_t *Enable_Block);
-    int XuOsdSetStartPosition(uint8_t OSD_Type, uint32_t RowStart, uint32_t ColStart);
-    int XuOsdGetStartPosition(uint32_t *LineRowStart, uint32_t *LineColStart, uint32_t *BlockRowStart, uint32_t *BlockColStart);
-    int XuOsdSetMultiSize(uint8_t Stream0, uint8_t Stream1, uint8_t Stream2);
-    int XuOsdGetMultiSize(uint8_t *Stream0, uint8_t *Stream1, uint8_t *Stream2);
-    int XuOsdSetMSStartPosition(uint8_t StreamID, uint8_t RowStart, uint8_t ColStart);
-    int XuOsdGetMSStartPosition(uint8_t *S0_Row, uint8_t *S0_Col, uint8_t *S1_Row, uint8_t *S1_Col, uint8_t *S2_Row, uint8_t *S2_Col);
-    int XuOsdSetString(uint8_t group, char *String);
-    int XuOsdGetString(uint8_t group, char *String);
+    int32_t XuOsdTimerCtrl(uint8_t enable);
+    int32_t XuOsdGetRTC(uint32_t *year, uint8_t *month, uint8_t *day, uint8_t *hour, uint8_t *minute, uint8_t *second);
+    int32_t XuOsdSetSize(uint8_t LineSize, uint8_t BlockSize);
+    int32_t XuOsdGetSize(uint8_t *LineSize, uint8_t *BlockSize);
+    int32_t XuOsdSetColor(uint8_t FontColor, uint8_t BorderColor);
+    int32_t XuOsdGetColor(uint8_t *FontColor, uint8_t *BorderColor);
+    int32_t XuOsdSetAutoScale(uint8_t Enable_Line, uint8_t Enable_Block);
+    int32_t XuOsdGetAutoScale(uint8_t *Enable_Line, uint8_t *Enable_Block);
+    int32_t XuOsdSetStartPosition(uint8_t OSD_Type, uint32_t RowStart, uint32_t ColStart);
+    int32_t XuOsdGetStartPosition(uint32_t *LineRowStart, uint32_t *LineColStart, uint32_t *BlockRowStart, uint32_t *BlockColStart);
+    int32_t XuOsdSetMultiSize(uint8_t Stream0, uint8_t Stream1, uint8_t Stream2);
+    int32_t XuOsdGetMultiSize(uint8_t *Stream0, uint8_t *Stream1, uint8_t *Stream2);
+    int32_t XuOsdSetMSStartPosition(uint8_t StreamID, uint8_t RowStart, uint8_t ColStart);
+    int32_t XuOsdGetMSStartPosition(uint8_t *S0_Row, uint8_t *S0_Col, uint8_t *S1_Row, uint8_t *S1_Col, uint8_t *S2_Row, uint8_t *S2_Col);
+    int32_t XuOsdSetString(uint8_t group, char *String);
+    int32_t XuOsdGetString(uint8_t group, char *String);
 
-    int XuMDSetMode(uint8_t Enable);
-    int XuMDGetMode(uint8_t *Enable);
-    int XuMDSetThreshold(uint32_t MD_Threshold);
-    int XuMDGetThreshold(uint32_t *MD_Threshold);
-    int XuMDSetMask(uint8_t *Mask);
-    int XuMDGetMask(uint8_t *Mask);
-    int XuMDSetResult(uint8_t *Result);
-    int XuMDGetResult(uint8_t *Result);
+    int32_t XuMDSetMode(uint8_t Enable);
+    int32_t XuMDGetMode(uint8_t *Enable);
+    int32_t XuMDSetThreshold(uint32_t MD_Threshold);
+    int32_t XuMDGetThreshold(uint32_t *MD_Threshold);
+    int32_t XuMDSetMask(uint8_t *Mask);
+    int32_t XuMDGetMask(uint8_t *Mask);
+    int32_t XuMDSetResult(uint8_t *Result);
+    int32_t XuMDGetResult(uint8_t *Result);
 
-    int XuMJPGSetBitrate(uint32_t MJPG_Bitrate);
-    int XuMJPGGetBitrate(uint32_t *MJPG_Bitrate);
+    int32_t XuMJPGSetBitrate(uint32_t MJPG_Bitrate);
+    int32_t XuMJPGGetBitrate(uint32_t *MJPG_Bitrate);
 
-    int XuIMGSetMirror(uint8_t Mirror);
-    int XuIMGGetMirror(uint8_t *Mirror);
+    int32_t XuIMGSetMirror(uint8_t Mirror);
+    int32_t XuIMGGetMirror(uint8_t *Mirror);
 
-    int XuIMGSetFlip(uint8_t Flip);
-    int XuIMGGetFlip(uint8_t *Flip);
+    int32_t XuIMGSetFlip(uint8_t Flip);
+    int32_t XuIMGGetFlip(uint8_t *Flip);
 
-    int XuIMGSetColor(uint8_t Color);
-    int XuIMGGetColor(uint8_t *Color);
+    int32_t XuIMGSetColor(uint8_t Color);
+    int32_t XuIMGGetColor(uint8_t *Color);
 
-    int XuGPIOCtrlSet(uint8_t GPIO_En, uint8_t GPIO_Value);
-    int XuGPIOCtrlGet(uint8_t *GPIO_En, uint8_t *GPIO_OutputValue, uint8_t *GPIO_InputValue);
+    int32_t XuGPIOCtrlSet(uint8_t GPIO_En, uint8_t GPIO_Value);
+    int32_t XuGPIOCtrlGet(uint8_t *GPIO_En, uint8_t *GPIO_OutputValue, uint8_t *GPIO_InputValue);
 
-    int XuFrameDropEnSet(uint8_t Stream1_En, uint8_t Stream2_En);
-    int XuFrameDropEnGet(uint8_t *Stream1_En, uint8_t *Stream2_En);
-    int XuFrameDropCtrlSet(uint8_t Stream1_fps, uint8_t Stream2_fps);
-    int XuFrameDropCtrlGet(uint8_t *Stream1_fps, uint8_t *Stream2_fps);
+    int32_t XuFrameDropEnSet(uint8_t Stream1_En, uint8_t Stream2_En);
+    int32_t XuFrameDropEnGet(uint8_t *Stream1_En, uint8_t *Stream2_En);
+    int32_t XuFrameDropCtrlSet(uint8_t Stream1_fps, uint8_t Stream2_fps);
+    int32_t XuFrameDropCtrlGet(uint8_t *Stream1_fps, uint8_t *Stream2_fps);
 
-    int XuSFRead(uint32_t Addr, uint8_t *pData, uint32_t Length);
+    int32_t XuSFRead(uint32_t Addr, uint8_t *pData, uint32_t Length);
 };

@@ -24,6 +24,7 @@
 #pragma once
 
 #include <linux/videodev2.h>
+#include <stdint.h>
 
 #define NB_BUFFER 16
 #define DHT_SIZE 420
@@ -33,10 +34,10 @@
 #endif
 
 struct vdIn {
-    int fd;
+    int32_t fd;
     char *videodevice;
-    char *status;
-    char *pictName;
+    int8_t *status;
+    int8_t *pictName;
     struct v4l2_capability cap;
     struct v4l2_format fmt;
     struct v4l2_buffer buf;
@@ -44,16 +45,16 @@ struct vdIn {
     void *mem[NB_BUFFER];
     uint8_t *tmpbuffer;
     uint8_t *framebuffer;
-    int isstreaming;
-    int grabmethod;
-    __u32 width;
-    __u32 height;
-    __u32 formatIn;
-    __u32 formatOut;
-    __u32 framesizeIn;
-    __u32 signalquit;
-    __u32 toggleAvi;
-    __u32 getPict;
+    int32_t isstreaming;
+    int32_t grabmethod;
+    uint32_t width;
+    uint32_t height;
+    uint32_t formatIn;
+    uint32_t formatOut;
+    uint32_t framesizeIn;
+    uint32_t signalquit;
+    uint32_t toggleAvi;
+    uint32_t getPict;
 };
 
 class V4l2Capture
@@ -62,24 +63,25 @@ public:
   V4l2Capture();
   ~V4l2Capture();
 
-  int InitV4l2(struct vdIn *vd);
-  int CloseV4l2(struct vdIn *vd);
+  int32_t InitV4l2(struct vdIn *vd);
+  int32_t CloseV4l2(struct vdIn *vd);
 
 private:
-  int InitVideoIn(struct vdIn *vd, char *device, int width, int height,
-                 int format, int grabmethod);
-  int VideoDisable(struct vdIn *vd);
-  int VideoEnable(struct vdIn *vd);
-  int UvcGrab(struct vdIn *vd);
-  int IsV4l2Control(int fd, int control, struct v4l2_queryctrl *queryctrl);
+  int32_t InitVideoIn(struct vdIn *vd, char *device, int32_t width, int32_t height,
+                 int32_t format, int32_t grabmethod);
+  int32_t VideoDisable(struct vdIn *vd);
+  int32_t VideoEnable(struct vdIn *vd);
+  int32_t UvcGrab(struct vdIn *vd);
+  int32_t IsV4l2Control(int32_t fd, int32_t control, struct v4l2_queryctrl *queryctrl);
 
-  int v4l2GetControl(int fd, int control);
-  int v4l2SetControl(int fd, int control, int value);
-  int v4l2UpControl(int fd, int control);
-  int v4l2DownControl(int fd, int control);
-  int v4l2ToggleControl(int fd, int control);
-  int v4l2ResetControl(int fd, int control);
+  int32_t v4l2GetControl(int32_t fd, int32_t control);
+  int32_t v4l2SetControl(int32_t fd, int32_t control, int32_t value);
+  int32_t v4l2UpControl(int32_t fd, int32_t control);
+  int32_t v4l2DownControl(int32_t fd, int32_t control);
+  int32_t v4l2ToggleControl(int32_t fd, int32_t control);
+  int32_t v4l2ResetControl(int32_t fd, int32_t control);
 
 private:
-  int debug_;
+  int32_t debug_;
+  struct vdIn *video_;
 };

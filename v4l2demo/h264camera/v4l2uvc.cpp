@@ -22,11 +22,11 @@
 #                                                                              #
 *******************************************************************************/
 
-
 #include "debug.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/videodev2.h>
+#include <new>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,7 +37,7 @@
 
 #include "v4l2uvc.h"
 
-static unsigned char dht_data[DHT_SIZE] = {
+static uint8_t dht_data[DHT_SIZE] = {
     0xff, 0xc4, 0x01, 0xa2, 0x00, 0x00, 0x01, 0x05, 0x01, 0x01, 0x01, 0x01,
     0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x02,
     0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x01, 0x00, 0x03,
@@ -76,15 +76,30 @@ static unsigned char dht_data[DHT_SIZE] = {
 
 V4l2Capture::V4l2Capture()
 {
-  debug_ = 0;
+    debug_ = 0;
 }
 
 V4l2Capture::~V4l2Capture()
 {
+    // if (vd->videodevice) {
+    //     delete[] vd->videodevice;
+    // }
+    // if (vd->status) {
+    //     delete[] vd->status;
+    // }
+    // if (vd->pictName) {
+    //     delete[] vd->pictName;
+    // }
+    // if (vd->tmpbuffer) {
+    //     delete[] vd->tmpbuffer;
+    // }
+    // if (vd->framebuffer) {
+    //     delete[] vd->framebuffer;
+    // }
 }
 
-int V4l2Capture::InitVideoIn(struct vdIn *vd, char *device, int width, int height,
-                 int format, int grabmethod)
+int32_t V4l2Capture::InitVideoIn(struct vdIn *vd, char *device, int32_t width, int32_t height,
+                                 int32_t format, int32_t grabmethod)
 {
 
     if (vd == NULL || device == NULL) {
@@ -99,9 +114,9 @@ int V4l2Capture::InitVideoIn(struct vdIn *vd, char *device, int width, int heigh
     vd->videodevice = NULL;
     vd->status      = NULL;
     vd->pictName    = NULL;
-    vd->videodevice = (char *)calloc(1, 16 * sizeof(char));
-    vd->status      = (char *)calloc(1, 100 * sizeof(char));
-    vd->pictName    = (char *)calloc(1, 80 * sizeof(char));
+    vd->videodevice = new (std::nothrow) char[16 * sizeof(int8_t)];
+    vd->status      = new (std::nothrow) int8_t[100 * sizeof(int8_t)];
+    vd->pictName    = new (std::nothrow) int8_t[80 * sizeof(int8_t)];
     snprintf(vd->videodevice, 12, "%s", device);
     vd->toggleAvi  = 0;
     vd->getPict    = 0;
@@ -119,14 +134,14 @@ int V4l2Capture::InitVideoIn(struct vdIn *vd, char *device, int width, int heigh
     vd->framesizeIn = (vd->width * vd->height << 1);
     switch (vd->formatIn) {
     case V4L2_PIX_FMT_MJPEG:
-        vd->tmpbuffer = (unsigned char *)calloc(1, (size_t)vd->framesizeIn);
-        if (!vd->tmpbuffer)
+        vd->tmpbuffer = new (std::nothrow) uint8_t[vd->framesizeIn];
+        if (!vd->tmpbuffer) {
             goto error;
-        vd->framebuffer =
-            (unsigned char *)calloc(1, (size_t)vd->width * (vd->height + 8) * 2);
+        }
+        vd->framebuffer = new (std::nothrow) uint8_t[vd->width * (vd->height + 8) * 2];
         break;
     case V4L2_PIX_FMT_YUYV:
-        vd->framebuffer = (unsigned char *)calloc(1, (size_t)vd->framesizeIn);
+        vd->framebuffer = new (std::nothrow) uint8_t[vd->framesizeIn];
         break;
     default:
         TestAp_Printf(TESTAP_DBG_ERR, " should never arrive exit fatal !!\n");
@@ -138,17 +153,17 @@ int V4l2Capture::InitVideoIn(struct vdIn *vd, char *device, int width, int heigh
     }
     return 0;
 error:
-    free(vd->videodevice);
-    free(vd->status);
-    free(vd->pictName);
+    delete[] vd->videodevice;
+    delete[] vd->status;
+    delete[] vd->pictName;
     close(vd->fd);
     return -1;
 }
 
-int V4l2Capture::InitV4l2(struct vdIn *vd)
+int32_t V4l2Capture::InitV4l2(struct vdIn *vd)
 {
-    int i;
-    int ret = 0;
+    int32_t i;
+    int32_t ret = 0;
 
     if ((vd->fd = open(vd->videodevice, O_RDWR)) == -1) {
         perror("ERROR opening V4L interface \n");
@@ -255,10 +270,10 @@ fatal:
     return -1;
 }
 
-int V4l2Capture::VideoEnable(struct vdIn *vd)
+int32_t V4l2Capture::VideoEnable(struct vdIn *vd)
 {
-    int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    int ret;
+    int32_t type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    int32_t ret;
 
     ret = ioctl(vd->fd, VIDIOC_STREAMON, &type);
     if (ret < 0) {
@@ -269,10 +284,10 @@ int V4l2Capture::VideoEnable(struct vdIn *vd)
     return 0;
 }
 
-int V4l2Capture::VideoDisable(struct vdIn *vd)
+int32_t V4l2Capture::VideoDisable(struct vdIn *vd)
 {
-    int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    int ret;
+    int32_t type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    int32_t ret;
 
     ret = ioctl(vd->fd, VIDIOC_STREAMOFF, &type);
     if (ret < 0) {
@@ -283,9 +298,9 @@ int V4l2Capture::VideoDisable(struct vdIn *vd)
     return 0;
 }
 
-int V4l2Capture::UvcGrab(struct vdIn *vd)
+int32_t V4l2Capture::UvcGrab(struct vdIn *vd)
 {
-    int ret;
+    int32_t ret;
     //#define HEADERFRAME1 0xaf
     uint8_t HEADERFRAME1 = 0xaf;
 
@@ -344,9 +359,9 @@ err:
     return -1;
 }
 
-int V4l2Capture::CloseV4l2(struct vdIn *vd)
+int32_t V4l2Capture::CloseV4l2(struct vdIn *vd)
 {
-    int i;
+    int32_t i;
 
     if (vd->isstreaming) {
         VideoDisable(vd);
@@ -386,30 +401,30 @@ int V4l2Capture::CloseV4l2(struct vdIn *vd)
 }
 
 /* return >= 0 ok otherwhise -1 */
-int V4l2Capture::IsV4l2Control(int fd, int control, struct v4l2_queryctrl *queryctrl)
+int32_t V4l2Capture::IsV4l2Control(int32_t fd, int32_t control, struct v4l2_queryctrl *queryctrl)
 {
-    int err = 0;
+    int32_t err = 0;
 
     queryctrl->id = control;
     if ((err = ioctl(fd, VIDIOC_QUERYCTRL, queryctrl)) < 0) {
         TestAp_Printf(TESTAP_DBG_ERR, "ioctl querycontrol error %d \n", errno);
     } else if (queryctrl->flags & V4L2_CTRL_FLAG_DISABLED) {
-        TestAp_Printf(TESTAP_DBG_ERR, "control %s disabled \n", (char *)queryctrl->name);
+        TestAp_Printf(TESTAP_DBG_ERR, "control %s disabled \n", (int8_t *)queryctrl->name);
     } else if (queryctrl->type & V4L2_CTRL_TYPE_BOOLEAN) {
         return 1;
     } else if (queryctrl->type & V4L2_CTRL_TYPE_INTEGER) {
         return 0;
     } else {
-        TestAp_Printf(TESTAP_DBG_ERR, "contol %s unsupported  \n", (char *)queryctrl->name);
+        TestAp_Printf(TESTAP_DBG_ERR, "contol %s unsupported  \n", (int8_t *)queryctrl->name);
     }
     return -1;
 }
 
-int V4l2Capture::v4l2GetControl(int fd, int control)
+int32_t V4l2Capture::v4l2GetControl(int32_t fd, int32_t control)
 {
     struct v4l2_queryctrl queryctrl;
     struct v4l2_control control_s;
-    int err;
+    int32_t err;
 
     if (IsV4l2Control(fd, control, &queryctrl) < 0) {
         return -1;
@@ -422,12 +437,12 @@ int V4l2Capture::v4l2GetControl(int fd, int control)
     return control_s.value;
 }
 
-int V4l2Capture::v4l2SetControl(int fd, int control, int value)
+int32_t V4l2Capture::v4l2SetControl(int32_t fd, int32_t control, int32_t value)
 {
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
-    int min, max;
-    int err;
+    int32_t min, max;
+    int32_t err;
 
     if (IsV4l2Control(fd, control, &queryctrl) < 0) {
         return -1;
@@ -447,12 +462,12 @@ int V4l2Capture::v4l2SetControl(int fd, int control, int value)
     return 0;
 }
 
-int V4l2Capture::v4l2UpControl(int fd, int control)
+int32_t V4l2Capture::v4l2UpControl(int32_t fd, int32_t control)
 {
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
-    int max, current, step;
-    int err;
+    int32_t max, current, step;
+    int32_t err;
 
     if (IsV4l2Control(fd, control, &queryctrl) < 0) {
         return -1;
@@ -474,12 +489,12 @@ int V4l2Capture::v4l2UpControl(int fd, int control)
     return control_s.value;
 }
 
-int V4l2Capture::v4l2DownControl(int fd, int control)
+int32_t V4l2Capture::v4l2DownControl(int32_t fd, int32_t control)
 {
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
-    int min, current, step;
-    int err;
+    int32_t min, current, step;
+    int32_t err;
 
     if (IsV4l2Control(fd, control, &queryctrl) < 0) {
         return -1;
@@ -501,12 +516,12 @@ int V4l2Capture::v4l2DownControl(int fd, int control)
     return control_s.value;
 }
 
-int V4l2Capture::v4l2ToggleControl(int fd, int control)
+int32_t V4l2Capture::v4l2ToggleControl(int32_t fd, int32_t control)
 {
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
-    int current;
-    int err;
+    int32_t current;
+    int32_t err;
 
     if (IsV4l2Control(fd, control, &queryctrl) != 1) {
         return -1;
@@ -521,12 +536,12 @@ int V4l2Capture::v4l2ToggleControl(int fd, int control)
     return control_s.value;
 }
 
-int V4l2Capture::v4l2ResetControl(int fd, int control)
+int32_t V4l2Capture::v4l2ResetControl(int32_t fd, int32_t control)
 {
     struct v4l2_control control_s;
     struct v4l2_queryctrl queryctrl;
-    int val_def;
-    int err;
+    int32_t val_def;
+    int32_t err;
 
     if (IsV4l2Control(fd, control, &queryctrl) < 0) {
         return -1;

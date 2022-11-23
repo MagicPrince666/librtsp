@@ -14,12 +14,12 @@
 #include "h264_xu_ctrls.h"
 #include "debug.h"
 #include <errno.h>
+#include <new>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <new>
 
 #define Default_fwLen 13
 const uint8_t Default_fwData[Default_fwLen] = {
@@ -287,18 +287,19 @@ static struct uvc_xu_control_mapping rervision_xu_usr_mappings[] =
          V4L2_CTRL_TYPE_INTEGER,
          UVC_CTRL_DATA_TYPE_UNSIGNED}};
 
-H264XuCtrls::H264XuCtrls(int fd) : video_fd_(fd)
+H264XuCtrls::H264XuCtrls(int32_t fd) : video_fd_(fd)
 {
-    H264_fmt_    = nullptr;
-    current_fps_ = 24;
-    chip_id_     = CHIP_NONE;
+    H264_fmt_            = nullptr;
+    current_fps_         = 24;
+    chip_id_             = CHIP_NONE;
     i_h264_format_count_ = 0;
 }
 
-H264XuCtrls::~H264XuCtrls() {
-    if(H264_fmt_) {
+H264XuCtrls::~H264XuCtrls()
+{
+    if (H264_fmt_) {
         for (int32_t i = 0; i < i_h264_format_count_; i++) {
-            if(H264_fmt_[i].FrPay) {
+            if (H264_fmt_[i].FrPay) {
                 delete[] H264_fmt_[i].FrPay;
             }
         }
@@ -306,9 +307,9 @@ H264XuCtrls::~H264XuCtrls() {
     }
 }
 
-int H264XuCtrls::XuSetCur(uint8_t xu_unit, uint8_t xu_selector, uint16_t xu_size, uint8_t *xu_data)
+int32_t H264XuCtrls::XuSetCur(uint8_t xu_unit, uint8_t xu_selector, uint16_t xu_size, uint8_t *xu_data)
 {
-    int err = 0;
+    int32_t err = 0;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 0, 36)
     struct uvc_xu_control_query xctrl;
     xctrl.unit     = xu_unit;
@@ -328,9 +329,9 @@ int H264XuCtrls::XuSetCur(uint8_t xu_unit, uint8_t xu_selector, uint16_t xu_size
     return err;
 }
 
-int H264XuCtrls::XuGetCur(uint8_t xu_unit, uint8_t xu_selector, uint16_t xu_size, uint8_t *xu_data)
+int32_t H264XuCtrls::XuGetCur(uint8_t xu_unit, uint8_t xu_selector, uint16_t xu_size, uint8_t *xu_data)
 {
-    int err = 0;
+    int32_t err = 0;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 0, 36)
     struct uvc_xu_control_query xctrl;
     xctrl.unit     = xu_unit;
@@ -352,10 +353,9 @@ int H264XuCtrls::XuGetCur(uint8_t xu_unit, uint8_t xu_selector, uint16_t xu_size
 
 // XU ctrls ----------------------------------------------------------
 
-int H264XuCtrls::XuCtrlAdd(struct uvc_xu_control_info *info, struct uvc_xu_control_mapping *map)
+int32_t H264XuCtrls::XuCtrlAdd(struct uvc_xu_control_info *info, struct uvc_xu_control_mapping *map)
 {
-    int err = 0;
-
+    int32_t err = 0;
     /* try to add controls listed */
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(3, 0, 36)
     TestAp_Printf(TESTAP_DBG_FLOW, "Adding XU Ctrls - %s\n", map->name);
@@ -388,11 +388,11 @@ int H264XuCtrls::XuCtrlAdd(struct uvc_xu_control_info *info, struct uvc_xu_contr
     return 0;
 }
 
-int H264XuCtrls::XuInitCtrl()
+int32_t H264XuCtrls::XuInitCtrl()
 {
-    int i   = 0;
-    int err = 0;
-    int length;
+    int32_t i   = 0;
+    int32_t err = 0;
+    int32_t length;
     struct uvc_xu_control_info *xu_infos;
     struct uvc_xu_control_mapping *xu_mappings;
 
@@ -442,11 +442,11 @@ int H264XuCtrls::XuInitCtrl()
     return 0;
 }
 
-int H264XuCtrls::XuCtrlReadChipID()
+int32_t H264XuCtrls::XuCtrlReadChipID()
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuCtrlReadChipID ==>\n");
-    int ret = 0;
-    int err = 0;
+    int32_t ret = 0;
+    int32_t err = 0;
     uint8_t ctrldata[4];
 
     // uvc_xu_control parmeters
@@ -517,10 +517,10 @@ int H264XuCtrls::XuCtrlReadChipID()
     return ret;
 }
 
-int H264XuCtrls::H264GetFormat()
+int32_t H264XuCtrls::H264GetFormat()
 {
-    int i, j;
-    int success          = 1;
+    int32_t i, j;
+    int32_t success = 1;
 
     uint8_t *fwData = nullptr;
     uint16_t fwLen  = 0;
@@ -585,11 +585,11 @@ Skip_XU_GetFormat:
     return success;
 }
 
-int H264XuCtrls::H264CountFormat(uint8_t *Data, int len)
+int32_t H264XuCtrls::H264CountFormat(uint8_t *Data, int32_t len)
 {
-    int fmtCnt = 0;
-    int cur_len = 0;
-    int cur_fpsNum = 0;
+    int32_t fmtCnt     = 0;
+    int32_t cur_len    = 0;
+    int32_t cur_fpsNum = 0;
 
     if (Data == NULL || len == 0) {
         return 0;
@@ -619,12 +619,12 @@ int H264XuCtrls::H264CountFormat(uint8_t *Data, int len)
     return fmtCnt;
 }
 
-int H264XuCtrls::H264ParseFormat(uint8_t *Data, int len, struct H264Format *fmt)
+int32_t H264XuCtrls::H264ParseFormat(uint8_t *Data, int32_t len, struct H264Format *fmt)
 {
-    int cur_len    = 0;
-    int cur_fmtid  = 0;
-    int cur_fpsNum = 0;
-    int i;
+    int32_t cur_len    = 0;
+    int32_t cur_fmtid  = 0;
+    int32_t cur_fpsNum = 0;
+    int32_t i;
 
     while (cur_len < len) {
         // Copy Size
@@ -682,14 +682,14 @@ int H264XuCtrls::H264ParseFormat(uint8_t *Data, int len, struct H264Format *fmt)
     return 1;
 }
 
-int H264XuCtrls::H264GetFps(uint32_t FrPay)
+int32_t H264XuCtrls::H264GetFps(uint32_t FrPay)
 {
-    int fps = 0;
+    int32_t fps = 0;
     if (chip_id_ == CHIP_RER9420) {
         uint16_t frH = (FrPay & 0xFF000000) >> 16;
         uint16_t frL = (FrPay & 0x00FF0000) >> 16;
         uint16_t fr  = (frH | frL);
-        fps = ((uint32_t)10000000 / fr) >> 8;
+        fps          = ((uint32_t)10000000 / fr) >> 8;
     } else if ((chip_id_ == CHIP_RER9421) || (chip_id_ == CHIP_RER9422)) {
         fps = ((uint32_t)10000000 / (uint16_t)FrPay) >> 8;
     }
@@ -697,11 +697,11 @@ int H264XuCtrls::H264GetFps(uint32_t FrPay)
     return fps;
 }
 
-int H264XuCtrls::XuH264InitFormat()
+int32_t H264XuCtrls::XuH264InitFormat()
 {
-    int i                = 0;
-    int ret              = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t ret          = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -744,12 +744,12 @@ int H264XuCtrls::XuH264InitFormat()
     return ret;
 }
 
-int H264XuCtrls::XuH264GetFormatLength(uint16_t *fwLen)
+int32_t H264XuCtrls::XuH264GetFormatLength(uint16_t *fwLen)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264GetFormatLength ==>\n");
-    int i                = 0;
-    int ret              = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t ret          = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -794,17 +794,17 @@ int H264XuCtrls::XuH264GetFormatLength(uint16_t *fwLen)
     return ret;
 }
 
-int H264XuCtrls::XuH264GetFormatData(uint8_t *fwData, uint16_t fwLen)
+int32_t H264XuCtrls::XuH264GetFormatData(uint8_t *fwData, uint16_t fwLen)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264GetFormatData ==>\n");
-    int i                = 0;
-    int ret              = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t ret          = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
-    int loop     = 0;
-    int LoopCnt  = (fwLen % 11) ? (fwLen / 11) + 1 : (fwLen / 11);
-    int Copyleft = fwLen;
+    int32_t loop     = 0;
+    int32_t LoopCnt  = (fwLen % 11) ? (fwLen / 11) + 1 : (fwLen / 11);
+    int32_t Copyleft = fwLen;
 
     // uvc_xu_control parmeters
     uint8_t xu_unit     = 0;
@@ -869,7 +869,7 @@ int H264XuCtrls::XuH264GetFormatData(uint8_t *fwData, uint16_t fwLen)
     return ret;
 }
 
-int H264XuCtrls::XuH264SetFormat(struct Cur_H264Format fmt)
+int32_t H264XuCtrls::XuH264SetFormat(struct Cur_H264Format fmt)
 {
     // Need to get H264 format first
     if (H264_fmt_ == nullptr) {
@@ -891,8 +891,8 @@ int H264XuCtrls::XuH264SetFormat(struct Cur_H264Format fmt)
                       H264GetFps(H264_fmt_[fmt.FmtId].FrPay[fmt.FrameRateId * 2]));
     }
 
-    int ret              = 0;
-    int err              = 0;
+    int32_t ret          = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -971,11 +971,11 @@ int H264XuCtrls::XuH264SetFormat(struct Cur_H264Format fmt)
     return ret;
 }
 
-int H264XuCtrls::XuH264GetMode(int *Mode)
+int32_t H264XuCtrls::XuH264GetMode(int32_t *Mode)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264GetMode ==>\n");
-    int ret              = 0;
-    int err              = 0;
+    int32_t ret          = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1024,11 +1024,11 @@ int H264XuCtrls::XuH264GetMode(int *Mode)
     return ret;
 }
 
-int H264XuCtrls::XuH264SetMode(int Mode)
+int32_t H264XuCtrls::XuH264SetMode(int32_t Mode)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264SetMode (0x%x) ==>\n", Mode);
-    int ret              = 0;
-    int err              = 0;
+    int32_t ret          = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1074,12 +1074,12 @@ int H264XuCtrls::XuH264SetMode(int Mode)
     return ret;
 }
 
-int H264XuCtrls::XuH264GetQPLimit(int *QP_Min, int *QP_Max)
+int32_t H264XuCtrls::XuH264GetQPLimit(int32_t *QP_Min, int32_t *QP_Max)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264GetQPLimit ==>\n");
-    int i                = 0;
-    int ret              = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t ret          = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1130,17 +1130,17 @@ int H264XuCtrls::XuH264GetQPLimit(int *QP_Min, int *QP_Max)
     return ret;
 }
 
-int H264XuCtrls::XuH264GetQP(int *QP_Val)
+int32_t H264XuCtrls::XuH264GetQP(int32_t *QP_Val)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264GetQP ==>\n");
-    //	int i = 0;
-    int ret              = 0;
-    int err              = 0;
+    //	int32_t i = 0;
+    int32_t ret          = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
     *QP_Val              = -1;
 
     if (chip_id_ == CHIP_RER9420) {
-        int qp_min, qp_max;
+        int32_t qp_min, qp_max;
         XuH264GetQPLimit(&qp_min, &qp_max);
     }
 
@@ -1190,11 +1190,11 @@ int H264XuCtrls::XuH264GetQP(int *QP_Val)
     return ret;
 }
 
-int H264XuCtrls::XuH264SetQP(int QP_Val)
+int32_t H264XuCtrls::XuH264SetQP(int32_t QP_Val)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264SetQP (0x%x) ==>\n", QP_Val);
-    int ret              = 0;
-    int err              = 0;
+    int32_t ret          = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1240,15 +1240,15 @@ int H264XuCtrls::XuH264SetQP(int QP_Val)
     return ret;
 }
 
-int H264XuCtrls::XuH264GetBitRate(double *BitRate)
+int32_t H264XuCtrls::XuH264GetBitRate(double *BitRate)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264GetBitRate ==>\n");
-    int i                = 0;
-    int ret              = 0;
-    int err              = 0;
-    uint8_t ctrldata[11] = {0};
-    int BitRate_CtrlNum  = 0;
-    *BitRate             = -1.0;
+    int32_t i               = 0;
+    int32_t ret             = 0;
+    int32_t err             = 0;
+    uint8_t ctrldata[11]    = {0};
+    int32_t BitRate_CtrlNum = 0;
+    *BitRate                = -1.0;
 
     // uvc_xu_control parmeters
     uint8_t xu_unit     = 0;
@@ -1315,13 +1315,13 @@ int H264XuCtrls::XuH264GetBitRate(double *BitRate)
     return ret;
 }
 
-int H264XuCtrls::XuH264SetBitRate(double BitRate)
+int32_t H264XuCtrls::XuH264SetBitRate(double BitRate)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264SetBitRate (%.2f) ==>\n", BitRate);
-    int ret              = 0;
-    int err              = 0;
-    uint8_t ctrldata[11] = {0};
-    int BitRate_CtrlNum  = 0;
+    int32_t ret             = 0;
+    int32_t err             = 0;
+    uint8_t ctrldata[11]    = {0};
+    int32_t BitRate_CtrlNum = 0;
 
     // uvc_xu_control parmeters
     uint8_t xu_unit     = 0;
@@ -1356,14 +1356,14 @@ int H264XuCtrls::XuH264SetBitRate(double BitRate)
     // Set Bit Rate Ctrl Number
     if (chip_id_ == CHIP_RER9420) {
         // Bit Rate = BitRate_Ctrl_Num*512*fps*8/1000 (Kbps)
-        BitRate_CtrlNum = (int)((BitRate * 1024) / (512 * current_fps_ * 8));
+        BitRate_CtrlNum = (int32_t)((BitRate * 1024) / (512 * current_fps_ * 8));
         xu_data[0]      = (BitRate_CtrlNum & 0xFF00) >> 8; // BitRate ctrl Num
         xu_data[1]      = (BitRate_CtrlNum & 0x00FF);
     } else if ((chip_id_ == CHIP_RER9421) || (chip_id_ == CHIP_RER9422)) {
         // Bit Rate = BitRate_Ctrl_Num*512*fps*8/1000 (Kbps)
-        xu_data[0] = ((int)BitRate & 0x00FF0000) >> 16;
-        xu_data[1] = ((int)BitRate & 0x0000FF00) >> 8;
-        xu_data[2] = ((int)BitRate & 0x000000FF);
+        xu_data[0] = ((int32_t)BitRate & 0x00FF0000) >> 16;
+        xu_data[1] = ((int32_t)BitRate & 0x0000FF00) >> 8;
+        xu_data[2] = ((int32_t)BitRate & 0x000000FF);
     }
 
     if ((err = XuSetCur(xu_unit, xu_selector, xu_size, xu_data)) < 0) {
@@ -1378,13 +1378,13 @@ int H264XuCtrls::XuH264SetBitRate(double BitRate)
     return ret;
 }
 
-int H264XuCtrls::XuH264SetIFrame()
+int32_t H264XuCtrls::XuH264SetIFrame()
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264SetIFrame ==>\n");
-    int ret              = 0;
-    int err              = 0;
+    int32_t ret          = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
-    //	int BitRate_CtrlNum = 0;
+    //	int32_t BitRate_CtrlNum = 0;
 
     // uvc_xu_control parmeters
     uint8_t xu_unit     = 0;
@@ -1431,10 +1431,10 @@ int H264XuCtrls::XuH264SetIFrame()
     return ret;
 }
 
-int H264XuCtrls::XuH264GetSEI(uint8_t *SEI)
+int32_t H264XuCtrls::XuH264GetSEI(uint8_t *SEI)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264GetSEI ==>\n");
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1478,10 +1478,10 @@ int H264XuCtrls::XuH264GetSEI(uint8_t *SEI)
     return 0;
 }
 
-int H264XuCtrls::XuH264SetSEI(uint8_t SEI)
+int32_t H264XuCtrls::XuH264SetSEI(uint8_t SEI)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264SetSEI ==>\n");
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1522,10 +1522,10 @@ int H264XuCtrls::XuH264SetSEI(uint8_t SEI)
     return 0;
 }
 
-int H264XuCtrls::XuH264GetGOP(uint32_t *GOP)
+int32_t H264XuCtrls::XuH264GetGOP(uint32_t *GOP)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264GetGOP ==>\n");
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1563,10 +1563,10 @@ int H264XuCtrls::XuH264GetGOP(uint32_t *GOP)
     return 0;
 }
 
-int H264XuCtrls::XuH264SetGOP(uint32_t GOP)
+int32_t H264XuCtrls::XuH264SetGOP(uint32_t GOP)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuH264SetGOP ==>\n");
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1603,12 +1603,12 @@ int H264XuCtrls::XuH264SetGOP(uint32_t GOP)
     return 0;
 }
 
-int H264XuCtrls::XuGet(struct uvc_xu_control *xctrl)
+int32_t H264XuCtrls::XuGet(struct uvc_xu_control *xctrl)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XU Get ==>\n");
-    int i   = 0;
-    int ret = 0;
-    int err = 0;
+    int32_t i   = 0;
+    int32_t ret = 0;
+    int32_t err = 0;
 
     // XU Set
     if ((err = XuSetCur(xctrl->unit, xctrl->selector, xctrl->size, xctrl->data)) < 0) {
@@ -1633,12 +1633,12 @@ int H264XuCtrls::XuGet(struct uvc_xu_control *xctrl)
     return ret;
 }
 
-int H264XuCtrls::XuSet(struct uvc_xu_control xctrl)
+int32_t H264XuCtrls::XuSet(struct uvc_xu_control xctrl)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XU Set ==>\n");
-    int i   = 0;
-    int ret = 0;
-    int err = 0;
+    int32_t i   = 0;
+    int32_t ret = 0;
+    int32_t err = 0;
 
     // XU Set
     for (i = 0; i < xctrl.size; i++)
@@ -1655,10 +1655,10 @@ int H264XuCtrls::XuSet(struct uvc_xu_control xctrl)
     return ret;
 }
 
-int H264XuCtrls::XuAsicRead(uint32_t Addr, uint8_t *AsicData)
+int32_t H264XuCtrls::XuAsicRead(uint32_t Addr, uint8_t *AsicData)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuAsicRead ==>\n");
-    int ret = 0;
+    int32_t ret = 0;
     uint8_t ctrldata[4];
 
     // uvc_xu_control parmeters
@@ -1697,10 +1697,10 @@ int H264XuCtrls::XuAsicRead(uint32_t Addr, uint8_t *AsicData)
     return ret;
 }
 
-int H264XuCtrls::XuAsicWrite(uint32_t Addr, uint8_t AsicData)
+int32_t H264XuCtrls::XuAsicWrite(uint32_t Addr, uint8_t AsicData)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuAsicWrite ==>\n");
-    int ret = 0;
+    int32_t ret = 0;
     uint8_t ctrldata[4];
 
     // uvc_xu_control parmeters
@@ -1726,11 +1726,11 @@ int H264XuCtrls::XuAsicWrite(uint32_t Addr, uint8_t AsicData)
     return ret;
 }
 
-int H264XuCtrls::XuMultiGetStatus(struct Multistream_Info *status)
+int32_t H264XuCtrls::XuMultiGetStatus(struct Multistream_Info *status)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiGetStatus ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1769,11 +1769,11 @@ int H264XuCtrls::XuMultiGetStatus(struct Multistream_Info *status)
     return 0;
 }
 
-int H264XuCtrls::XuMultiGetInfo(struct Multistream_Info *Info)
+int32_t H264XuCtrls::XuMultiGetInfo(struct Multistream_Info *Info)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiGetInfo ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1812,11 +1812,11 @@ int H264XuCtrls::XuMultiGetInfo(struct Multistream_Info *Info)
     return 0;
 }
 
-int H264XuCtrls::XuMultiSetType(uint32_t format)
+int32_t H264XuCtrls::XuMultiSetType(uint32_t format)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiSetType (%d) ==>\n", format);
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1856,13 +1856,13 @@ int H264XuCtrls::XuMultiSetType(uint32_t format)
     return 0;
 }
 
-int H264XuCtrls::XuMultiSetEnable(uint8_t enable)
+int32_t H264XuCtrls::XuMultiSetEnable(uint8_t enable)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiSetEnable ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
-    //	int BitRate_CtrlNum = 0;
+    //	int32_t BitRate_CtrlNum = 0;
 
     // uvc_xu_control parmeters
     uint8_t xu_unit     = XU_RERVISION_USR_ID;
@@ -1900,11 +1900,11 @@ int H264XuCtrls::XuMultiSetEnable(uint8_t enable)
     return 0;
 }
 
-int H264XuCtrls::XuMultiGetEnable(uint8_t *enable)
+int32_t H264XuCtrls::XuMultiGetEnable(uint8_t *enable)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiGetEnable ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -1943,13 +1943,13 @@ int H264XuCtrls::XuMultiGetEnable(uint8_t *enable)
 }
 
 #if 0
-int H264XuCtrls::XuMultiSetBitRate(uint32_t BitRate1, uint32_t BitRate2, uint32_t BitRate3)
+int32_t H264XuCtrls::XuMultiSetBitRate(uint32_t BitRate1, uint32_t BitRate2, uint32_t BitRate3)
 {	
 	TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiSetBitRate  BiteRate1=%d  BiteRate2=%d  BiteRate3=%d   ==>\n",BitRate1, BitRate2, BitRate3);
 
-	int err = 0;
+	int32_t err = 0;
 	uint8_t ctrldata[11]={0};
-	int BitRate_CtrlNum = 0;
+	int32_t BitRate_CtrlNum = 0;
 
 	//uvc_xu_control parmeters
 	uint8_t xu_unit= XU_RERVISION_USR_ID; 
@@ -1993,15 +1993,15 @@ int H264XuCtrls::XuMultiSetBitRate(uint32_t BitRate1, uint32_t BitRate2, uint32_
 	return 0;
 }
 
-int H264XuCtrls::XuMultiGetBitRate(int fd)
+int32_t H264XuCtrls::XuMultiGetBitRate(int32_t fd)
 {	
 	TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiGetBitRate  ==>\n");
 
-	int i = 0;
-	int err = 0;
-	int BitRate1 = 0;
-	int BitRate2 = 0;
-	int BitRate3 = 0;
+	int32_t i = 0;
+	int32_t err = 0;
+	int32_t BitRate1 = 0;
+	int32_t BitRate2 = 0;
+	int32_t BitRate3 = 0;
 	uint8_t ctrldata[11]={0};
 
 	//uvc_xu_control parmeters
@@ -2051,13 +2051,13 @@ int H264XuCtrls::XuMultiGetBitRate(int fd)
 }
 #endif
 
-int H264XuCtrls::XuMultiSetBitRate(uint32_t StreamID, uint32_t BitRate)
+int32_t H264XuCtrls::XuMultiSetBitRate(uint32_t StreamID, uint32_t BitRate)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiSetBitRate  StreamID=%d  BiteRate=%d  ==>\n", StreamID, BitRate);
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
-    //	int BitRate_CtrlNum = 0;
+    //	int32_t BitRate_CtrlNum = 0;
 
     // uvc_xu_control parmeters
     uint8_t xu_unit     = XU_RERVISION_USR_ID;
@@ -2095,12 +2095,12 @@ int H264XuCtrls::XuMultiSetBitRate(uint32_t StreamID, uint32_t BitRate)
     return 0;
 }
 
-int H264XuCtrls::XuMultiGetBitRate(uint32_t StreamID, uint32_t *BitRate)
+int32_t H264XuCtrls::XuMultiGetBitRate(uint32_t StreamID, uint32_t *BitRate)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiGetBitRate  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2154,13 +2154,13 @@ int H264XuCtrls::XuMultiGetBitRate(uint32_t StreamID, uint32_t *BitRate)
     return 0;
 }
 
-int H264XuCtrls::XuMultiSetQP(uint32_t StreamID, uint32_t QP_Val)
+int32_t H264XuCtrls::XuMultiSetQP(uint32_t StreamID, uint32_t QP_Val)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiSetQP  StreamID=%d  QP_Val=%d  ==>\n", StreamID, QP_Val);
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
-    //	int BitRate_CtrlNum = 0;
+    //	int32_t BitRate_CtrlNum = 0;
 
     // uvc_xu_control parmeters
     uint8_t xu_unit     = XU_RERVISION_USR_ID;
@@ -2219,12 +2219,12 @@ int H264XuCtrls::XuMultiSetQP(uint32_t StreamID, uint32_t QP_Val)
     return 0;
 }
 
-int H264XuCtrls::XuMultiGetQP(uint32_t StreamID, uint32_t *QP_val)
+int32_t H264XuCtrls::XuMultiGetQP(uint32_t StreamID, uint32_t *QP_val)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiGetQP  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2290,13 +2290,13 @@ int H264XuCtrls::XuMultiGetQP(uint32_t StreamID, uint32_t *QP_val)
     return 0;
 }
 
-int H264XuCtrls::XuMultiSetH264Mode(uint32_t StreamID, uint32_t Mode)
+int32_t H264XuCtrls::XuMultiSetH264Mode(uint32_t StreamID, uint32_t Mode)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiSetH264Mode  StreamID=%d  Mode=%d  ==>\n", StreamID, Mode);
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
-    //	int BitRate_CtrlNum = 0;
+    //	int32_t BitRate_CtrlNum = 0;
 
     // uvc_xu_control parmeters
     uint8_t xu_unit     = XU_RERVISION_USR_ID;
@@ -2332,12 +2332,12 @@ int H264XuCtrls::XuMultiSetH264Mode(uint32_t StreamID, uint32_t Mode)
     return 0;
 }
 
-int H264XuCtrls::XuMultiGetH264Mode(uint32_t StreamID, uint32_t *Mode)
+int32_t H264XuCtrls::XuMultiGetH264Mode(uint32_t StreamID, uint32_t *Mode)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiGetH264Mode  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2403,13 +2403,13 @@ int H264XuCtrls::XuMultiGetH264Mode(uint32_t StreamID, uint32_t *Mode)
     return 0;
 }
 
-int H264XuCtrls::XuMultiSetSubStreamGOP(uint32_t sub_gop)
+int32_t H264XuCtrls::XuMultiSetSubStreamGOP(uint32_t sub_gop)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XU_Multi_Set_SubStream_GOP sub_gop=%d  ==>\n", sub_gop);
 
-    int err = 0, main_gop = 0;
+    int32_t err = 0, main_gop = 0;
     uint8_t ctrldata[11] = {0};
-    //    int BitRate_CtrlNum = 0;
+    //    int32_t BitRate_CtrlNum = 0;
 
     // uvc_xu_control parmeters
     uint8_t xu_unit     = XU_RERVISION_USR_ID;
@@ -2451,12 +2451,12 @@ int H264XuCtrls::XuMultiSetSubStreamGOP(uint32_t sub_gop)
     return 0;
 }
 
-int H264XuCtrls::XuMultiGetSubStreamGOP(uint32_t *sub_gop)
+int32_t H264XuCtrls::XuMultiGetSubStreamGOP(uint32_t *sub_gop)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMultiGetSubStreamGOP  ==>\n");
 
-    //	int i = 0;
-    int err              = 0, main_gop, get_gop;
+    //	int32_t i = 0;
+    int32_t err          = 0, main_gop, get_gop;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2497,11 +2497,11 @@ int H264XuCtrls::XuMultiGetSubStreamGOP(uint32_t *sub_gop)
     return 0;
 }
 
-int H264XuCtrls::XuOsdTimerCtrl(uint8_t enable)
+int32_t H264XuCtrls::XuOsdTimerCtrl(uint8_t enable)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdTimerCtrl  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2538,12 +2538,12 @@ int H264XuCtrls::XuOsdTimerCtrl(uint8_t enable)
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetRTC(uint32_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second)
+int32_t H264XuCtrls::XuOsdSetRTC(uint32_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetRTC  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2590,12 +2590,12 @@ int H264XuCtrls::XuOsdSetRTC(uint32_t year, uint8_t month, uint8_t day, uint8_t 
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetRTC(uint32_t *year, uint8_t *month, uint8_t *day, uint8_t *hour, uint8_t *minute, uint8_t *second)
+int32_t H264XuCtrls::XuOsdGetRTC(uint32_t *year, uint8_t *month, uint8_t *day, uint8_t *hour, uint8_t *minute, uint8_t *second)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetRTC  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2649,11 +2649,11 @@ int H264XuCtrls::XuOsdGetRTC(uint32_t *year, uint8_t *month, uint8_t *day, uint8
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetSize(uint8_t LineSize, uint8_t BlockSize)
+int32_t H264XuCtrls::XuOsdSetSize(uint8_t LineSize, uint8_t BlockSize)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetSize  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2696,12 +2696,12 @@ int H264XuCtrls::XuOsdSetSize(uint8_t LineSize, uint8_t BlockSize)
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetSize(uint8_t *LineSize, uint8_t *BlockSize)
+int32_t H264XuCtrls::XuOsdGetSize(uint8_t *LineSize, uint8_t *BlockSize)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetSize  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2746,11 +2746,11 @@ int H264XuCtrls::XuOsdGetSize(uint8_t *LineSize, uint8_t *BlockSize)
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetColor(uint8_t FontColor, uint8_t BorderColor)
+int32_t H264XuCtrls::XuOsdSetColor(uint8_t FontColor, uint8_t BorderColor)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetColor  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2796,12 +2796,12 @@ int H264XuCtrls::XuOsdSetColor(uint8_t FontColor, uint8_t BorderColor)
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetColor(uint8_t *FontColor, uint8_t *BorderColor)
+int32_t H264XuCtrls::XuOsdGetColor(uint8_t *FontColor, uint8_t *BorderColor)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetColor  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2846,11 +2846,11 @@ int H264XuCtrls::XuOsdGetColor(uint8_t *FontColor, uint8_t *BorderColor)
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetEnable(uint8_t Enable_Line, uint8_t Enable_Block)
+int32_t H264XuCtrls::XuOsdSetEnable(uint8_t Enable_Line, uint8_t Enable_Block)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetEnable  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2887,12 +2887,12 @@ int H264XuCtrls::XuOsdSetEnable(uint8_t Enable_Line, uint8_t Enable_Block)
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetEnable(uint8_t *Enable_Line, uint8_t *Enable_Block)
+int32_t H264XuCtrls::XuOsdGetEnable(uint8_t *Enable_Line, uint8_t *Enable_Block)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetEnable  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2938,11 +2938,11 @@ int H264XuCtrls::XuOsdGetEnable(uint8_t *Enable_Line, uint8_t *Enable_Block)
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetAutoScale(uint8_t Enable_Line, uint8_t Enable_Block)
+int32_t H264XuCtrls::XuOsdSetAutoScale(uint8_t Enable_Line, uint8_t Enable_Block)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetAutoScale  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -2980,12 +2980,12 @@ int H264XuCtrls::XuOsdSetAutoScale(uint8_t Enable_Line, uint8_t Enable_Block)
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetAutoScale(uint8_t *Enable_Line, uint8_t *Enable_Block)
+int32_t H264XuCtrls::XuOsdGetAutoScale(uint8_t *Enable_Line, uint8_t *Enable_Block)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetAutoScale  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -3030,11 +3030,11 @@ int H264XuCtrls::XuOsdGetAutoScale(uint8_t *Enable_Line, uint8_t *Enable_Block)
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetMultiSize(uint8_t Stream0, uint8_t Stream1, uint8_t Stream2)
+int32_t H264XuCtrls::XuOsdSetMultiSize(uint8_t Stream0, uint8_t Stream1, uint8_t Stream2)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetMultiSize  %d   %d   %d  ==>\n", Stream0, Stream1, Stream2);
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -3073,12 +3073,12 @@ int H264XuCtrls::XuOsdSetMultiSize(uint8_t Stream0, uint8_t Stream1, uint8_t Str
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetMultiSize(uint8_t *Stream0, uint8_t *Stream1, uint8_t *Stream2)
+int32_t H264XuCtrls::XuOsdGetMultiSize(uint8_t *Stream0, uint8_t *Stream1, uint8_t *Stream2)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetMultiSize  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -3125,11 +3125,11 @@ int H264XuCtrls::XuOsdGetMultiSize(uint8_t *Stream0, uint8_t *Stream1, uint8_t *
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetStartPosition(uint8_t OSD_Type, uint32_t RowStart, uint32_t ColStart)
+int32_t H264XuCtrls::XuOsdSetStartPosition(uint8_t OSD_Type, uint32_t RowStart, uint32_t ColStart)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetStartPosition  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -3174,12 +3174,12 @@ int H264XuCtrls::XuOsdSetStartPosition(uint8_t OSD_Type, uint32_t RowStart, uint
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetStartPosition(uint32_t *LineRowStart, uint32_t *LineColStart, uint32_t *BlockRowStart, uint32_t *BlockColStart)
+int32_t H264XuCtrls::XuOsdGetStartPosition(uint32_t *LineRowStart, uint32_t *LineColStart, uint32_t *BlockRowStart, uint32_t *BlockColStart)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetStartPosition  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -3228,11 +3228,11 @@ int H264XuCtrls::XuOsdGetStartPosition(uint32_t *LineRowStart, uint32_t *LineCol
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetMSStartPosition(uint8_t StreamID, uint8_t RowStart, uint8_t ColStart)
+int32_t H264XuCtrls::XuOsdSetMSStartPosition(uint8_t StreamID, uint8_t RowStart, uint8_t ColStart)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetMSStartPosition  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -3271,12 +3271,12 @@ int H264XuCtrls::XuOsdSetMSStartPosition(uint8_t StreamID, uint8_t RowStart, uin
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetMSStartPosition(uint8_t *S0_Row, uint8_t *S0_Col, uint8_t *S1_Row, uint8_t *S1_Col, uint8_t *S2_Row, uint8_t *S2_Col)
+int32_t H264XuCtrls::XuOsdGetMSStartPosition(uint8_t *S0_Row, uint8_t *S0_Col, uint8_t *S1_Row, uint8_t *S1_Col, uint8_t *S2_Row, uint8_t *S2_Col)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetMSStartPosition  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -3329,12 +3329,12 @@ int H264XuCtrls::XuOsdGetMSStartPosition(uint8_t *S0_Row, uint8_t *S0_Col, uint8
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetString(uint8_t group, char *String)
+int32_t H264XuCtrls::XuOsdSetString(uint8_t group, char *String)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetString  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -3375,12 +3375,12 @@ int H264XuCtrls::XuOsdSetString(uint8_t group, char *String)
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetString(uint8_t group, char *String)
+int32_t H264XuCtrls::XuOsdGetString(uint8_t group, char *String)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetString  ==>\n");
 
-    int i                = 0;
-    int err              = 0;
+    int32_t i            = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -3438,11 +3438,11 @@ int H264XuCtrls::XuOsdGetString(uint8_t group, char *String)
     return 0;
 }
 
-int H264XuCtrls::XuMDSetMode(uint8_t Enable)
+int32_t H264XuCtrls::XuMDSetMode(uint8_t Enable)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMDSetMode  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[24] = {0};
 
     // uvc_xu_control parmeters
@@ -3479,11 +3479,11 @@ int H264XuCtrls::XuMDSetMode(uint8_t Enable)
     return 0;
 }
 
-int H264XuCtrls::XuMDGetMode(uint8_t *Enable)
+int32_t H264XuCtrls::XuMDGetMode(uint8_t *Enable)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMDGetMode  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[24] = {0};
 
     // uvc_xu_control parmeters
@@ -3522,11 +3522,11 @@ int H264XuCtrls::XuMDGetMode(uint8_t *Enable)
     return 0;
 }
 
-int H264XuCtrls::XuMDSetThreshold(uint32_t MD_Threshold)
+int32_t H264XuCtrls::XuMDSetThreshold(uint32_t MD_Threshold)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMDSetThreshold  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[24] = {0};
 
     // uvc_xu_control parmeters
@@ -3564,11 +3564,11 @@ int H264XuCtrls::XuMDSetThreshold(uint32_t MD_Threshold)
     return 0;
 }
 
-int H264XuCtrls::XuMDGetThreshold(uint32_t *MD_Threshold)
+int32_t H264XuCtrls::XuMDGetThreshold(uint32_t *MD_Threshold)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMDGetThreshold  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[24] = {0};
 
     // uvc_xu_control parmeters
@@ -3607,11 +3607,11 @@ int H264XuCtrls::XuMDGetThreshold(uint32_t *MD_Threshold)
     return 0;
 }
 
-int H264XuCtrls::XuMDSetMask(uint8_t *Mask)
+int32_t H264XuCtrls::XuMDSetMask(uint8_t *Mask)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMDSetMask  ==>\n");
 
-    int err = 0;
+    int32_t err = 0;
     uint8_t i;
     uint8_t ctrldata[24] = {0};
 
@@ -3651,12 +3651,12 @@ int H264XuCtrls::XuMDSetMask(uint8_t *Mask)
     return 0;
 }
 
-int H264XuCtrls::XuMDGetMask(uint8_t *Mask)
+int32_t H264XuCtrls::XuMDGetMask(uint8_t *Mask)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMDGetMask  ==>\n");
 
-    int err = 0;
-    int i, j, k;
+    int32_t err = 0;
+    int32_t i, j, k;
     uint8_t ctrldata[24] = {0};
 
     // uvc_xu_control parmeters
@@ -3710,11 +3710,11 @@ int H264XuCtrls::XuMDGetMask(uint8_t *Mask)
     return 0;
 }
 
-int H264XuCtrls::XuMDSetResult(uint8_t *Result)
+int32_t H264XuCtrls::XuMDSetResult(uint8_t *Result)
 {
     // TestAp_Printf(TESTAP_DBG_FLOW, "XuMDSetResult  ==>\n");
 
-    int err = 0;
+    int32_t err = 0;
     uint8_t i;
     uint8_t ctrldata[24] = {0};
 
@@ -3754,12 +3754,12 @@ int H264XuCtrls::XuMDSetResult(uint8_t *Result)
     return 0;
 }
 
-int H264XuCtrls::XuMDGetResult(uint8_t *Result)
+int32_t H264XuCtrls::XuMDGetResult(uint8_t *Result)
 {
     // TestAp_Printf(TESTAP_DBG_FLOW, "XuMDGetResult  ==>\n");
 
-    int err = 0;
-    int i, j, k;
+    int32_t err = 0;
+    int32_t i, j, k;
     uint8_t ctrldata[24] = {0};
 
     // uvc_xu_control parmeters
@@ -3812,15 +3812,15 @@ int H264XuCtrls::XuMDGetResult(uint8_t *Result)
     return 0;
 }
 
-int H264XuCtrls::XuMJPGGetBitrate(uint32_t *MJPG_Bitrate)
+int32_t H264XuCtrls::XuMJPGGetBitrate(uint32_t *MJPG_Bitrate)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMJPGGetBitrate ==>\n");
-    int i                = 0;
-    int ret              = 0;
-    int err              = 0;
-    uint8_t ctrldata[11] = {0};
-    int BitRate_CtrlNum  = 0;
-    *MJPG_Bitrate        = 0;
+    int32_t i               = 0;
+    int32_t ret             = 0;
+    int32_t err             = 0;
+    uint8_t ctrldata[11]    = {0};
+    int32_t BitRate_CtrlNum = 0;
+    *MJPG_Bitrate           = 0;
 
     // uvc_xu_control parmeters
     uint8_t xu_unit     = 0;
@@ -3885,13 +3885,13 @@ int H264XuCtrls::XuMJPGGetBitrate(uint32_t *MJPG_Bitrate)
     return ret;
 }
 
-int H264XuCtrls::XuMJPGSetBitrate(uint32_t MJPG_Bitrate)
+int32_t H264XuCtrls::XuMJPGSetBitrate(uint32_t MJPG_Bitrate)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuMJPGSetBitrate (%x) ==>\n", MJPG_Bitrate);
-    int ret              = 0;
-    int err              = 0;
-    uint8_t ctrldata[11] = {0};
-    int BitRate_CtrlNum  = 0;
+    int32_t ret             = 0;
+    int32_t err             = 0;
+    uint8_t ctrldata[11]    = {0};
+    int32_t BitRate_CtrlNum = 0;
 
     // uvc_xu_control parmeters
     uint8_t xu_unit     = 0;
@@ -3949,11 +3949,11 @@ int H264XuCtrls::XuMJPGSetBitrate(uint32_t MJPG_Bitrate)
     return ret;
 }
 
-int H264XuCtrls::XuIMGSetMirror(uint8_t Mirror)
+int32_t H264XuCtrls::XuIMGSetMirror(uint8_t Mirror)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuIMGSetMirror  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4002,11 +4002,11 @@ int H264XuCtrls::XuIMGSetMirror(uint8_t Mirror)
     return 0;
 }
 
-int H264XuCtrls::XuIMGGetMirror(uint8_t *Mirror)
+int32_t H264XuCtrls::XuIMGGetMirror(uint8_t *Mirror)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuIMGGetMirror  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4057,11 +4057,11 @@ int H264XuCtrls::XuIMGGetMirror(uint8_t *Mirror)
     return 0;
 }
 
-int H264XuCtrls::XuIMGSetFlip(uint8_t Flip)
+int32_t H264XuCtrls::XuIMGSetFlip(uint8_t Flip)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuIMGSetFlip  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4110,11 +4110,11 @@ int H264XuCtrls::XuIMGSetFlip(uint8_t Flip)
     return 0;
 }
 
-int H264XuCtrls::XuIMGGetFlip(uint8_t *Flip)
+int32_t H264XuCtrls::XuIMGGetFlip(uint8_t *Flip)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuIMGGetFlip  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4165,11 +4165,11 @@ int H264XuCtrls::XuIMGGetFlip(uint8_t *Flip)
     return 0;
 }
 
-int H264XuCtrls::XuIMGSetColor(uint8_t Color)
+int32_t H264XuCtrls::XuIMGSetColor(uint8_t Color)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuIMGSetColor  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4218,11 +4218,11 @@ int H264XuCtrls::XuIMGSetColor(uint8_t Color)
     return 0;
 }
 
-int H264XuCtrls::XuIMGGetColor(uint8_t *Color)
+int32_t H264XuCtrls::XuIMGGetColor(uint8_t *Color)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuIMGGetColor  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4274,11 +4274,11 @@ int H264XuCtrls::XuIMGGetColor(uint8_t *Color)
 }
 
 //--------------------------------------------------------------------------------------
-int H264XuCtrls::XuOsdSetCarcamCtrl(uint8_t SpeedEn, uint8_t CoordinateEn, uint8_t CoordinateCtrl)
+int32_t H264XuCtrls::XuOsdSetCarcamCtrl(uint8_t SpeedEn, uint8_t CoordinateEn, uint8_t CoordinateCtrl)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetCarcamCtrl  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4317,11 +4317,11 @@ int H264XuCtrls::XuOsdSetCarcamCtrl(uint8_t SpeedEn, uint8_t CoordinateEn, uint8
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetCarcamCtrl(uint8_t *SpeedEn, uint8_t *CoordinateEn, uint8_t *CoordinateCtrl)
+int32_t H264XuCtrls::XuOsdGetCarcamCtrl(uint8_t *SpeedEn, uint8_t *CoordinateEn, uint8_t *CoordinateCtrl)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetCarcamCtrl  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4364,11 +4364,11 @@ int H264XuCtrls::XuOsdGetCarcamCtrl(uint8_t *SpeedEn, uint8_t *CoordinateEn, uin
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetSpeed(uint32_t Speed)
+int32_t H264XuCtrls::XuOsdSetSpeed(uint32_t Speed)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetSpeed  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4406,11 +4406,11 @@ int H264XuCtrls::XuOsdSetSpeed(uint32_t Speed)
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetSpeed(uint32_t *Speed)
+int32_t H264XuCtrls::XuOsdGetSpeed(uint32_t *Speed)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetSpeed  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4449,11 +4449,11 @@ int H264XuCtrls::XuOsdGetSpeed(uint32_t *Speed)
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetCoordinate1(uint8_t Direction, uint8_t *Vaule)
+int32_t H264XuCtrls::XuOsdSetCoordinate1(uint8_t Direction, uint8_t *Vaule)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetCoordinate1  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4499,11 +4499,11 @@ int H264XuCtrls::XuOsdSetCoordinate1(uint8_t Direction, uint8_t *Vaule)
     return 0;
 }
 
-int H264XuCtrls::XuOsdSetCoordinate2(uint8_t Direction, uint8_t Vaule1, unsigned long Vaule2, uint8_t Vaule3, unsigned long Vaule4)
+int32_t H264XuCtrls::XuOsdSetCoordinate2(uint8_t Direction, uint8_t Vaule1, unsigned long Vaule2, uint8_t Vaule3, unsigned long Vaule4)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdSetCoordinate2  ==>\n");
 
-    int err = 0;
+    int32_t err = 0;
     //	char i;
     uint8_t ctrldata[11] = {0};
 
@@ -4551,11 +4551,11 @@ int H264XuCtrls::XuOsdSetCoordinate2(uint8_t Direction, uint8_t Vaule1, unsigned
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetCoordinate1(uint8_t *Direction, uint8_t *Vaule)
+int32_t H264XuCtrls::XuOsdGetCoordinate1(uint8_t *Direction, uint8_t *Vaule)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetCoordinate1  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4606,11 +4606,11 @@ int H264XuCtrls::XuOsdGetCoordinate1(uint8_t *Direction, uint8_t *Vaule)
     return 0;
 }
 
-int H264XuCtrls::XuOsdGetCoordinate2(uint8_t *Direction, uint8_t *Vaule1, unsigned long *Vaule2, uint8_t *Vaule3, unsigned long *Vaule4)
+int32_t H264XuCtrls::XuOsdGetCoordinate2(uint8_t *Direction, uint8_t *Vaule1, unsigned long *Vaule2, uint8_t *Vaule3, unsigned long *Vaule4)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuOsdGetCoordinate2  ==>\n");
 
-    int err = 0;
+    int32_t err = 0;
     //	char i;
     uint8_t ctrldata[11] = {0};
 
@@ -4656,12 +4656,12 @@ int H264XuCtrls::XuOsdGetCoordinate2(uint8_t *Direction, uint8_t *Vaule1, unsign
     return 0;
 }
 
-int H264XuCtrls::XuGPIOCtrlSet(uint8_t GPIO_En, uint8_t GPIO_Value)
+int32_t H264XuCtrls::XuGPIOCtrlSet(uint8_t GPIO_En, uint8_t GPIO_Value)
 {
 
     TestAp_Printf(TESTAP_DBG_FLOW, "XuGPIOCtrlSet  ==>\n");
 
-    int err = 0;
+    int32_t err = 0;
     //	char i;
     uint8_t ctrldata[11] = {0};
 
@@ -4700,11 +4700,11 @@ int H264XuCtrls::XuGPIOCtrlSet(uint8_t GPIO_En, uint8_t GPIO_Value)
     return 0;
 }
 
-int H264XuCtrls::XuGPIOCtrlGet(uint8_t *GPIO_En, uint8_t *GPIO_OutputValue, uint8_t *GPIO_InputValue)
+int32_t H264XuCtrls::XuGPIOCtrlGet(uint8_t *GPIO_En, uint8_t *GPIO_OutputValue, uint8_t *GPIO_InputValue)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuGPIOCtrlGet  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4746,11 +4746,11 @@ int H264XuCtrls::XuGPIOCtrlGet(uint8_t *GPIO_En, uint8_t *GPIO_OutputValue, uint
     return 0;
 }
 
-int H264XuCtrls::XuFrameDropEnSet(uint8_t Stream1_En, uint8_t Stream2_En)
+int32_t H264XuCtrls::XuFrameDropEnSet(uint8_t Stream1_En, uint8_t Stream2_En)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuFrameDropEnSet  ==>\n");
 
-    int err = 0;
+    int32_t err = 0;
     //	char i;
     uint8_t ctrldata[11] = {0};
 
@@ -4789,11 +4789,11 @@ int H264XuCtrls::XuFrameDropEnSet(uint8_t Stream1_En, uint8_t Stream2_En)
     return 0;
 }
 
-int H264XuCtrls::XuFrameDropEnGet(uint8_t *Stream1_En, uint8_t *Stream2_En)
+int32_t H264XuCtrls::XuFrameDropEnGet(uint8_t *Stream1_En, uint8_t *Stream2_En)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuFrameDropEnGet  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4834,11 +4834,11 @@ int H264XuCtrls::XuFrameDropEnGet(uint8_t *Stream1_En, uint8_t *Stream2_En)
     return 0;
 }
 
-int H264XuCtrls::XuFrameDropCtrlSet(uint8_t Stream1_fps, uint8_t Stream2_fps)
+int32_t H264XuCtrls::XuFrameDropCtrlSet(uint8_t Stream1_fps, uint8_t Stream2_fps)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuFrameDropCtrlSet  ==>\n");
 
-    int err = 0;
+    int32_t err = 0;
     //	char i;
     uint8_t ctrldata[11] = {0};
 
@@ -4877,11 +4877,11 @@ int H264XuCtrls::XuFrameDropCtrlSet(uint8_t Stream1_fps, uint8_t Stream2_fps)
     return 0;
 }
 
-int H264XuCtrls::XuFrameDropCtrlGet(uint8_t *Stream1_fps, uint8_t *Stream2_fps)
+int32_t H264XuCtrls::XuFrameDropCtrlGet(uint8_t *Stream1_fps, uint8_t *Stream2_fps)
 {
     TestAp_Printf(TESTAP_DBG_FLOW, "XuFrameDropCtrlGet  ==>\n");
 
-    int err              = 0;
+    int32_t err          = 0;
     uint8_t ctrldata[11] = {0};
 
     // uvc_xu_control parmeters
@@ -4922,13 +4922,13 @@ int H264XuCtrls::XuFrameDropCtrlGet(uint8_t *Stream1_fps, uint8_t *Stream2_fps)
     return 0;
 }
 
-int H264XuCtrls::XuSFRead(uint32_t Addr, uint8_t *pData, uint32_t Length)
+int32_t H264XuCtrls::XuSFRead(uint32_t Addr, uint8_t *pData, uint32_t Length)
 {
 #define DEF_SF_RW_LENGTH 8
 #define min(a, b) a < b ? a : b
     // TestAp_Printf(TESTAP_DBG_FLOW, "XuSFRead  ==>\n");
 
-    int err = 0;
+    int32_t err = 0;
     uint32_t i, ValidLength = 0, loop = 0, remain = 0;
     uint8_t *pCopy       = pData;
     uint8_t ctrldata[11] = {0};
