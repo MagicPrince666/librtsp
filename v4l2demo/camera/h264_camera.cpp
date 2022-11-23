@@ -68,6 +68,8 @@ V4l2H264hData::~V4l2H264hData()
     if (camera_buf_) {
         delete[] camera_buf_;
     }
+
+    RINGBUF.Reset();
 }
 
 void V4l2H264hData::Init()

@@ -75,6 +75,7 @@ H264UvcCap::~H264UvcCap()
         }
         delete video_;
     }
+    RINGBUF.Reset();
 }
 
 int errnoexit(const char *s)
