@@ -54,20 +54,22 @@ $ cp x264.h ../librtsp/v4l2demo/x264/
 $ cp x264_config.h ../librtsp/v4l2demo/x264/
 ```
 
-```
-码农不易 尊重劳动
-作者：大魔王leo
-功能：
-QQ：846863428
-TEL: 15220187476
-email: 846863428@qq.com
-修改时间 ：2022-11-23
-```
+
 
 # Donation
 If you find my work useful and you want to encourage the development of more free resources, you can do it by donating…
 
 觉得不错给鼓励一下
+
+```
+码农不易 尊重劳动
+作者：大魔王leo
+功能：rtsp视频服务, 基于cijliu的librtsp重写的C++版本[原仓库地址](https://github.com/cijliu/librtsp.git), 支持v4l2 YUV 4:2:2 格式摄像头，以及可以输出H264的UVC摄像头
+QQ：846863428
+TEL: 15220187476
+email: 846863428@qq.com
+修改时间 ：2022-11-23
+```
 
 ![alipay](docs/alipay.jpg)
 ![wechat](docs/wechat.png)
