@@ -81,21 +81,21 @@ V4l2Capture::V4l2Capture()
 
 V4l2Capture::~V4l2Capture()
 {
-    // if (vd->videodevice) {
-    //     delete[] vd->videodevice;
-    // }
-    // if (vd->status) {
-    //     delete[] vd->status;
-    // }
-    // if (vd->pictName) {
-    //     delete[] vd->pictName;
-    // }
-    // if (vd->tmpbuffer) {
-    //     delete[] vd->tmpbuffer;
-    // }
-    // if (vd->framebuffer) {
-    //     delete[] vd->framebuffer;
-    // }
+    if (video_->videodevice) {
+        delete[] video_->videodevice;
+    }
+    if (video_->status) {
+        delete[] video_->status;
+    }
+    if (video_->pictName) {
+        delete[] video_->pictName;
+    }
+    if (video_->tmpbuffer) {
+        delete[] video_->tmpbuffer;
+    }
+    if (video_->framebuffer) {
+        delete[] video_->framebuffer;
+    }
 }
 
 int32_t V4l2Capture::InitVideoIn(struct vdIn *vd, char *device, int32_t width, int32_t height,
@@ -111,6 +111,7 @@ int32_t V4l2Capture::InitVideoIn(struct vdIn *vd, char *device, int32_t width, i
     if (grabmethod < 0 || grabmethod > 1) {
         grabmethod = 1; // mmap by default;
     }
+    video_ = vd;
     vd->videodevice = NULL;
     vd->status      = NULL;
     vd->pictName    = NULL;
