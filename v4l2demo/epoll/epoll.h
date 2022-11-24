@@ -1,7 +1,7 @@
 /**
  * @file epoll.h
  * @author 黄李全 (846863428@qq.com)
- * @brief 
+ * @brief 单例类 观察者模式
  * @version 0.1
  * @date 2022-11-18
  * @copyright Copyright (c) {2021} 个人版权所有
@@ -9,10 +9,10 @@
 #pragma once
 
 #include <sys/socket.h>
-#ifndef __APPLE__
-#include <sys/epoll.h>
-#else
+#ifdef __APPLE__
 #include <sys/event.h>
+#else
+#include <sys/epoll.h>
 #endif
 
 #include <functional>
