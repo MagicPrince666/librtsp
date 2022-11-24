@@ -144,7 +144,7 @@ void rtp_thread(std::string dev)
 #endif
 
     while (g_pause) {
-        uint64_t len = RINGBUF.Size();
+        uint64_t len = RINGBUF.Length();
         uint8_t *h264data = new uint8_t[len];
         RINGBUF.Read(h264data, len);
         h264_nalu_t *nalu = h264.NalPacketMalloc(h264data, len);
