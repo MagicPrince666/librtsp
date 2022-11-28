@@ -57,7 +57,7 @@ public:
      * @param fNumTruncatedBytes
      * @return int32_t
      */
-    int32_t getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes);
+    int32_t getData(void *fTo, uint32_t fMaxSize, uint32_t &fFrameSize, uint32_t &fNumTruncatedBytes);
 
 private:
     /**
