@@ -142,12 +142,23 @@ void rtp_thread(std::string dev)
     H264UvcCap h264_camera(dev, 1280, 720);
     h264_camera.Init();
 #endif
+    uint32_t fMaxSize = 1843200;
+    uint8_t *h264data = new uint8_t[fMaxSize];
 
     while (g_pause) {
-        uint64_t len = RINGBUF.Length();
-        uint8_t *h264data = new uint8_t[len];
-        RINGBUF.Read(h264data, len);
-        h264_nalu_t *nalu = h264.NalPacketMalloc(h264data, len);
+        uint32_t fFrameSize = 0;
+        // uint32_t fNumTruncatedBytes = 0;
+        // h264_camera.getData(h264data, fMaxSize, fFrameSize, fNumTruncatedBytes);
+        // if(fFrameSize <= 0) {
+        //     continue;
+        // }
+
+        fFrameSize = RINGBUF.Read(h264data, fMaxSize);
+        if(fFrameSize <= 0) {
+            continue;
+        }
+        h264_nalu_t *nalu = h264.NalPacketMalloc(h264data, fFrameSize);
+        
         h264_nalu_t *h264_nal = nalu;
 
         while (h264_nal && g_pause) {
@@ -177,13 +188,14 @@ void rtp_thread(std::string dev)
             h264_nal = h264_nal->next;
         }
         h264.NalPacketFree(nalu);
-        delete[] h264data;
+        
     }
 #if SOFT_H264
     softh264.StopCap();
 #else
     h264_camera.StopCap();
 #endif
+    delete[] h264data;
     udp_server.Deinit(&udp);
     udp_server.Deinit(&rtcp);
     spdlog::info("rtp exit");
