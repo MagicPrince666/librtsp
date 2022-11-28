@@ -36,7 +36,7 @@ target_link_libraries(${EXEC_NAME}
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     MESSAGE(STATUS "Now is ${CMAKE_SYSTEM_NAME}.")
 
-    set(EXEC_NAME2 v4l2_demo)
+    set(EXEC_NAME2 V4l2Demo)
     add_subdirectory(v4l2demo/camera)
     add_subdirectory(v4l2demo/h264camera)
     add_subdirectory(v4l2demo/epoll)

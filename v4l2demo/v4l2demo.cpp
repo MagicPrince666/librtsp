@@ -27,7 +27,7 @@
 #include "ringbuffer.h"
 #include "epoll.h"
 
-#define SOFT_H264 1
+#define SOFT_H264 0
 #if SOFT_H264
 #include "h264_camera.h"
 #else
@@ -139,7 +139,7 @@ void rtp_thread(std::string dev)
     V4l2H264hData softh264(dev);
     softh264.Init();
 #else
-    H264UvcCap h264_camera(dev);
+    H264UvcCap h264_camera(dev, 1280, 720);
     h264_camera.Init();
 #endif
 
@@ -313,9 +313,7 @@ int main(int argc, char *argv[])
     //     rtsp_thread_test.join();
     // }
 
-    while (1) {
-        MY_EPOLL.EpollLoop();
-    }
+    MY_EPOLL.EpollLoop();
 
     return 0;
 }
