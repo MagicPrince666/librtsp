@@ -53,8 +53,14 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         x264
         dl
     )
+
+    install(TARGETS ${EXEC_NAME} ${EXEC_NAME2}
+        RUNTIME DESTINATION /usr/sbin)
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
     MESSAGE(STATUS "Now is windows.")
+ELSEIF (CMAKE_SYSTEM_NAME MATCHES "darwin")
+    install(TARGETS ${EXEC_NAME}
+        RUNTIME DESTINATION /usr/sbin)
 ELSE ()
     MESSAGE(STATUS "Not support ${CMAKE_SYSTEM_NAME} yet")
 ENDIF ()
