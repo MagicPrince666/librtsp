@@ -10,8 +10,7 @@ include_directories(
 
 PROJECT(RtspDemo)
 
-cmake_host_system_information(RESULT var QUERY OS_PLATFORM)
-message("processor platfrom: ${var}")
+message("-- system processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
 set(CMAKE_CXX_STANDARD 17)
 
