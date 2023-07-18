@@ -1,0 +1,38 @@
+/**
+ * @file video_source.h
+ * @author 黄李全 (846863428@qq.com)
+ * @brief 
+ * @version 0.1
+ * @date 2023-07-18
+ * @copyright 个人版权所有 Copyright (c) 2023
+ */
+#pragma once
+
+#include <iostream>
+#include <memory>
+
+// 实际使用到的视频流
+class VideoStream {
+public:
+    VideoStream(std::string dev, uint32_t width, uint32_t height, uint32_t fps) 
+    :dev_name_(dev),
+    video_width_(width),
+    video_height_(height),
+    video_fps_(fps) {}
+
+    virtual ~VideoStream() {}
+    virtual int32_t getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes) = 0;
+
+protected:
+	std::string dev_name_;
+    uint32_t video_width_;
+    uint32_t video_height_;
+    uint32_t video_fps_;
+};
+
+// 视频工厂基类
+class VideoFactory
+{
+public:
+	virtual VideoStream* createVideoStream() = 0;
+};

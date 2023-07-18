@@ -1,14 +1,3 @@
-/*****************************************************************************************
-
- * 文件名  H264_UVC_TestAP.cpp
- * 描述    ：录制H264裸流
- * 平台    ：linux
- * 版本    ：V1.0.0
- * 作者    ：Leo Huang  QQ：846863428
- * 邮箱    ：Leo.huang@junchentech.cn
- * 修改时间  ：2017-06-28
-
-*****************************************************************************************/
 #include <chrono>
 #include <errno.h>
 #include <fcntl.h>
@@ -35,22 +24,20 @@
 
 #include "H264_UVC_Cap.h"
 #include "epoll.h"
-#include "ringbuffer.h"
 #include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
 #include "spdlog/fmt/ostr.h" // support for user defined types
 #include "spdlog/spdlog.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
-H264UvcCap::H264UvcCap(std::string dev, uint32_t width, uint32_t height)
-    : v4l2_device_(dev),
-      video_width_(width),
-      video_height_(height)
+H264UvcCap::H264UvcCap(std::string dev, uint32_t width, uint32_t height, uint32_t fps)
+    : VideoStream(dev, width, height, fps)
 {
     capturing_     = false;
     rec_fp1_       = nullptr;
     h264_xu_ctrls_ = nullptr;
     video_         = nullptr;
+    Init();
 }
 
 H264UvcCap::~H264UvcCap()
@@ -76,7 +63,6 @@ H264UvcCap::~H264UvcCap()
         }
         delete video_;
     }
-    RINGBUF.Reset();
 }
 
 int32_t errnoexit(const char *s)
@@ -112,24 +98,24 @@ bool H264UvcCap::CreateFile(bool yes)
 
 bool H264UvcCap::OpenDevice()
 {
-    spdlog::info("Open device {}", v4l2_device_);
+    spdlog::info("Open device {}", dev_name_);
     struct stat st;
 
-    if (-1 == stat(v4l2_device_.c_str(), &st)) {
-        spdlog::error("Cannot identify '{}': {}, {}", v4l2_device_, errno, strerror(errno));
+    if (-1 == stat(dev_name_.c_str(), &st)) {
+        spdlog::error("Cannot identify '{}': {}, {}", dev_name_, errno, strerror(errno));
         return false;
     }
 
     if (!S_ISCHR(st.st_mode)) {
-        spdlog::error("{} is not a device", v4l2_device_);
+        spdlog::error("{} is not a device", dev_name_);
         return false;
     }
 
     video_     = new (std::nothrow) vdIn;
-    video_->fd = open(v4l2_device_.c_str(), O_RDWR);
+    video_->fd = open(dev_name_.c_str(), O_RDWR);
 
     if (-1 == video_->fd) {
-        spdlog::error("Cannot open '{}': {}, {}", v4l2_device_, errno, strerror(errno));
+        spdlog::error("Cannot open '{}': {}, {}", dev_name_, errno, strerror(errno));
         return false;
     }
     return true;
@@ -147,7 +133,7 @@ int32_t H264UvcCap::InitMmap(void)
 
     if (-1 == xioctl(video_->fd, VIDIOC_REQBUFS, &req)) {
         if (EINVAL == errno) {
-            spdlog::error("{} does not support memory mapping", v4l2_device_);
+            spdlog::error("{} does not support memory mapping", dev_name_);
             return -1;
         } else {
             return errnoexit("VIDIOC_REQBUFS");
@@ -155,7 +141,7 @@ int32_t H264UvcCap::InitMmap(void)
     }
 
     if (req.count < 2) {
-        spdlog::error("Insufficient buffer memory on {}", v4l2_device_);
+        spdlog::error("Insufficient buffer memory on {}", dev_name_);
         return -1;
     }
 
@@ -221,7 +207,7 @@ int32_t H264UvcCap::InitDevice(int32_t width, int32_t height, int32_t format)
 
     if (-1 == xioctl(video_->fd, VIDIOC_QUERYCAP, &cap)) {
         if (EINVAL == errno) {
-            spdlog::error("{} is not a V4L2 device", v4l2_device_);
+            spdlog::error("{} is not a V4L2 device", dev_name_);
             return -1;
         } else {
             return errnoexit("VIDIOC_QUERYCAP");
@@ -229,12 +215,12 @@ int32_t H264UvcCap::InitDevice(int32_t width, int32_t height, int32_t format)
     }
 
     if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)) {
-        spdlog::error("{} is no video capture device", v4l2_device_);
+        spdlog::error("{} is no video capture device", dev_name_);
         return -1;
     }
 
     if (!(cap.capabilities & V4L2_CAP_STREAMING)) {
-        spdlog::error("{} does not support streaming i/o", v4l2_device_);
+        spdlog::error("{} does not support streaming i/o", dev_name_);
         return -1;
     }
 
@@ -280,6 +266,15 @@ int32_t H264UvcCap::InitDevice(int32_t width, int32_t height, int32_t format)
     }
 
     video_->fmt = fmt;
+
+    if (-1 == xioctl(video_->fd, VIDIOC_G_FMT, &fmt)) {
+        return errnoexit("VIDIOC_G_FMT");
+    }
+
+    if (fmt.fmt.pix.pixelformat != V4L2_PIX_FMT_H264) {
+        spdlog::error("Not a H264 Camera!!");
+        return -1;
+    }
 
     struct v4l2_streamparm parm;
     memset(&parm, 0, sizeof parm);
@@ -337,8 +332,18 @@ bool H264UvcCap::Init(void)
         return false;
     }
 
-    if (InitDevice(video_width_, video_height_, format) < 0) {
-        return false;
+    for (uint32_t i = 0; i < 12; i++) { // 自行搜索设备
+        if (InitDevice(video_width_, video_height_, format) < 0) {
+            dev_name_ = "/dev/video" + std::to_string(i);
+            if (video_->fd) {
+                close(video_->fd);
+            }
+        } else {
+            break;
+        }
+        if (!OpenDevice()) {
+            return false;
+        }
     }
 
     StartPreviewing();
@@ -360,7 +365,7 @@ bool H264UvcCap::Init(void)
     if (ret < 0) {
         spdlog::error("XuH264SetBitRate Failed");
     } else {
-        double m_BitRate = 4096 * 1024;
+        double m_BitRate = 2048 * 1024;
         //设置码率
         if (h264_xu_ctrls_->XuH264SetBitRate(m_BitRate) < 0) {
             spdlog::error("XuH264SetBitRate {} Failed", m_BitRate);
@@ -374,10 +379,10 @@ bool H264UvcCap::Init(void)
 
     CreateFile(false);
 
-    cat_h264_thread_ = std::thread([](H264UvcCap *p_this) { p_this->VideoCapThread(); }, this);
-    // capturing_ = true;
+    // cat_h264_thread_ = std::thread([](H264UvcCap *p_this) { p_this->VideoCapThread(); }, this);
+    capturing_ = true;
 
-    spdlog::info("-----Init H264 Camera {}-----", v4l2_device_);
+    spdlog::info("-----Init H264 Camera {}-----", dev_name_);
 
     return true;
 }
@@ -402,8 +407,6 @@ int64_t H264UvcCap::CapVideo()
 
     // spdlog::info("Get buffer size = {}", buf.bytesused);
 
-    RINGBUF.Write((uint8_t *)video_->buffers[buf.index].start, buf.bytesused);
-
     ret = ioctl(video_->fd, VIDIOC_QBUF, &buf);
 
     if (ret < 0) {
@@ -418,8 +421,7 @@ int32_t H264UvcCap::BitRateSetting(int32_t rate)
 {
     int32_t ret = -1;
     spdlog::info("write to the setting");
-    if (!capturing_) //未有客户端接入
-    {
+    if (!capturing_) { //未有客户端接入
         if (video_->fd > 0) { //未初始化不能访问
             ret = h264_xu_ctrls_->XuInitCtrl();
         }
@@ -446,7 +448,7 @@ int32_t H264UvcCap::BitRateSetting(int32_t rate)
     return ret;
 }
 
-int32_t H264UvcCap::getData(void *fTo, uint32_t fMaxSize, uint32_t &fFrameSize, uint32_t &fNumTruncatedBytes)
+int32_t H264UvcCap::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
 {
     if (!capturing_) {
         spdlog::warn("V4l2H264hData::getData capturing_ = false");
@@ -465,8 +467,9 @@ int32_t H264UvcCap::getData(void *fTo, uint32_t fMaxSize, uint32_t &fFrameSize, 
         return -1;
     }
 
-    uint32_t len = buf.bytesused;
+    unsigned len = buf.bytesused;
 
+    //拷贝视频到live555缓存
     if (len < fMaxSize) {
         memcpy(fTo, video_->buffers[buf.index].start, len);
         fFrameSize         = len;

@@ -27,12 +27,8 @@
 #include "ringbuffer.h"
 #include "epoll.h"
 
-#define SOFT_H264 0
-#if SOFT_H264
 #include "h264_camera.h"
-#else
 #include "H264_UVC_Cap.h"
-#endif
 
 std::atomic<bool> g_pause;
 ip_t g_ip;
@@ -135,28 +131,24 @@ void rtp_thread(std::string dev)
 
     spdlog::info("rtp server init.");
 
-#if SOFT_H264
-    V4l2H264hData softh264(dev);
-    softh264.Init();
-#else
-    H264UvcCap h264_camera(dev, 1280, 720);
-    h264_camera.Init();
-#endif
+    std::unique_ptr<VideoFactory> video_stream_factory(new UvcYuyvCamera);
+    std::unique_ptr<VideoStream> h264_video_(video_stream_factory->createVideoStream());
+
     uint32_t fMaxSize = 1843200;
     uint8_t *h264data = new uint8_t[fMaxSize];
 
     while (g_pause) {
         uint32_t fFrameSize = 0;
-        // uint32_t fNumTruncatedBytes = 0;
-        // h264_camera.getData(h264data, fMaxSize, fFrameSize, fNumTruncatedBytes);
-        // if(fFrameSize <= 0) {
-        //     continue;
-        // }
-
-        fFrameSize = RINGBUF.Read(h264data, fMaxSize);
+        uint32_t fNumTruncatedBytes = 0;
+        h264_video_->getData(h264data, fMaxSize, fFrameSize, fNumTruncatedBytes);
         if(fFrameSize <= 0) {
             continue;
         }
+
+        // fFrameSize = RINGBUF.Read(h264data, fMaxSize);
+        // if(fFrameSize <= 0) {
+        //     continue;
+        // }
         h264_nalu_t *nalu = h264.NalPacketMalloc(h264data, fFrameSize);
         
         h264_nalu_t *h264_nal = nalu;
@@ -190,11 +182,7 @@ void rtp_thread(std::string dev)
         h264.NalPacketFree(nalu);
         
     }
-#if SOFT_H264
-    softh264.StopCap();
-#else
-    h264_camera.StopCap();
-#endif
+
     delete[] h264data;
     udp_server.Deinit(&udp);
     udp_server.Deinit(&rtcp);

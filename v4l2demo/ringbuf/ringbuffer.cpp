@@ -1,116 +1,49 @@
 #include "ringbuffer.h"
-#include <new>
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-RingBuff::RingBuff(uint64_t rbuf)
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+
+RingBuffer::RingBuffer(uint32_t size)
 {
-    Create(rbuf);
+    fifo_buffer_ = new uint8_t[size];
+    fifo_size_   = size;
+    fifo_in_ = fifo_out_ = 0;
 }
 
-RingBuff::~RingBuff()
+RingBuffer::~RingBuffer()
 {
-    Destroy();
+    delete[] fifo_buffer_;
+    fifo_buffer_ = nullptr;
 }
 
-bool RingBuff::Create(uint64_t length)
+uint32_t RingBuffer::RingBufferIn(const void *in, uint32_t len)
 {
-    uint64_t size = ROUND_UP_2(length);
+    len = min(len, RingBufferAvail());
 
-    if ((size & (size - 1)) || (size < DEFAULT_BUF_SIZE)) {
-        size = DEFAULT_BUF_SIZE;
-    }
+    /* First put the data starting from fifo_in_ to buffer end. */
+    uint32_t l = min(len, fifo_size_ - (fifo_in_ & (fifo_size_ - 1)));
+    memcpy(fifo_buffer_ + (fifo_in_ & (fifo_size_ - 1)), in, l);
 
-    p_buffer_ = new (std::nothrow) RingBuffer;
-    if (!p_buffer_) {
-        return false;
-    }
-    memset(p_buffer_, 0, sizeof(RingBuffer));
+    /* Then put the rest (if any) at the beginning of the buffer. */
+    memcpy(fifo_buffer_, (uint8_t *)in + l, len - l);
 
-    p_buffer_->size = size;
-    p_buffer_->in   = 0;
-    p_buffer_->out  = 0;
+    fifo_in_ += len;
 
-    p_buffer_->buf = new (std::nothrow) uint8_t[size];
-    if (!p_buffer_->buf) {
-        delete p_buffer_;
-        return false;
-    }
-
-    memset(p_buffer_->buf, 0, size);
-
-    return true;
-}
-
-void RingBuff::Destroy()
-{
-    if (p_buffer_) {
-        delete[] p_buffer_->buf;
-        delete p_buffer_;
-    }
-}
-
-bool RingBuff::Reset()
-{
-    if (p_buffer_ == nullptr) {
-        return false;
-    }
-
-    p_buffer_->in  = 0;
-    p_buffer_->out = 0;
-    // memset(p_buffer_->buf, 0, p_buffer_->size);
-
-    return true;
-}
-
-uint64_t RingBuff::Length()
-{
-    uint64_t len = 0;
-    if (p_buffer_->in >= p_buffer_->out) {
-        len = p_buffer_->in - p_buffer_->out;
-    } else {
-        len = p_buffer_->size - p_buffer_->out + p_buffer_->in;
-    }
     return len;
 }
 
-bool RingBuff::Empty()
+uint32_t RingBuffer::RingBufferOut(void *out, uint32_t len)
 {
-    return p_buffer_->in == p_buffer_->out;
-}
+    len = min(len, RingBufferLen());
 
-uint64_t RingBuff::Write(uint8_t *data, uint64_t length)
-{
-    uint64_t len  = 0;
-    // uint64_t size = Length();
-    // if (length > size) {
-    //     Reset();
-    // }
+    /* First get the data from fifo_out_ until the end of the buffer. */
+    uint32_t l = min(len, fifo_size_ - (fifo_out_ & (fifo_size_ - 1)));
+    memcpy(out, fifo_buffer_ + (fifo_out_ & (fifo_size_ - 1)), l);
 
-    length = Min(length, p_buffer_->size - p_buffer_->in + p_buffer_->out);
-    len    = Min(length, p_buffer_->size - (p_buffer_->in & (p_buffer_->size - 1)));
+    /* Then get the rest (if any) from the beginning of the buffer. */
+    memcpy((uint8_t *)out + l, fifo_buffer_, len - l);
 
-    memcpy(p_buffer_->buf + (p_buffer_->in & (p_buffer_->size - 1)), data, len);
-    memcpy(p_buffer_->buf, data + len, length - len);
+    fifo_out_ += len;
 
-    p_buffer_->in += length;
-
-    return length;
-}
-
-uint64_t RingBuff::Read(uint8_t *target, uint64_t amount)
-{
-    uint64_t len = 0;
-
-    amount = Min(amount, p_buffer_->in - p_buffer_->out);
-    len    = Min(amount, p_buffer_->size - (p_buffer_->out & (p_buffer_->size - 1)));
-
-    memcpy(target, p_buffer_->buf + (p_buffer_->out & (p_buffer_->size - 1)), len);
-    memcpy(target + len, p_buffer_->buf, amount - len);
-
-    p_buffer_->out += amount;
-
-    return amount;
+    return len;
 }

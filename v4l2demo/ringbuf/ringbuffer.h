@@ -1,79 +1,62 @@
 /**
  * @file ringbuffer.h
  * @author 黄李全 (846863428@qq.com)
- * @brief
+ * @brief 
  * @version 0.1
- * @date 2022-11-18
- * @copyright Copyright (c) {2021} 个人版权所有
+ * @date 2023-07-18
+ * @copyright 个人版权所有 Copyright (c) 2023
  */
+#ifndef __RING_BUFFER_H__
+#define __RING_BUFFER_H__
 
-#pragma once
-
+#include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-#define Min(x, y) ((x) < (y) ? (x) : (y))
-#define ROUND_UP_2(num) (((num) + 1) & ~1)
-#define DEFAULT_BUF_SIZE (2 * 1024 * 1024)
-
-#define RINGBUF RingBuff::GetInstance()
-
-class RingBuff
+class RingBuffer
 {
 public:
-    ~RingBuff();
-    static RingBuff& GetInstance() {
-        static RingBuff instance;
-        return instance;
+    RingBuffer(uint32_t size);
+    ~RingBuffer();
+
+    uint32_t RingBufferIn(const void *in, uint32_t len);
+    uint32_t RingBufferOut(void *out, uint32_t len);
+
+    uint32_t RingBufferLen()
+    {
+        return fifo_in_ - fifo_out_;
     }
 
-    /**
-     * @brief 重置内存
-     * @return true 
-     * @return false 
-     */
-    bool Reset();
-
-    /**
-     * @brief 判断是否为空
-     * @return true 
-     * @return false 
-     */
-    bool Empty();
-
-    /**
-     * @brief 获取buf长度
-     * @return uint64_t 
-     */
-    uint64_t Length();
-
-    /**
-     * @brief 读取一段数据
-     * @param target 
-     * @param amount 
-     * @return uint64_t 
-     */
-    uint64_t Read(uint8_t *target, uint64_t amount);
-
-    /**
-     * @brief 写入一段数据
-     * @param data 
-     * @param length 
-     * @return uint64_t 
-     */
-    uint64_t Write(uint8_t *data, uint64_t length);
+    void RingBufferReset()
+    {
+        fifo_in_ = fifo_out_ = 0;
+    }
 
 private:
-    RingBuff(uint64_t rbuf = DEFAULT_BUF_SIZE);
-    bool Create(uint64_t length);
-    void Destroy();
+    uint8_t *fifo_buffer_;
+    uint32_t fifo_size_;
+    uint32_t fifo_in_;
+    uint32_t fifo_out_;
 
-private:
-    typedef struct cycle_buffer {
-        uint8_t *buf;
-        uint64_t size;
-        uint64_t in;
-        uint64_t out;
-    } RingBuffer;
+    uint32_t RingBufferSize()
+    {
+        return fifo_size_;
+    }
 
-    RingBuffer *p_buffer_;
+    uint32_t RingBufferAvail()
+    {
+        return RingBufferSize() - RingBufferLen();
+    }
+
+    bool RingBufferIsEmpty()
+    {
+        return RingBufferLen() == 0;
+    }
+
+    bool RingBufferIsFull()
+    {
+        return RingBufferAvail() == 0;
+    }
 };
+
+#endif

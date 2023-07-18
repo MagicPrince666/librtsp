@@ -1,10 +1,10 @@
 /**
  * @file h264encoder.h
  * @author 黄李全 (846863428@qq.com)
- * @brief 编码H264
+ * @brief 
  * @version 0.1
- * @date 2022-11-18
- * @copyright Copyright (c) {2021} 个人版权所有
+ * @date 2023-07-18
+ * @copyright 个人版权所有 Copyright (c) 2023
  */
 #pragma once
 
