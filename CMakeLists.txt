@@ -3,9 +3,15 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 option(EXAMPLE "shall we complie example" on)
 # INCLUDE(build_for_host)
 
+# find_package(x264 REQUIRED)
+
 include_directories(
     ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include
+    include
+    v4l2demo/ringbuf
+    v4l2demo/camera
+    v4l2demo/h264camera
+    v4l2demo/epoll
 )
 
 PROJECT(RtspDemo)
@@ -20,7 +26,6 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
 
 add_subdirectory(src)
-add_subdirectory(v4l2demo/ringbuf)
 
 set(EXEC_NAME rtsp_demo)
 
@@ -36,25 +41,26 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     MESSAGE(STATUS "Now is ${CMAKE_SYSTEM_NAME}.")
 
     set(EXEC_NAME2 V4l2Demo)
-    add_subdirectory(v4l2demo/camera)
-    add_subdirectory(v4l2demo/h264camera)
-    add_subdirectory(v4l2demo/epoll)
 
-    add_executable(${EXEC_NAME2} v4l2demo/v4l2demo.cpp)
+    file(GLOB main_srcs 
+        v4l2demo/camera/*.cpp
+        v4l2demo/h264camera/*.cpp
+        v4l2demo/epoll/*.cpp
+        v4l2demo/ringbuf/*.cpp
+        v4l2demo/*.cpp
+    )
 
-    target_link_libraries(${EXEC_NAME2} 
-        pthread
+    add_executable(${EXEC_NAME2} ${main_srcs})
+
+    target_link_libraries(${EXEC_NAME2}
         rtsp
-        camera
-        h264camera
-        ringbuf
-        epoll
         x264
+        pthread
         dl
     )
 
     install(TARGETS ${EXEC_NAME} ${EXEC_NAME2}
-        RUNTIME DESTINATION /usr/sbin)
+        RUNTIME DESTINATION /usr/bin)
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
     MESSAGE(STATUS "Now is windows.")
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "darwin")
@@ -67,7 +73,7 @@ ELSEIF (CMAKE_SYSTEM_NAME MATCHES "darwin")
     ENDIF()
 
     install(TARGETS ${EXEC_NAME}
-        RUNTIME DESTINATION /usr/sbin)
+        RUNTIME DESTINATION /usr/bin)
 ELSE ()
     MESSAGE(STATUS "Not support ${CMAKE_SYSTEM_NAME} yet")
 ENDIF ()
