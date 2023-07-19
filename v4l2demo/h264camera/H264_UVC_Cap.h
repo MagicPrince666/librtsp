@@ -1,13 +1,13 @@
 /**
- * @file H264_UVC_Cap.h
+ * @file H264_UVC_TestAP.h
  * @author 黄李全 (846863428@qq.com)
- * @brief 
+ * @brief
  * @version 0.1
- * @date 2023-07-18
- * @copyright 个人版权所有 Copyright (c) 2023
+ * @date 2022-11-18
+ * @copyright Copyright (c) {2021} 个人版权所有
  */
-
-#pragma once
+#ifndef __H264_UVC_TESTAP_H__
+#define __H264_UVC_TESTAP_H__
 
 #include <iostream>
 #include <thread>
@@ -152,7 +152,9 @@ private:
 class UvcH264Camera : public VideoFactory
 {
 public:
-	VideoStream* createVideoStream() {
-        return new H264UvcCap("/dev/video2", 1280, 720, 30);
+	VideoStream* createVideoStream(std::string dev, uint32_t width, uint32_t height, uint32_t fps) {
+        return new H264UvcCap(dev, width, height, fps);
     }
 };
+
+#endif

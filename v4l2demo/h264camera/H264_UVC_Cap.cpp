@@ -1,3 +1,14 @@
+/*****************************************************************************************
+
+ * 文件名  H264_UVC_TestAP.cpp
+ * 描述    ：录制H264裸流
+ * 平台    ：linux
+ * 版本    ：V1.0.0
+ * 作者    ：Leo Huang  QQ：846863428
+ * 邮箱    ：Leo.huang@junchentech.cn
+ * 修改时间  ：2017-06-28
+
+*****************************************************************************************/
 #include <chrono>
 #include <errno.h>
 #include <fcntl.h>
@@ -24,8 +35,7 @@
 
 #include "H264_UVC_Cap.h"
 #include "epoll.h"
-#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
-#include "spdlog/fmt/ostr.h" // support for user defined types
+
 #include "spdlog/spdlog.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
@@ -493,7 +503,7 @@ int32_t H264UvcCap::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, 
 void H264UvcCap::StartCap()
 {
     if (!capturing_) {
-        MY_EPOLL.EpollAdd(video_->fd, std::bind(&H264UvcCap::CapVideo, this));
+        MY_EPOLL.EpollAddRead(video_->fd, std::bind(&H264UvcCap::CapVideo, this));
     }
     capturing_ = true;
 }

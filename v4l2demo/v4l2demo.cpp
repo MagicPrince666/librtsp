@@ -132,7 +132,7 @@ void rtp_thread(std::string dev)
     spdlog::info("rtp server init.");
 
     std::unique_ptr<VideoFactory> video_stream_factory(new UvcYuyvCamera);
-    std::unique_ptr<VideoStream> h264_video_(video_stream_factory->createVideoStream());
+    std::unique_ptr<VideoStream> h264_video_(video_stream_factory->createVideoStream(dev, 640, 480, 15));
 
     uint32_t fMaxSize = 1843200;
     uint8_t *h264data = new uint8_t[fMaxSize];
@@ -307,13 +307,7 @@ int main(int argc, char *argv[])
 
     spdlog::info("Use commad: rtsp://{}:8554/live", GetHostIpAddress());
 
-    std::thread rtsp_thread_test(rtsp_thread, dev);
-    rtsp_thread_test.detach();
-    // if (rtsp_thread_test.joinable()) {
-    //     rtsp_thread_test.join();
-    // }
-
-    MY_EPOLL.EpollLoop();
+    rtsp_thread(dev);
 
     return 0;
 }

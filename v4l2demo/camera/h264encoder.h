@@ -1,12 +1,13 @@
 /**
  * @file h264encoder.h
  * @author 黄李全 (846863428@qq.com)
- * @brief 
+ * @brief 编码H264
  * @version 0.1
- * @date 2023-07-18
- * @copyright 个人版权所有 Copyright (c) 2023
+ * @date 2022-11-18
+ * @copyright Copyright (c) {2021} 个人版权所有
  */
-#pragma once
+#ifndef __H264_ENCODER_H__
+#define __H264_ENCODER_H__
 
 #include <stdint.h>
 #include <stdio.h>
@@ -71,3 +72,5 @@ private:
     int32_t video_height_;
     EncoderData encode_;
 };
+
+#endif

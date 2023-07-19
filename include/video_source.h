@@ -1,12 +1,13 @@
 /**
  * @file video_source.h
  * @author 黄李全 (846863428@qq.com)
- * @brief 
+ * @brief 视频抽象类
  * @version 0.1
- * @date 2023-07-18
- * @copyright 个人版权所有 Copyright (c) 2023
+ * @date 2023-03-21
+ * @copyright Copyright (c) {2023} 个人版权所有,仅供学习
  */
-#pragma once
+#ifndef __VIDEO_SOURCE_H__
+#define __VIDEO_SOURCE_H__
 
 #include <iostream>
 #include <memory>
@@ -34,5 +35,7 @@ protected:
 class VideoFactory
 {
 public:
-	virtual VideoStream* createVideoStream() = 0;
+	virtual VideoStream* createVideoStream(std::string dev, uint32_t width, uint32_t height, uint32_t fps) = 0;
 };
+
+#endif

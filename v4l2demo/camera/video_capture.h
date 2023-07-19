@@ -1,12 +1,13 @@
 /**
  * @file video_capture.h
  * @author 黄李全 (846863428@qq.com)
- * @brief 
+ * @brief 获取v4l2视频
  * @version 0.1
- * @date 2023-07-18
- * @copyright 个人版权所有 Copyright (c) 2023
+ * @date 2022-11-18
+ * @copyright Copyright (c) {2021} 个人版权所有
  */
-#pragma once
+#ifndef __VIDEO_CAPTURE_H__
+#define __VIDEO_CAPTURE_H__
 
 #include <iostream>
 #include <linux/videodev2.h>
@@ -115,3 +116,5 @@ private:
     uint32_t n_buffers_ = 0;
     struct Camera camera_;
 };
+
+#endif

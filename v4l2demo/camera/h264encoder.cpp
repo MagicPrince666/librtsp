@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
-#include "spdlog/fmt/ostr.h" // support for user defined types
 #include "spdlog/spdlog.h"
 
 H264Encoder::H264Encoder(int32_t width, int32_t height)

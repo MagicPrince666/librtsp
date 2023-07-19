@@ -1,12 +1,13 @@
 /**
  * @file h264_camera.h
  * @author 黄李全 (846863428@qq.com)
- * @brief 
+ * @brief 获取视频流并编码
  * @version 0.1
- * @date 2023-07-18
- * @copyright 个人版权所有 Copyright (c) 2023
+ * @date 2022-11-18
+ * @copyright Copyright (c) {2021} 个人版权所有
  */
-#pragma once
+#ifndef __H264_CAMERA_H__
+#define __H264_CAMERA_H__
 
 #include <list>
 #include <memory>
@@ -20,7 +21,7 @@
 class V4l2H264hData : public VideoStream
 {
 public:
-    V4l2H264hData(std::string dev = "/dev/video0", uint32_t width = 1280, uint32_t height = 720, uint32_t fps = 30);
+    V4l2H264hData(std::string dev = "/dev/video0", uint32_t width = 640, uint32_t height = 480, uint32_t fps = 30);
     virtual ~V4l2H264hData();
 
     /**
@@ -124,10 +125,12 @@ private:
 class UvcYuyvCamera : public VideoFactory
 {
 public:
-    VideoStream *createVideoStream()
+    VideoStream *createVideoStream(std::string dev, uint32_t width, uint32_t height, uint32_t fps)
     {
-        return new V4l2H264hData("/dev/video0", 640, 480, 30);
+        return new V4l2H264hData(dev, width, height, fps);
     }
 };
 
 inline bool FileExists(const std::string &name);
+
+#endif

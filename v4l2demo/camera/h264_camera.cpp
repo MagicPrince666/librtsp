@@ -27,8 +27,6 @@
 #include <sstream>
 #include <string>
 
-#include "spdlog/cfg/env.h"  // support for loading levels from the environment variable
-#include "spdlog/fmt/ostr.h" // support for user defined types
 #include "spdlog/spdlog.h"
 
 #include "h264_camera.h"
@@ -248,7 +246,7 @@ uint64_t V4l2H264hData::DirSize(const char *dir)
 
     while ((entry = readdir(dp)) != NULL) {
         char subdir[256];
-        snprintf(subdir, sizeof(subdir), "%s/%s", dir, entry->d_name);
+        sprintf(subdir, "%s/%s", dir, entry->d_name);
         lstat(subdir, &statbuf);
         if (S_ISDIR(statbuf.st_mode)) {
             if (strcmp(".", entry->d_name) == 0 || strcmp("..", entry->d_name) == 0) {
