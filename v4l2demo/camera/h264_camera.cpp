@@ -145,6 +145,7 @@ int32_t V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSiz
     int32_t len = 0;
     if (p_capture_) {
         len = p_capture_->BuffOneFrame(camera_buf_);
+        // spdlog::info("get size after encoder = {}", len);
     }
 
     if (len <= 0) {
@@ -245,7 +246,7 @@ uint64_t V4l2H264hData::DirSize(const char *dir)
     totalSize += statbuf.st_size;
 
     while ((entry = readdir(dp)) != NULL) {
-        char subdir[256];
+        char subdir[257];
         sprintf(subdir, "%s/%s", dir, entry->d_name);
         lstat(subdir, &statbuf);
         if (S_ISDIR(statbuf.st_mode)) {
