@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
     g_pause = false;
     spdlog::info("Use commad: rtsp://{}:8554/live", GetHostIpAddress());
 
-    std::string file = "test.h264";
+    std::string file = "../example/bigbuckbunny_480x272.h264";
     if(argc > 1) {
         file = (char *)argv[1];
     }

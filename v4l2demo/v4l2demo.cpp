@@ -259,6 +259,7 @@ void rtsp_thread(std::string dev)
         case TEARDOWN:
             rtsp_handler.RtspRelyDumps(rely, msg, 2048);
             tcp_server.SendMsg(&tcp, client, msg, strlen(msg));
+            spdlog::info("rtsp client {} close", client);
             tcp_server.CloseClient(&tcp, client);
             client  = 0;
             g_pause = false;
