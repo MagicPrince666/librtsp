@@ -24,6 +24,7 @@
 V4l2VideoCapture::V4l2VideoCapture(std::string dev, uint32_t width, uint32_t height, uint32_t fps)
     : v4l2_device_(dev)
 {
+    n_buffers_     = 0;
     camera_.fd     = -1;
     camera_.width  = width;
     camera_.height = height;

@@ -113,7 +113,7 @@ private:
 
 private:
     std::string v4l2_device_;
-    uint32_t n_buffers_ = 0;
+    uint32_t n_buffers_;
     struct Camera camera_;
 };
 
