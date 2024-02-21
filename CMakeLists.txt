@@ -18,7 +18,7 @@ PROJECT(RtspDemo)
 
 message("-- system processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 
 SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb ")
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
@@ -28,6 +28,11 @@ MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
 add_subdirectory(src)
 
 set(EXEC_NAME rtsp_demo)
+
+# set(CMAKE_BUILD_TYPE "Debug")
+if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+add_definitions(-DBACKTRACE_DEBUG)
+endif ()
 
 add_executable(${EXEC_NAME} example/example.cpp
 )
