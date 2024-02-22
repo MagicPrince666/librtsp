@@ -25,7 +25,7 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
 
-option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" ON)
+option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" OFF)
 
 add_subdirectory(src)
 
