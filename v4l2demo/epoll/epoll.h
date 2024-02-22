@@ -96,8 +96,8 @@ private:
 #ifndef __APPLE__
     struct epoll_event ev_, events_[MAXEVENTS];
 #else
-    struct kevent ev_[MAXEVENTS];
-    struct kevent activeEvs_[MAXEVENTS];
+    struct kevent ev_;
+    struct kevent events_[MAXEVENTS]; // kevent返回的事件列表（参考后面的kevent函数）
 #endif
     int epfd_;
     bool epoll_loop_{true};

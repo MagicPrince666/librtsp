@@ -27,17 +27,19 @@ MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
 
 add_subdirectory(src)
 
-set(EXEC_NAME rtsp_demo)
-
 # set(CMAKE_BUILD_TYPE "Debug")
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
 add_definitions(-DBACKTRACE_DEBUG)
 endif ()
 
-add_executable(${EXEC_NAME} example/example.cpp
+file(GLOB demo_srcs
+    example/example.cpp
+    # v4l2demo/epoll/*.cpp
 )
 
-target_link_libraries(${EXEC_NAME}
+add_executable(${PROJECT_NAME} ${demo_srcs})
+
+target_link_libraries(${PROJECT_NAME}
     pthread
     rtsp
 )
@@ -64,7 +66,7 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         dl
     )
 
-    install(TARGETS ${EXEC_NAME} ${EXEC_NAME2}
+    install(TARGETS ${PROJECT_NAME} ${EXEC_NAME2}
         RUNTIME DESTINATION /usr/bin)
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
     MESSAGE(STATUS "Now is windows.")
@@ -77,7 +79,7 @@ ELSEIF (CMAKE_SYSTEM_NAME MATCHES "darwin")
         target_link_libraries(${OPENCV_DEMO_NAME} ${OpenCV_LIBS})
     ENDIF()
 
-    install(TARGETS ${EXEC_NAME}
+    install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION /usr/bin)
 ELSE ()
     MESSAGE(STATUS "Not support ${CMAKE_SYSTEM_NAME} yet")
