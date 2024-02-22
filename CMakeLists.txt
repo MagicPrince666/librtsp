@@ -25,6 +25,8 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
 
+option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" ON)
+
 add_subdirectory(src)
 
 # set(CMAKE_BUILD_TYPE "Debug")
@@ -49,6 +51,26 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     set(EXEC_NAME2 V4l2Demo)
 
+    set(COMMON_LIBRARIES
+        rtsp
+        x264
+        pthread
+        dl
+    )
+
+    find_package(PkgConfig REQUIRED)
+    if (USE_RK_HW_ENCODER)
+        pkg_search_module(RK_MPP REQUIRED rockchip_mpp)
+        if (NOT RK_MPP_FOUND)
+            message(FATAL_ERROR "rockchip_mpp is not found")
+        endif ()
+        pkg_search_module(RGA librga)
+        if (NOT RGA_FOUND)
+            add_definitions(-DUSE_LIBYUV)
+            message("librga is not found, use libyuv instead")
+        endif ()
+    endif ()
+
     file(GLOB main_srcs 
         v4l2demo/camera/*.cpp
         v4l2demo/h264camera/*.cpp
@@ -57,13 +79,35 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         v4l2demo/*.cpp
     )
 
+    if (USE_RK_HW_ENCODER)
+        list(APPEND COMMON_LIBRARIES
+            ${RK_MPP_LIBRARIES}
+            ${RGA_LIBRARIES}
+        )
+    endif ()
+
+    if (USE_RK_HW_ENCODER)
+        add_definitions(-DUSE_RK_HW_ENCODER)
+        list(APPEND main_srcs rk_mpp/rk_mpp_encoder.cpp)
+        list(APPEND COMMON_INCLUDE_DIRS
+            ${RK_MPP_INCLUDE_DIRS}
+            ${RGA_INCLUDE_DIRS}
+        )
+        list(APPEND COMMON_LIBRARIES
+            ${RGA_LIBRARIES}
+            ${RK_MPP_LIBRARIES}
+        )
+        if (NOT RGA_FOUND)
+            list(APPEND COMMON_LIBRARIES
+            -lyuv
+            )
+        endif ()
+    endif ()
+
     add_executable(${EXEC_NAME2} ${main_srcs})
 
     target_link_libraries(${EXEC_NAME2}
-        rtsp
-        x264
-        pthread
-        dl
+        ${COMMON_LIBRARIES}
     )
 
     install(TARGETS ${PROJECT_NAME} ${EXEC_NAME2}
