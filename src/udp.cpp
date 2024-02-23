@@ -85,7 +85,7 @@ int UdpServer::ReciveMsg(udp_t *udp, ip_t *ip, uint8_t *data, int len)
     if (ret) {
         return -1;
     }
-    sprintf(ip->ip, "%s", inet_ntoa(addr.sin_addr));
+    snprintf(ip->ip, sizeof(ip->ip), "%s", inet_ntoa(addr.sin_addr));
     ip->port = ntohs(addr.sin_port);
     return size;
 }

@@ -90,7 +90,7 @@ const char *rfc822_datetime_format(time_t time, char *datetime)
     char mon[8], week[8];
     int32_t year, day, hour, min, sec;
     sscanf(date, "%s %s %d %d:%d:%d %d", week, mon, &day, &hour, &min, &sec, &year);
-    r = sprintf(datetime, "%s, %02d %s %04d %02d:%02d:%02d GMT",
+    r = snprintf(datetime, sizeof(datetime), "%s, %02d %s %04d %02d:%02d:%02d GMT",
                  week, day, mon, year, hour, min, sec);
     return r > 0 && r < 32 ? datetime : NULL;
 }
@@ -232,7 +232,7 @@ void rtsp_thread(std::string file_name)
                 continue;
             }
             client = tcp_server.WaitClient(&tcp);
-            sprintf(ipaddr->ip, "%s", inet_ntoa(tcp.addr.sin_addr));
+            snprintf(ipaddr->ip, sizeof(ipaddr->ip), "%s", inet_ntoa(tcp.addr.sin_addr));
             ipaddr->port = ntohs(tcp.addr.sin_port);
             spdlog::info("rtsp client ip:{} port:{}", inet_ntoa(tcp.addr.sin_addr), ntohs(tcp.addr.sin_port));
         }
@@ -247,7 +247,7 @@ void rtsp_thread(std::string file_name)
         case SETUP:
             rely.tansport.server_port = 45504;
             rtsp_handler.RtspRelyDumps(rely, msg, 2048);
-            sprintf(g_ip.ip, "%s", ipaddr->ip);
+            snprintf(g_ip.ip, sizeof(g_ip.ip) ,"%s", ipaddr->ip);
             g_ip.port = rtsp.tansport.client_port;
             g_pause = true;
             rtp_thread_test = std::thread(rtp_thread, file_name);

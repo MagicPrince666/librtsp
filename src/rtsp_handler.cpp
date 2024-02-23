@@ -109,8 +109,8 @@ rtsp_rely_t RtspHandler::GetRely(rtsp_msg_t rtsp)
 {
     rtsp_rely_t rely;
     memset(&rely, 0, sizeof(rtsp_rely_t));
-    sprintf(rely.desc, "OK");
-    sprintf(rely.session, "%p", &rtsp);
+    snprintf(rely.desc, sizeof(rely.desc), "OK");
+    snprintf(rely.session, sizeof(rely.session), "%p", &rtsp);
     rely.request = rtsp.request;
     rely.status  = 200;
     rely.cseq    = rtsp.cseq;
