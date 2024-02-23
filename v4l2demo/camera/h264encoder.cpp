@@ -16,7 +16,6 @@ H264Encoder::H264Encoder(int32_t width, int32_t height)
 H264Encoder::~H264Encoder()
 {
     UnInit();
-    // RK_MPI_SYS_Exit();
 }
 
 int32_t H264Encoder::X264ParamApplyPreset(x264_param_t *param, const char *preset)

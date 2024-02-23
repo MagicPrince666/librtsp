@@ -2,7 +2,6 @@
 #define __RK_MPP_ENCODER_H__
 
 #include <iostream>
-#define MODULE_TAG "mpi_enc_test"
 
 #include "rockchip/rk_mpi.h"
 #include "rockchip/mpp_rc_api.h"

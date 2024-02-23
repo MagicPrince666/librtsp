@@ -1,3 +1,4 @@
+#define MODULE_TAG "rk_mpi_enc"
 #include "rk_mpp_encoder.h"
 #include "mpp_buffer.h"
 
@@ -964,9 +965,14 @@ RkMppEncoder::RkMppEncoder()
     RK_S32 ret = -1;
     // 初始化RK MPI库
     mpi_enc_cmd_ = mpi_enc_test_cmd_get();
-    mpi_enc_cmd_->rc_mode = MPP_ENC_RC_MODE_BUTT;
-    // mpi_enc_cmd_->rc_mode == MPP_ENC_RC_MODE_FIXQP
-    // mpi_enc_cmd_->file_input = (char *)"/dev/video11";
+    mpi_enc_cmd_->type = MPP_VIDEO_CodingAVC;
+    mpi_enc_cmd_->type_src = MPP_VIDEO_CodingAutoDetect;
+    mpi_enc_cmd_->width = 640;
+    mpi_enc_cmd_->height = 480;
+    mpi_enc_cmd_->frame_num = 200;
+    mpi_enc_cmd_->fps_in_flex = 30;
+    mpi_enc_cmd_->file_input = (char *)"/dev/video11";
+    mpi_enc_cmd_->file_output = (char *)"test.h264";
     /* check essential parameter */
     if (mpi_enc_cmd_->type <= MPP_VIDEO_CodingAutoDetect) {
         mpp_err("invalid type %d\n", mpi_enc_cmd_->type);
