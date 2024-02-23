@@ -90,7 +90,7 @@ const char *rfc822_datetime_format(time_t time, char *datetime)
     char mon[8], week[8];
     int32_t year, day, hour, min, sec;
     sscanf(date, "%s %s %d %d:%d:%d %d", week, mon, &day, &hour, &min, &sec, &year);
-    r = snprintf(datetime, sizeof(datetime), "%s, %02d %s %04d %02d:%02d:%02d GMT",
+    r = sprintf(datetime, "%s, %02d %s %04d %02d:%02d:%02d GMT",
                  week, day, mon, year, hour, min, sec);
     return r > 0 && r < 32 ? datetime : NULL;
 }
