@@ -2,8 +2,6 @@
 #include <opencv2/opencv.hpp>
 #include <time.h>
 
-#include "spdlog/cfg/env.h"  // suppoop rt for loading levels from the environment variable
-#include "spdlog/fmt/ostr.h" // support for user defined types
 #include "spdlog/spdlog.h"
 
 int main(int argc, char *argv[])
@@ -34,7 +32,7 @@ int main(int argc, char *argv[])
         capture >> frame;
         cv::imshow("read frame", frame);
         cv::waitKey(1);
-        spdlog::debug("{}", time(NULL));
+        spdlog::info("{}", time(NULL));
     }
     return 0;
 }
