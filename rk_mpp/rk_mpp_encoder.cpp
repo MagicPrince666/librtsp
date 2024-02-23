@@ -1,4 +1,5 @@
 #include "rk_mpp_encoder.h"
+#include "mpp_buffer.h"
 
 MPP_RET test_ctx_init(MpiEncMultiCtxInfo *info)
 {

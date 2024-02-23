@@ -3,6 +3,16 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 option(EXAMPLE "shall we complie example" on)
 # INCLUDE(build_for_host)
 
+PROJECT(RtspDemo LANGUAGES C CXX)
+
+message("-- system processor: ${CMAKE_SYSTEM_PROCESSOR}")
+
+set(CMAKE_CXX_STANDARD 11)
+
+MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
+
+option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" ON)
+
 # find_package(x264 REQUIRED)
 
 include_directories(
@@ -13,19 +23,6 @@ include_directories(
     v4l2demo/h264camera
     v4l2demo/epoll
 )
-
-PROJECT(RtspDemo)
-
-message("-- system processor: ${CMAKE_SYSTEM_PROCESSOR}")
-
-set(CMAKE_CXX_STANDARD 11)
-
-SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb ")
-SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
-
-MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
-
-option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" OFF)
 
 add_subdirectory(src)
 
@@ -77,6 +74,10 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         v4l2demo/epoll/*.cpp
         v4l2demo/ringbuf/*.cpp
         v4l2demo/*.cpp
+        if (USE_RK_HW_ENCODER)
+            rk_mpp/*.cpp
+            rk_mpp/*.c
+        endif ()
     )
 
     if (USE_RK_HW_ENCODER)
@@ -88,8 +89,6 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     if (USE_RK_HW_ENCODER)
         add_definitions(-DUSE_RK_HW_ENCODER)
-        file(GLOB rk_mpp_srcs rk_mpp/*.cpp rk_mpp/*.c)
-        list(APPEND main_srcs ${rk_mpp_srcs})
         list(APPEND COMMON_INCLUDE_DIRS
             ${RK_MPP_INCLUDE_DIRS}
             ${RGA_INCLUDE_DIRS}
