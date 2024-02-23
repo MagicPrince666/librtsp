@@ -16,6 +16,7 @@
 #include "mpi_enc_utils.h"
 #include "camera_source.h"
 #include "mpp_enc_roi_utils.h"
+#include "mpp_buffer.h"
 
 typedef struct {
     // base flow context

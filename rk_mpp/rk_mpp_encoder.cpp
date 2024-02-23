@@ -468,16 +468,18 @@ MPP_RET test_mpp_run(MpiEncMultiCtxInfo *info)
                     continue;
                 }
                 mpp_log_q(quiet, "chn %d found last frame. feof %d\n", chn, feof(p->fp_input));
-            } else if (ret == MPP_ERR_VALUE)
+            } else if (ret == MPP_ERR_VALUE) {
                 goto RET;
+            }
             mpp_buffer_sync_end(p->frm_buf);
         } else {
             if (p->cam_ctx == NULL) {
                 mpp_buffer_sync_begin(p->frm_buf);
                 ret = fill_image(buf, p->width, p->height, p->hor_stride,
                                  p->ver_stride, p->fmt, p->frame_count);
-                if (ret)
+                if (ret) {
                     goto RET;
+                }
                 mpp_buffer_sync_end(p->frm_buf);
             } else {
                 cam_frm_idx = camera_source_get_frame(p->cam_ctx);
@@ -739,7 +741,7 @@ void *enc_test(void *arg)
         goto MPP_TEST_OUT;
     }
 
-    ret = mpp_buffer_group_get_internal(&p->buf_grp, MPP_BUFFER_TYPE_DRM | MPP_BUFFER_FLAGS_CACHABLE);
+    ret = mpp_buffer_group_get_internal(&p->buf_grp, (MppBufferType)(MPP_BUFFER_TYPE_DRM | MPP_BUFFER_FLAGS_CACHABLE));
     if (ret) {
         mpp_err_f("failed to get mpp buffer group ret %d\n", ret);
         goto MPP_TEST_OUT;
@@ -963,6 +965,7 @@ RkMppEncoder::RkMppEncoder()
     mpi_enc_cmd_ = mpi_enc_test_cmd_get();
     mpi_enc_cmd_->rc_mode = MPP_ENC_RC_MODE_BUTT;
     // mpi_enc_cmd_->rc_mode == MPP_ENC_RC_MODE_FIXQP
+    // mpi_enc_cmd_->file_input = (char *)"/dev/video11";
     /* check essential parameter */
     if (mpi_enc_cmd_->type <= MPP_VIDEO_CodingAutoDetect) {
         mpp_err("invalid type %d\n", mpi_enc_cmd_->type);

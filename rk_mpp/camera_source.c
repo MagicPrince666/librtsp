@@ -32,6 +32,7 @@
 #include "rockchip/mpp_log.h"
 #include "mpp_mem.h"
 #include "camera_source.h"
+#include "mpp_buffer.h"
 
 typedef struct CamFrame_t {
     void        *start;
@@ -434,8 +435,9 @@ MppBuffer camera_frame_to_buf(CamSource *ctx, RK_S32 idx)
         return buf;
 
     buf = ctx->fbuf[idx].buffer;
-    if (buf)
+    if (buf) {
         mpp_buffer_sync_end(buf);
+    }
 
     return buf;
 }

@@ -27,6 +27,7 @@
 #include "mpp_time.h"
 #include "mpp_common.h"
 #include "rk_utils.h"
+#include "mpp_frame.h"
 
 #define MAX_HALF_WORD_SUM_CNT \
     ((RK_ULONG)((0-1) / ((1UL << ((__SIZEOF_POINTER__ * 8) / 2)) - 1)))
@@ -1519,6 +1520,7 @@ MPP_RET fps_calc_inc(FpsCalc ctx)
     return MPP_OK;
 }
 
+// #define MPP_FRAME_FMT_PROP_MASK     (0x0ff00000)
 /*
  * @brief convert a string that discribes decimal, octal and hexadecimal
  *        number to a long integer.

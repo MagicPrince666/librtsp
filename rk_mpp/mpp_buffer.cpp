@@ -22,6 +22,7 @@
 #include "mpp_debug.h"
 #include "mpp_dmabuf.h"
 #include "mpp_buffer_impl.h"
+#include "mpp_buffer.h"
 
 MPP_RET mpp_buffer_import_with_tag(MppBufferGroup group, MppBufferInfo *info, MppBuffer *buffer,
                                    const char *tag, const char *caller)
