@@ -35,7 +35,7 @@ RtspParse g_rtsp_parse;
     do {                                    \
         if (m == v) {                       \
             char str[2048] = {0};           \
-            sprintf(str, ##args);           \
+            snprintf(str, sizeof(str), ##args);\
             sprintf(msg, "%s%s", msg, str); \
         }                                   \
     } while (0)
