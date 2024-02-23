@@ -88,7 +88,8 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     if (USE_RK_HW_ENCODER)
         add_definitions(-DUSE_RK_HW_ENCODER)
-        list(APPEND main_srcs rk_mpp/rk_mpp_encoder.cpp)
+        file(GLOB rk_mpp_srcs rk_mpp/*.cpp rk_mpp/*.c)
+        list(APPEND main_srcs ${rk_mpp_srcs})
         list(APPEND COMMON_INCLUDE_DIRS
             ${RK_MPP_INCLUDE_DIRS}
             ${RGA_INCLUDE_DIRS}
