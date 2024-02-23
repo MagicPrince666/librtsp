@@ -131,6 +131,7 @@ public:
     ~RkMppEncoder();
 
 private:
+    MpiEncTestArgs* mpi_enc_cmd_;
 };
 
 #endif

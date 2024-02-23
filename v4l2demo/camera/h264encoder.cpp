@@ -3,16 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(USE_RK_HW_ENCODER)
-#include "rockchip/rk_mpi.h"
-#endif
-#include "spdlog/spdlog.h"
 
 H264Encoder::H264Encoder(int32_t width, int32_t height)
     : video_width_(width),
       video_height_(height)
 {
-    // RK_MPI_SYS_Init();
+#if defined(USE_RK_HW_ENCODER)
+    rk_encoder_ = std::make_shared<RkMppEncoder>();
+#endif
 }
 
 H264Encoder::~H264Encoder()

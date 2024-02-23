@@ -11,8 +11,13 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <memory>
 
+#include "spdlog/spdlog.h"
 #include "x264.h"
+#if defined(USE_RK_HW_ENCODER)
+#include "rk_mpp/rk_mpp_encoder.h"
+#endif
 
 // #define USE_NV12_FORMAT
 
@@ -71,6 +76,9 @@ private:
     int32_t video_width_;
     int32_t video_height_;
     EncoderData encode_;
+#if defined(USE_RK_HW_ENCODER)
+    std::shared_ptr<RkMppEncoder> rk_encoder_;
+#endif
 };
 
 #endif

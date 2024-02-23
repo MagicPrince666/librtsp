@@ -1,11 +1,5 @@
 #include "rk_mpp_encoder.h"
 
-RkMppEncoder::RkMppEncoder()
-{}
-
-RkMppEncoder::~RkMppEncoder()
-{}
-
 MPP_RET test_ctx_init(MpiEncMultiCtxInfo *info)
 {
     MpiEncTestArgs *cmd = info->cmd;
@@ -951,4 +945,65 @@ DONE:
     mpi_enc_test_cmd_put(cmd);
 
     return ret;
+}
+
+static void show_enc_fps(RK_S64 total_time, RK_S64 total_count, RK_S64 last_time, RK_S64 last_count)
+{
+    float avg_fps = (float)total_count * 1000000 / total_time;
+    float ins_fps = (float)last_count * 1000000 / last_time;
+
+    mpp_log("encoded %10lld frame fps avg %7.2f ins %7.2f\n",
+            total_count, avg_fps, ins_fps);
+}
+
+RkMppEncoder::RkMppEncoder()
+{
+    RK_S32 ret = -1;
+    // 初始化RK MPI库
+    mpi_enc_cmd_ = mpi_enc_test_cmd_get();
+    mpi_enc_cmd_->rc_mode = MPP_ENC_RC_MODE_BUTT;
+    // mpi_enc_cmd_->rc_mode == MPP_ENC_RC_MODE_FIXQP
+    /* check essential parameter */
+    if (mpi_enc_cmd_->type <= MPP_VIDEO_CodingAutoDetect) {
+        mpp_err("invalid type %d\n", mpi_enc_cmd_->type);
+        ret = MPP_NOK;
+    }
+
+    if (mpi_enc_cmd_->rc_mode == MPP_ENC_RC_MODE_BUTT)
+        mpi_enc_cmd_->rc_mode = (mpi_enc_cmd_->type == MPP_VIDEO_CodingMJPEG) ?
+                       MPP_ENC_RC_MODE_FIXQP : MPP_ENC_RC_MODE_VBR;
+
+    if (!mpi_enc_cmd_->hor_stride)
+        mpi_enc_cmd_->hor_stride = mpi_enc_width_default_stride(mpi_enc_cmd_->width, mpi_enc_cmd_->format);
+    if (!mpi_enc_cmd_->ver_stride)
+        mpi_enc_cmd_->ver_stride = mpi_enc_cmd_->height;
+
+    if (mpi_enc_cmd_->type_src == MPP_VIDEO_CodingUnused) {
+        if (mpi_enc_cmd_->width <= 0 || mpi_enc_cmd_->height <= 0 ||
+            mpi_enc_cmd_->hor_stride <= 0 || mpi_enc_cmd_->ver_stride <= 0) {
+            mpp_err("invalid w:h [%d:%d] stride [%d:%d]\n",
+                    mpi_enc_cmd_->width, mpi_enc_cmd_->height, mpi_enc_cmd_->hor_stride, mpi_enc_cmd_->ver_stride);
+            ret = MPP_NOK;
+        }
+    }
+
+    if (mpi_enc_cmd_->rc_mode == MPP_ENC_RC_MODE_FIXQP) {
+        if (!mpi_enc_cmd_->qp_init) {
+            if (mpi_enc_cmd_->type == MPP_VIDEO_CodingAVC ||
+                mpi_enc_cmd_->type == MPP_VIDEO_CodingHEVC)
+                mpi_enc_cmd_->qp_init = 26;
+        }
+    }
+
+    if (mpi_enc_cmd_->trace_fps) {
+        fps_calc_init(&mpi_enc_cmd_->fps);
+        mpp_assert(mpi_enc_cmd_->fps);
+        fps_calc_set_cb(mpi_enc_cmd_->fps, show_enc_fps);
+    }
+    enc_test_multi(mpi_enc_cmd_, "h264");
+}
+
+RkMppEncoder::~RkMppEncoder()
+{
+    mpi_enc_test_cmd_put(mpi_enc_cmd_);
 }
