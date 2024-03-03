@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
 
-option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" ON)
+option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" OFF)
 
 # find_package(x264 REQUIRED)
 
@@ -74,13 +74,14 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         v4l2demo/epoll/*.cpp
         v4l2demo/ringbuf/*.cpp
         v4l2demo/*.cpp
-        if (USE_RK_HW_ENCODER)
-            rk_mpp/*.cpp
-            rk_mpp/*.c
-        endif ()
     )
 
     if (USE_RK_HW_ENCODER)
+        file(GLOB rk_mpp_srcs 
+            rk_mpp/*.cpp
+            rk_mpp/*.c
+        )
+        list(APPEND main_srcs ${rk_mpp_srcs})
         list(APPEND COMMON_LIBRARIES
             ${RK_MPP_LIBRARIES}
             ${RGA_LIBRARIES}
