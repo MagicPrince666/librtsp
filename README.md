@@ -54,6 +54,10 @@ cp x264.h ../librtsp/v4l2demo/x264/
 cp x264_config.h ../librtsp/v4l2demo/x264/
 ```
 
+## ubuntu编译
+```bash
+sudo apt install -y libx264-dev libfaac-dev
+```
 # Donation
 
 码农不易 尊重劳动
