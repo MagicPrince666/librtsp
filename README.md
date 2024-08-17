@@ -58,6 +58,12 @@ cp x264_config.h ../librtsp/v4l2demo/x264/
 ```bash
 sudo apt install -y libx264-dev libfaac-dev
 ```
+编译RK MPP库
+```bash
+git clone https://github.com/rockchip-linux/mpp.git
+cd build
+make && sudo make install
+```
 # Donation
 
 码农不易 尊重劳动
