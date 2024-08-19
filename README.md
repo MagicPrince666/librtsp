@@ -64,6 +64,14 @@ git clone https://github.com/rockchip-linux/mpp.git
 cd build
 make && sudo make install
 ```
+
+## 自启动
+```bash
+cp scripts/rtsp_video.service /lib/systemd/system
+sudo ln -s /lib/systemd/system/rtsp_video.service /etc/systemd/system/rtsp_video.service
+sudo systemctl start rtsp_video.service
+sudo systemctl enable rtsp_video.service 
+```
 # Donation
 
 码农不易 尊重劳动

@@ -1,0 +1,15 @@
+[Unit]
+Description=rtsp service
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/home/i6sp/librtsp/scripts/rtsp_video.sh
+Restart=always
+RestartSec=10
+User=i6sp
+
+[Install]
+WantedBy=multi-user.target
+
