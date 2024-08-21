@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
 
-option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" OFF)
+option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" ON)
 
 # find_package(x264 REQUIRED)
 
@@ -75,6 +75,14 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         dl
     )
 
+    file(GLOB main_srcs 
+        v4l2demo/camera/*.cpp
+        v4l2demo/h264camera/*.cpp
+        v4l2demo/epoll/*.cpp
+        v4l2demo/ringbuf/*.cpp
+        v4l2demo/*.cpp
+    )
+
     find_package(PkgConfig REQUIRED)
     if (USE_RK_HW_ENCODER)
         pkg_search_module(RK_MPP REQUIRED rockchip_mpp)
@@ -86,38 +94,30 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
             add_definitions(-DUSE_LIBYUV)
             message("librga is not found, use libyuv instead")
         endif ()
-    endif ()
+        add_definitions(-DUSE_RK_HW_ENCODER)
 
-    file(GLOB main_srcs 
-        v4l2demo/camera/*.cpp
-        v4l2demo/h264camera/*.cpp
-        v4l2demo/epoll/*.cpp
-        v4l2demo/ringbuf/*.cpp
-        v4l2demo/*.cpp
-    )
-
-    if (USE_RK_HW_ENCODER)
-        file(GLOB rk_mpp_srcs 
-            rk_mpp/*.cpp
-            rk_mpp/*.c
+        include_directories(
+            thirdparty/mpp/inc
+            thirdparty/mpp/osal/inc
+            thirdparty/mpp/utils
         )
-        list(APPEND main_srcs ${rk_mpp_srcs})
+
+        list(APPEND main_srcs 
+            # v4l2demo/camera/mpi_enc_test.c
+            # thirdparty/mpp/utils/camera_source.c
+            # thirdparty/mpp/utils/mpi_enc_utils.c
+            # thirdparty/mpp/utils/mpp_enc_roi_utils.c
+        )
         list(APPEND COMMON_LIBRARIES
             ${RK_MPP_LIBRARIES}
             ${RGA_LIBRARIES}
         )
-    endif ()
 
-    if (USE_RK_HW_ENCODER)
-        add_definitions(-DUSE_RK_HW_ENCODER)
         list(APPEND COMMON_INCLUDE_DIRS
             ${RK_MPP_INCLUDE_DIRS}
             ${RGA_INCLUDE_DIRS}
         )
-        list(APPEND COMMON_LIBRARIES
-            ${RGA_LIBRARIES}
-            ${RK_MPP_LIBRARIES}
-        )
+
         if (NOT RGA_FOUND)
             list(APPEND COMMON_LIBRARIES
             -lyuv
