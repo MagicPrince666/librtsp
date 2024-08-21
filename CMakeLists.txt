@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
 
-option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" OFF)
+option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" ON)
 
 # find_package(x264 REQUIRED)
 
@@ -76,7 +76,9 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     )
 
     file(GLOB main_srcs 
-        v4l2demo/camera/*.cpp
+        v4l2demo/camera/h264_camera.cpp
+        v4l2demo/camera/h264encoder.cpp
+        v4l2demo/camera/video_capture.cpp
         v4l2demo/h264camera/*.cpp
         v4l2demo/epoll/*.cpp
         v4l2demo/ringbuf/*.cpp
@@ -100,9 +102,11 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         #     /usr/local/include/rockchip
         # )
 
-        # list(APPEND main_srcs 
-        #     v4l2demo/camera/mpi_enc_test.c
-        # )
+        list(APPEND main_srcs 
+            v4l2demo/camera/rk_mpp_encoder.cpp
+            v4l2demo/camera/mpp.cpp
+            v4l2demo/camera/v4l2.cpp
+        )
         list(APPEND COMMON_LIBRARIES
             ${RK_MPP_LIBRARIES}
             ${RGA_LIBRARIES}
