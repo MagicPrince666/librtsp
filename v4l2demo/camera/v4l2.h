@@ -34,12 +34,11 @@ public:
     /*call back function*/
     std::function<bool(uint8_t *, int)> process_image_;
 
-    int open_device(char *device);
+    int OpenDevice(const char *device);
     /*function pointer*/
-    int init_device();
-    int start_capturing();
-    void main_loop();
-    int v4l2_close();
+    int InitDevice();
+    int StartCapturing();
+    void MainLoop();
 
 private:
     int32_t fd;
@@ -47,10 +46,12 @@ private:
     const char *dev_name;
     struct buffer *buffers;
     uint32_t n_buffers;
-    int init_mmap();
-    int init_read(unsigned int buffer_size);
+
+    int V4l2Close();
+    int InitMmap();
+    int InitRead(unsigned int buffer_size);
     int xioctl(int fh, int request, void *arg);
-    int read_frame();
+    int ReadFrame();
 };
 
 #endif /* !_V4L2_H */

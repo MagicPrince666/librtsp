@@ -3,10 +3,10 @@
 MppContext::MppContext() {}
 
 MppContext::~MppContext() {
-    mpp_close();
+    MppClose();
 }
 
-void MppContext::mpp_close()
+void MppContext::MppClose()
 {
     MPP_RET ret = MPP_OK;
     ret         = mpi->reset(ctx);
@@ -26,7 +26,7 @@ void MppContext::mpp_close()
     free(ctx);
 }
 
-void MppContext::init_mpp()
+void MppContext::InitMpp()
 {
     MPP_RET ret              = MPP_OK;
     type       = MPP_VIDEO_CodingAVC;
@@ -176,7 +176,7 @@ MPP_INIT_OUT:
     printf("init mpp failed!\n");
 }
 
-bool MppContext::write_header(SpsHeader *sps_header)
+bool MppContext::WriteHeader(SpsHeader *sps_header)
 {
     int ret;
     if (type == MPP_VIDEO_CodingAVC) {
@@ -200,7 +200,7 @@ bool MppContext::write_header(SpsHeader *sps_header)
     return 1;
 }
 
-bool MppContext::process_image(uint8_t *p, int size)
+bool MppContext::ProcessImage(uint8_t *p, int size)
 {
     MPP_RET ret      = MPP_OK;
     MppFrame frame   = NULL;

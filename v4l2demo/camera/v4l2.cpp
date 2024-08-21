@@ -15,10 +15,10 @@ V4l2Context::V4l2Context() {}
 
 V4l2Context::~V4l2Context()
 {
-    v4l2_close();
+    V4l2Close();
 }
 
-int V4l2Context::v4l2_close()
+int V4l2Context::V4l2Close()
 {
     enum v4l2_buf_type type;
     unsigned int i;
@@ -56,7 +56,7 @@ int V4l2Context::xioctl(int fh, int request, void *arg)
     return r;
 }
 
-int V4l2Context::open_device(char *device)
+int V4l2Context::OpenDevice(const char *device)
 {
     dev_name = device;
     int ret;
@@ -79,7 +79,7 @@ int V4l2Context::open_device(char *device)
     return 0;
 }
 
-int V4l2Context::init_device()
+int V4l2Context::InitDevice()
 {
     struct v4l2_capability cap;
     struct v4l2_cropcap cropcap;
@@ -165,13 +165,15 @@ int V4l2Context::init_device()
     if (fmt.fmt.pix.sizeimage < min)
         fmt.fmt.pix.sizeimage = min;
 
-    if (io_method == IO_METHOD_MMAP)
-        return init_mmap();
-    else
-        return init_read(fmt.fmt.pix.sizeimage);
+    if (io_method == IO_METHOD_MMAP) {
+        return InitMmap();
+    } else {
+        return InitRead(fmt.fmt.pix.sizeimage);
+    }
+    return 0;
 }
 
-void V4l2Context::main_loop()
+void V4l2Context::MainLoop()
 {
     int fd = fd;
     int r;
@@ -187,13 +189,15 @@ void V4l2Context::main_loop()
         r            = select(fd + 1, &rdset, NULL, NULL, &tv);
 
         if (r > 0) {
-            if (read_frame() == -2)
+            if (ReadFrame() == -2) {
                 break;
+            }
         } else if (r == 0) {
             fprintf(stderr, "select timeout\\n");
         } else {
-            if (EINTR == errno || EAGAIN == errno)
+            if (EINTR == errno || EAGAIN == errno) {
                 continue;
+            }
             fprintf(stderr, "select failed: %d, %s\n", errno, strerror(errno));
             break;
         }
@@ -201,7 +205,7 @@ void V4l2Context::main_loop()
     }
 }
 
-int V4l2Context::init_mmap()
+int V4l2Context::InitMmap()
 {
     struct v4l2_requestbuffers req;
     memset(&req, 0, sizeof(req));
@@ -256,7 +260,7 @@ int V4l2Context::init_mmap()
     return 0;
 }
 
-int V4l2Context::init_read(unsigned int buffer_size)
+int V4l2Context::InitRead(unsigned int buffer_size)
 {
     buffers = (struct buffer *)calloc(1, sizeof(struct buffer));
 
@@ -276,7 +280,7 @@ int V4l2Context::init_read(unsigned int buffer_size)
     return 0;
 }
 
-int V4l2Context::start_capturing()
+int V4l2Context::StartCapturing()
 {
     unsigned int i;
     enum v4l2_buf_type type;
@@ -309,7 +313,7 @@ int V4l2Context::start_capturing()
     return 0;
 }
 
-int V4l2Context::read_frame()
+int V4l2Context::ReadFrame()
 {
     struct v4l2_buffer buf;
     switch (io_method) {

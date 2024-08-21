@@ -41,9 +41,8 @@ public:
         //call back function
         std::function<bool(uint8_t *, int)> write_frame_;
         //function pointer
-        bool process_image(uint8_t *p, int size);
-        bool write_header(SpsHeader *sps_header);
-        void mpp_close();
+        bool ProcessImage(uint8_t *p, int size);
+        bool WriteHeader(SpsHeader *sps_header);
 private:
         // global flow control flag
         RK_U32 frm_eos;
@@ -71,10 +70,8 @@ private:
         /* NOTE: packet buffer may overflow */
         size_t packet_size;
 
-        
-        FILE *fp_output;
-        FILE *fp_outputx;
-        void init_mpp();
+        void InitMpp();
+        void MppClose();
 };
 
 
