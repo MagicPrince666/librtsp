@@ -29,6 +29,9 @@
 
 #include "h264_camera.h"
 #include "H264_UVC_Cap.h"
+#ifdef USE_RK_HW_ENCODER
+#include "rk_mpp_encoder.h"
+#endif
 
 std::atomic<bool> g_pause;
 ip_t g_ip;
@@ -213,7 +216,11 @@ void rtp_thread(std::string dev)
 
     spdlog::info("rtp server init.");
 
+#ifdef USE_RK_HW_ENCODER
+    std::unique_ptr<VideoFactory> video_stream_factory(new UvcMppCamera);
+#else
     std::unique_ptr<VideoFactory> video_stream_factory(new UvcYuyvCamera);
+#endif
     std::unique_ptr<VideoStream> h264_video_(video_stream_factory->createVideoStream(dev, 640, 480, 15));
 
     uint32_t fMaxSize = 1843200;
