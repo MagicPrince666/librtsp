@@ -1,5 +1,11 @@
 #include "mpp.h"
 
+MppContext::MppContext() {}
+
+MppContext::~MppContext() {
+    mpp_close();
+}
+
 void MppContext::mpp_close()
 {
     MPP_RET ret = MPP_OK;

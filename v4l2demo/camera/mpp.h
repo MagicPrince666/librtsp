@@ -26,6 +26,25 @@ typedef struct {
 class MppContext
 {
 public:
+        MppContext();
+        ~MppContext();
+        // paramter for resource malloc
+        RK_U32 width;
+        RK_U32 height;
+        RK_U32 hor_stride;
+        RK_U32 ver_stride;
+        // rate control runtime parameter
+        RK_S32 gop;
+        RK_S32 fps;
+        RK_S32 bps;
+
+        //call back function
+        std::function<bool(uint8_t *, int)> write_frame_;
+        //function pointer
+        bool process_image(uint8_t *p, int size);
+        bool write_header(SpsHeader *sps_header);
+        void mpp_close();
+private:
         // global flow control flag
         RK_U32 frm_eos;
         RK_U32 pkt_eos;
@@ -43,11 +62,6 @@ public:
         MppBuffer frm_buf;
         MppEncSeiMode sei_mode;
 
-        // paramter for resource malloc
-        RK_U32 width;
-        RK_U32 height;
-        RK_U32 hor_stride;
-        RK_U32 ver_stride;
         MppFrameFormat fmt;
         MppCodingType type;
         RK_U32 num_frames;
@@ -57,19 +71,9 @@ public:
         /* NOTE: packet buffer may overflow */
         size_t packet_size;
 
-        // rate control runtime parameter
-        RK_S32 gop;
-        RK_S32 fps;
-        RK_S32 bps;
+        
         FILE *fp_output;
         FILE *fp_outputx;
-        //call back function
-        std::function<bool(uint8_t *, int)> write_frame_;
-        //function pointer
-        bool process_image(uint8_t *p, int size);
-        bool write_header(SpsHeader *sps_header);
-        void mpp_close();
-private:
         void init_mpp();
 };
 

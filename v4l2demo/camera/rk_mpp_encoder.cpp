@@ -7,14 +7,12 @@ RkMppEncoder::RkMppEncoder()
 
 RkMppEncoder::~RkMppEncoder()
 {
-    mpp_ctx->mpp_close();
-    v4l2_ctx->v4l2_close();
 }
 
 void RkMppEncoder::Init()
 {
-    v4l2_ctx                = new V4l2Context();
-    mpp_ctx                 = new MppContext();
+    v4l2_ctx                = std::make_shared<V4l2Context>();
+    mpp_ctx                 = std::make_shared<MppContext>();
     v4l2_ctx->process_image_ = std::bind(&RkMppEncoder::m_process_image, this, std::placeholders::_1, std::placeholders::_2);
     v4l2_ctx->force_format  = 1;
     v4l2_ctx->width         = 640;
@@ -43,5 +41,5 @@ bool RkMppEncoder::m_process_image(uint8_t *p, int size)
 
 bool RkMppEncoder::write_frame(uint8_t *data, int size)
 {
-    return 0;
+    return true;
 }

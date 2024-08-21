@@ -15,8 +15,8 @@ public:
     void Init();
 
 private:
-    V4l2Context *v4l2_ctx;
-    MppContext *mpp_ctx;
+    std::shared_ptr<V4l2Context> v4l2_ctx;
+    std::shared_ptr<MppContext> mpp_ctx;
 
     bool m_process_image(uint8_t *p, int size);
     bool write_frame(uint8_t*data,int size);
