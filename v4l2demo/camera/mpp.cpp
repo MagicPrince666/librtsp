@@ -242,8 +242,9 @@ mdddd:
         size_t len            = mpp_packet_get_length(packet);
         pkt_eos = mpp_packet_get_eos(packet);
         if (write_frame_)
-            if (!write_frame_((uint8_t*)ptr, len))
+            if (!write_frame_((uint8_t*)ptr, len)) {
                 printf("------------sendok!\n");
+            }
 
         mpp_packet_deinit(&packet);
         printf("encoded frame %d size %ld\n", frame_count, len);

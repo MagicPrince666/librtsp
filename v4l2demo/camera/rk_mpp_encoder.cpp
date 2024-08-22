@@ -40,19 +40,30 @@ void RkMppEncoder::Init()
     // v4l2_ctx->InitDevice();
     // v4l2_ctx->StartCapturing();
     v4l2_ctx->Init();
+
+    // loop_timer_ptr = std::make_shared<TimerFd>();
+    // loop_timer_ptr->AddCallback(std::bind(&RkMppEncoder::MainLoop, this));
+    // loop_timer_ptr->InitTimer();
+    // loop_timer_ptr->StartTimer(0, 33000000);
     
     // loop_thread_ = std::thread([&]() { v4l2_ctx->MainLoop(); });
 }
 
+void RkMppEncoder::MainLoop()
+{
+    uint64_t lenght = v4l2_ctx->BuffOneFrame(h264_buf_);
+    ProcessImage(h264_buf_, lenght);
+}
+
 bool RkMppEncoder::ProcessImage(const uint8_t *p, const uint32_t size)
 {
-    // std::cout << "process size " << size << std::endl;
     return mpp_ctx->ProcessImage(p, size);
 }
 
-bool RkMppEncoder::WriteFrame(uint8_t *data, int size)
+bool RkMppEncoder::WriteFrame(const uint8_t* data, const uint32_t size)
 {
     std::unique_lock<std::mutex> lck(data_mtx_);
+    // std::cout << "frame size " << size << std::endl;
     memcpy(h264_buf_, data, size);
     h264_lenght_ = size;
     return true;
