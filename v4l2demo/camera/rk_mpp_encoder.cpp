@@ -4,41 +4,49 @@
 RkMppEncoder::RkMppEncoder(std::string dev, uint32_t width, uint32_t height, uint32_t fps)
 : VideoStream(dev, width, height, fps)
 {
+    Init();
 }
 
 RkMppEncoder::~RkMppEncoder()
 {
+    // if (loop_thread_.joinable()) {
+    //     loop_thread_.join();
+    // }
 }
 
 void RkMppEncoder::Init()
 {
-    v4l2_ctx                = std::make_shared<V4l2Context>();
+    v4l2_ctx                = std::make_shared<V4l2VideoCapture>(dev_name_, video_width_, video_height_, video_fps_);
     mpp_ctx                 = std::make_shared<MppContext>();
-    v4l2_ctx->process_image_ = std::bind(&RkMppEncoder::ProcessImage, this, std::placeholders::_1, std::placeholders::_2);
-    v4l2_ctx->force_format  = 1;
-    v4l2_ctx->width         = video_width_;
-    v4l2_ctx->height        = video_height_;
-    v4l2_ctx->pixelformat   = V4L2_PIX_FMT_YUYV;
-    v4l2_ctx->field         = V4L2_FIELD_INTERLACED;
-    mpp_ctx->width          = v4l2_ctx->width;
-    mpp_ctx->height         = v4l2_ctx->height;
+    v4l2_ctx->AddCallback(std::bind(&RkMppEncoder::ProcessImage, this, std::placeholders::_1, std::placeholders::_2));
+    // v4l2_ctx->process_image_ = std::bind(&RkMppEncoder::ProcessImage, this, std::placeholders::_1, std::placeholders::_2);
+    // v4l2_ctx->force_format  = 1;
+    // v4l2_ctx->width         = video_width_;
+    // v4l2_ctx->height        = video_height_;
+    // v4l2_ctx->pixelformat   = V4L2_PIX_FMT_YUYV;
+    // v4l2_ctx->field         = V4L2_FIELD_INTERLACED;
+    mpp_ctx->width          = video_width_;
+    mpp_ctx->height         = video_height_;
     mpp_ctx->fps            = video_fps_;
-    mpp_ctx->gop            = 60;
+    mpp_ctx->gop            = 30;
     mpp_ctx->bps            = mpp_ctx->width * mpp_ctx->height / 8 * mpp_ctx->fps * 2;
     mpp_ctx->write_frame_    = std::bind(&RkMppEncoder::WriteFrame, this, std::placeholders::_1, std::placeholders::_2);
 
     h264_buf_ = new (std::nothrow) uint8_t[video_width_ * video_height_ * 2];
 
     SpsHeader sps_header;
-    v4l2_ctx->OpenDevice(dev_name_.c_str());
-    v4l2_ctx->InitDevice();
-    v4l2_ctx->StartCapturing();
     mpp_ctx->WriteHeader(&sps_header);
-    v4l2_ctx->MainLoop();
+    // v4l2_ctx->OpenDevice(dev_name_.c_str());
+    // v4l2_ctx->InitDevice();
+    // v4l2_ctx->StartCapturing();
+    v4l2_ctx->Init();
+    
+    // loop_thread_ = std::thread([&]() { v4l2_ctx->MainLoop(); });
 }
 
-bool RkMppEncoder::ProcessImage(uint8_t *p, int size)
+bool RkMppEncoder::ProcessImage(const uint8_t *p, const uint32_t size)
 {
+    // std::cout << "process size " << size << std::endl;
     return mpp_ctx->ProcessImage(p, size);
 }
 

@@ -7,6 +7,7 @@
 #include "mpp.h"
 #include <iostream>
 #include <memory>
+#include <thread>
 
 class RkMppEncoder : public VideoStream
 {
@@ -17,15 +18,17 @@ public:
     int32_t getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes);
 
 private:
-    std::shared_ptr<V4l2Context> v4l2_ctx;
+    // std::shared_ptr<V4l2Context> v4l2_ctx;
+    std::shared_ptr<V4l2VideoCapture> v4l2_ctx;
     std::shared_ptr<MppContext> mpp_ctx;
     std::mutex data_mtx_;
     uint8_t *h264_buf_;
     int h264_lenght_;
+    std::thread loop_thread_;
 
     void Init();
 
-    bool ProcessImage(uint8_t *p, int size);
+    bool ProcessImage(const uint8_t *p, const uint32_t size);
     bool WriteFrame(uint8_t*data,int size);
 };
 

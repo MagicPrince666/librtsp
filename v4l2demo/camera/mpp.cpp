@@ -200,7 +200,7 @@ bool MppContext::WriteHeader(SpsHeader *sps_header)
     return 1;
 }
 
-bool MppContext::ProcessImage(uint8_t *p, int size)
+bool MppContext::ProcessImage(const uint8_t *p, const uint32_t size)
 {
     MPP_RET ret      = MPP_OK;
     MppFrame frame   = NULL;
@@ -253,8 +253,9 @@ mdddd:
         if (pkt_eos) {
             printf("found last packet\n");
         }
-    } else
+    } else {
         goto mdddd;
+    }
     if (num_frames && frame_count >= num_frames) {
         printf("encode max %d frames", frame_count);
         return 0;

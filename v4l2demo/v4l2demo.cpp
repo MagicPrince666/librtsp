@@ -165,6 +165,7 @@ static void _signal_handler(int signum)
     }
 #endif
     free(strings);
+    MY_EPOLL.EpoolQuit();
     signal(signum, SIG_DFL); /* 还原默认的信号处理handler */
     fprintf(stderr, "Quit execute now\n");
     fflush(stderr);

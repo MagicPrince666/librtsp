@@ -41,7 +41,7 @@ public:
         //call back function
         std::function<bool(uint8_t *, int)> write_frame_;
         //function pointer
-        bool ProcessImage(uint8_t *p, int size);
+        bool ProcessImage(const uint8_t *p, const uint32_t size);
         bool WriteHeader(SpsHeader *sps_header);
 private:
         // global flow control flag

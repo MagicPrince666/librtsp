@@ -193,7 +193,7 @@ void V4l2Context::MainLoop()
                 break;
             }
         } else if (r == 0) {
-            fprintf(stderr, "select timeout\\n");
+            fprintf(stderr, "select timeout\n");
         } else {
             if (EINTR == errno || EAGAIN == errno) {
                 continue;

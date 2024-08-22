@@ -10,9 +10,9 @@
 #define __XEPOLL_H__
 
 #include <sys/socket.h>
-#ifdef __APPLE__
+#if defined(__APPLE__)
 #include <sys/event.h>
-#else
+#elif defined(__linux__)
 #include <sys/epoll.h>
 #endif
 
@@ -23,7 +23,7 @@
 #include <mutex>
 #include <thread>
 
-#define MAXEVENTS 20
+#define MAXEVENTS 50
 #define EPOLL_FD_SETSIZE 1024
 
 #define MY_EPOLL Epoll::Instance()
@@ -84,6 +84,10 @@ public:
      */
     bool EpoolQuit();
 
+    bool EpollLoopRunning() {
+        return epoll_loop_;
+    }
+
 private:
     Epoll();
 
@@ -93,11 +97,11 @@ private:
      */
     int EpollLoop();
 
-#ifndef __APPLE__
-    struct epoll_event ev_, events_[MAXEVENTS];
-#else
+#if defined(__APPLE__)
     struct kevent ev_;
     struct kevent events_[MAXEVENTS]; // kevent返回的事件列表（参考后面的kevent函数）
+#elif defined(__linux__)
+    struct epoll_event ev_, events_[MAXEVENTS];
 #endif
     int epfd_;
     bool epoll_loop_{true};

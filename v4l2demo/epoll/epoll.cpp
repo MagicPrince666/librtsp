@@ -12,10 +12,10 @@
 
 Epoll::Epoll(void)
 {
-#ifdef __APPLE__
+#if defined(__APPLE__)
     epfd_ = kqueue();
     // EV_SET(&ev_, epfd_, EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_WRITE, 0, NULL);
-#else
+#elif defined(__linux__)
     epfd_ = ::epoll_create(EPOLL_FD_SETSIZE);
 #endif
     assert(epfd_ >= 0);
@@ -47,11 +47,11 @@ int Epoll::EpollAddRead(int fd, std::function<void()> read_handler)
     if(fcntl(fd, F_SETFL, sta) < 0) {
         return -1;
     }
-#ifdef __APPLE__
+#if defined(__APPLE__)
     struct kevent event;
     EV_SET(&event, fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, (void *)(intptr_t)fd);
     return kevent(epfd_, &event, 1, nullptr, 0, nullptr);
-#else
+#elif defined(__linux__)
     ev_.data.fd = fd;
     ev_.events  = EPOLLIN;
     // ev_.events  = EPOLLIN | EPOLLET;
@@ -69,11 +69,11 @@ int Epoll::EpollAddWrite(int fd, std::function<void()> write_handler)
     if(::fcntl(fd, F_SETFL, sta) < 0) {
         return -1;
     }
-#ifdef __APPLE__
+#if defined(__APPLE__)
     struct kevent event;
     EV_SET(&event, fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, (void *)(intptr_t)fd);
     return kevent(epfd_, &event, 1, nullptr, 0, nullptr);
-#else
+#elif defined(__linux__)
     ev_.data.fd = fd;
     ev_.events  = EPOLLOUT;
     return ::epoll_ctl(epfd_, EPOLL_CTL_ADD, fd, &ev_);
@@ -91,14 +91,14 @@ int Epoll::EpollAddReadWrite(int fd, std::function<void()> read_handler, std::fu
     if(::fcntl(fd, F_SETFL, sta) < 0) {
         return -1;
     }
-#ifdef __APPLE__
+#if defined(__APPLE__)
     int n = 0;
     struct kevent event[2];
     EV_SET(&event[n++], fd, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, (void *)(intptr_t)fd);
     EV_SET(&event[n++], fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, (void *)(intptr_t)fd);
     return kevent(epfd_, event, 2, nullptr, 0, nullptr);
 
-#else
+#elif defined(__linux__)
     ev_.data.fd = fd;
     ev_.events  = EPOLLIN | EPOLLOUT;
     return ::epoll_ctl(epfd_, EPOLL_CTL_ADD, fd, &ev_);
@@ -110,13 +110,13 @@ int Epoll::EpollDel(int fd)
     if(fd < 0) {
         return -1;
     }
-#ifdef __APPLE__
+#if defined(__APPLE__)
     int n = 0;
     struct kevent event[2];
     EV_SET(&event[n++], fd, EVFILT_READ, EV_DELETE, 0, 0, (void *)(intptr_t)fd);
     EV_SET(&event[n++], fd, EVFILT_WRITE, EV_DELETE, 0, 0, (void *)(intptr_t)fd);
     kevent(epfd_, event, 2, nullptr, 0, nullptr);
-#else
+#elif defined(__linux__)
     ev_.data.fd = fd;
     ::epoll_ctl(epfd_, EPOLL_CTL_DEL, fd, nullptr);
 #endif
@@ -137,11 +137,11 @@ int Epoll::EpollDelWrite(int fd)
     if(fd < 0) {
         return -1;
     }
-#ifdef __APPLE__
+#if defined(__APPLE__)
     struct kevent event;
     EV_SET(&event, fd, EVFILT_READ, EV_DELETE, 0, 0, (void *)(intptr_t)fd);
     kevent(epfd_, &event, 1, nullptr, 0, nullptr);
-#else
+#elif defined(__linux__)
     ev_.data.fd = fd;
     ::epoll_ctl(epfd_, EPOLL_CTL_DEL, fd, nullptr);
 #endif
@@ -168,12 +168,12 @@ bool Epoll::EpoolQuit()
 int Epoll::EpollLoop()
 {
     while(epoll_loop_) {
-#ifdef __APPLE__
+#if defined(__APPLE__)
         struct timespec timeout;
         timeout.tv_sec  = 1;
         timeout.tv_nsec = 0;
         int nfds        = kevent(epfd_, nullptr, 0, events_, MAXEVENTS, &timeout);
-#else
+#elif defined(__linux__)
         int nfds = epoll_wait(epfd_, events_, MAXEVENTS, 1000);
 #endif
 
@@ -189,7 +189,7 @@ int Epoll::EpollLoop()
 
         for(int i = 0; i < nfds; i++) {
             // 有消息可读取
-#ifdef __APPLE__
+#if defined(__APPLE__)
             struct kevent event = events_[i];                 // 一个个取出已经就绪的事件
             int fd              = (int)(intptr_t)event.udata; // 从附加数据里面取回文件描述符的值
             if(event.filter == EVFILT_READ) {
@@ -205,7 +205,7 @@ int Epoll::EpollLoop()
             } else {
                 assert("unknown event");
             }
-#else
+#elif defined(__linux__)
             if(events_[i].events & EPOLLIN) {
                 // 在map中寻找对应的回调函数
                 auto handle_it = readable_map_.find(events_[i].data.fd);

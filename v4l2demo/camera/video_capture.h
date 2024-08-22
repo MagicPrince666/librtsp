@@ -13,6 +13,7 @@
 #include <linux/videodev2.h>
 #include <pthread.h>
 #include <stdint.h>
+#include <functional>
 
 #include "h264encoder.h"
 
@@ -63,6 +64,12 @@ public:
      */
     struct Camera *GetFormat();
 
+    /**
+     * @brief 回调注册
+     * @param handler 
+     */
+    void AddCallback(std::function<bool(const uint8_t *, const uint32_t)> handler);
+
 private:
     /**
      * @brief 关闭v4l2资源
@@ -111,10 +118,14 @@ private:
     void ErrnoExit(const char *s);
     int32_t xioctl(int32_t fd, int32_t request, void *arg);
 
+    void ReadBuffOneFrame();
+
 private:
     std::string v4l2_device_;
     uint32_t n_buffers_;
     struct Camera camera_;
+    /*call back function*/
+    std::function<bool(const uint8_t *, const uint32_t)> process_image_;
 };
 
 #endif

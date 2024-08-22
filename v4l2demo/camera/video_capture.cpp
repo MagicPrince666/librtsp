@@ -18,6 +18,7 @@
 #include "spdlog/spdlog.h"
 
 #include "video_capture.h"
+#include "epoll.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
@@ -127,6 +128,41 @@ uint64_t V4l2VideoCapture::BuffOneFrame(uint8_t *data)
     }
 
     return len;
+}
+
+void V4l2VideoCapture::ReadBuffOneFrame()
+{
+    struct v4l2_buffer buf;
+    CLEAR(buf);
+    // spdlog::info("Get data");
+
+    buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+
+    // this operator below will change buf.index and (0 <= buf.index <= 3)
+    if (-1 == ioctl(camera_.fd, VIDIOC_DQBUF, &buf)) { // 这里卡住了
+        spdlog::error("VIDIOC_DQBUF {}", strerror(errno));
+        switch (errno) {
+        case EAGAIN:
+            return;
+        case EIO:
+            /* Could ignore EIO, see spec. */
+            /* fall through */
+        default:
+            ErrnoExit("VIDIOC_DQBUF");
+        }
+    }
+
+    // yuyv422ToYuv420p(camera_.width, camera_.height, (uint8_t *)(camera_.buffers[buf.index].start), data);
+
+    // 把一帧数据拷贝到缓冲区
+    if (process_image_) {
+        process_image_((uint8_t *)(camera_.buffers[buf.index].start), buf.bytesused);
+    }
+
+    if (-1 == ioctl(camera_.fd, VIDIOC_QBUF, &buf)) {
+        ErrnoExit("VIDIOC_QBUF");
+    }
 }
 
 bool V4l2VideoCapture::StartPreviewing()
@@ -269,7 +305,7 @@ bool V4l2VideoCapture::InitCamera()
     fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV; // 16  YUV 4:2:2
     fmt->fmt.pix.field       = V4L2_FIELD_ANY;    // 隔行扫描
     // fmt->fmt.pix.pixelformat = V4L2_PIX_FMT_YUV420; // 12  YUV 4:2:0
-    // fmt->fmt.pix.field = V4L2_FIELD_ANY;
+    // fmt->fmt.pix.field = V4L2_FIELD_INTERLACED;
 #endif
 
     if (-1 == xioctl(camera_.fd, VIDIOC_S_FMT, fmt)) {
@@ -384,6 +420,11 @@ void V4l2VideoCapture::yuyv422ToYuv420p(int inWidth, int inHeight, uint8_t *pSrc
     }
 }
 
+void V4l2VideoCapture::AddCallback(std::function<bool(const uint8_t *, const uint32_t)> handler)
+{
+    process_image_ = handler;
+}
+
 bool V4l2VideoCapture::Init()
 {
     bool ret = false;
@@ -392,6 +433,9 @@ bool V4l2VideoCapture::Init()
     ret |= StartPreviewing();
     if (ret) {
         spdlog::info("Carmera init success");
+        if (process_image_ && MY_EPOLL.EpollLoopRunning()) {
+            MY_EPOLL.EpollAddRead(camera_.fd, std::bind(&V4l2VideoCapture::ReadBuffOneFrame, this));
+        }
     } else {
         spdlog::error("Carmera init fail");
     }
@@ -401,6 +445,7 @@ bool V4l2VideoCapture::Init()
 bool V4l2VideoCapture::V4l2Close()
 {
     bool ret = false;
+    MY_EPOLL.EpollDel(camera_.fd);
     ret |= StopPreviewing();
     ret |= UninitCamera();
     ret |= CloseCamera();
