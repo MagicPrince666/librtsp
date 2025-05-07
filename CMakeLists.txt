@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 MESSAGE(STATUS ${CMAKE_SYSTEM_NAME})
 
-option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" ON)
+option(USE_RK_HW_ENCODER "Use Rockchip hardware encoder" OFF)
 
 # find_package(x264 REQUIRED)
 
@@ -70,10 +70,18 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
     set(COMMON_LIBRARIES
         rtsp
-        x264
         pthread
         dl
     )
+
+    # 查找libx264库
+    pkg_check_modules(LIBX264 x264)
+
+    if (LIBX264_FOUND)
+        list(APPEND COMMON_LIBRARIES
+            ${LIBX264_LIBRARIES}
+        )
+    endif ()
 
     file(GLOB main_srcs 
         v4l2demo/camera/h264_camera.cpp
