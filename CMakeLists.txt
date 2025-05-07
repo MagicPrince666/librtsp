@@ -74,6 +74,7 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         dl
     )
 
+    find_package(PkgConfig REQUIRED)
     # 查找libx264库
     pkg_check_modules(LIBX264 x264)
 
