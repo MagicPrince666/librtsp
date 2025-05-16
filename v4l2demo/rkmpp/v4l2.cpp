@@ -11,7 +11,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-V4l2Context::V4l2Context() {}
+V4l2Context::V4l2Context(std::string dev, uint32_t width, uint32_t height, uint32_t fps)
+: width_(width), height_(height), fps_(fps) {
+    dev_name = dev.c_str();
+}
 
 V4l2Context::~V4l2Context()
 {
@@ -136,10 +139,10 @@ int V4l2Context::InitDevice()
     memset(&fmt, 0, sizeof(fmt));
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (force_format) {
-        fmt.fmt.pix.width       = width;
-        fmt.fmt.pix.height      = height;
-        fmt.fmt.pix.pixelformat = pixelformat;
-        fmt.fmt.pix.field       = field;
+        fmt.fmt.pix.width       = width_;
+        fmt.fmt.pix.height      = height_;
+        fmt.fmt.pix.pixelformat = pixelformat_;
+        fmt.fmt.pix.field       = field_;
 
         if (xioctl(fd, VIDIOC_S_FMT, &fmt) == -1) {
             fprintf(stderr, "get VIDIOC_S_FMT failed: %d, %s\n", errno, strerror(errno));

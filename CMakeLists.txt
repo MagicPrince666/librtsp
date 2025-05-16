@@ -27,9 +27,9 @@ include_directories(
 add_subdirectory(src)
 
 # set(CMAKE_BUILD_TYPE "Debug")
-if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
-    add_definitions(-DBACKTRACE_DEBUG)
-endif ()
+# if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+#     add_definitions(-DBACKTRACE_DEBUG)
+# endif ()
 
 # 执行git命令，并把结果重定向到自定义变量（此处是我的变量<GIT_VERSION>）。
 execute_process(
@@ -85,16 +85,13 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     endif ()
 
     file(GLOB main_srcs 
-        v4l2demo/camera/h264_camera.cpp
-        v4l2demo/camera/h264encoder.cpp
-        v4l2demo/camera/video_capture.cpp
+        v4l2demo/camera/*.cpp
         v4l2demo/h264camera/*.cpp
         v4l2demo/epoll/*.cpp
         v4l2demo/ringbuf/*.cpp
         v4l2demo/*.cpp
     )
 
-    find_package(PkgConfig REQUIRED)
     if (USE_RK_HW_ENCODER)
         pkg_search_module(RK_MPP REQUIRED rockchip_mpp)
         if (NOT RK_MPP_FOUND)
@@ -107,14 +104,14 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         endif ()
         add_definitions(-DUSE_RK_HW_ENCODER)
 
-        # include_directories(
-        #     /usr/local/include/rockchip
-        # )
+        include_directories(
+            v4l2demo/rkmpp
+        )
 
         list(APPEND main_srcs 
-            v4l2demo/camera/rk_mpp_encoder.cpp
-            v4l2demo/camera/mpp.cpp
-            v4l2demo/camera/v4l2.cpp
+            v4l2demo/rkmpp/rk_mpp_encoder.cpp
+            v4l2demo/rkmpp/mpp.cpp
+            v4l2demo/rkmpp/v4l2.cpp
         )
         list(APPEND COMMON_LIBRARIES
             ${RK_MPP_LIBRARIES}

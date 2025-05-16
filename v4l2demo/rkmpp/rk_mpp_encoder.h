@@ -5,9 +5,11 @@
 #include "video_source.h"
 #include "timer_fd.h"
 #include "mpp.h"
+// #include "v4l2.h"
 #include <iostream>
 #include <memory>
 #include <thread>
+#include <mutex>
 
 class RkMppEncoder : public VideoStream
 {

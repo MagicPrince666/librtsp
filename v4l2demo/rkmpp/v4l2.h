@@ -23,13 +23,13 @@ struct buffer {
 class V4l2Context
 {
 public:
-    V4l2Context();
+    V4l2Context(std::string dev = "/dev/video0", uint32_t width = 640, uint32_t height = 480, uint32_t fps = 30);
     ~V4l2Context();
     bool force_format;
-    uint32_t width;
-    uint32_t height;
-    uint32_t pixelformat;
-    uint32_t field;
+    uint32_t width_;
+    uint32_t height_;
+    uint32_t pixelformat_;
+    uint32_t field_;
 
     /*call back function*/
     std::function<bool(uint8_t *, int)> process_image_;
@@ -46,6 +46,7 @@ private:
     const char *dev_name;
     struct buffer *buffers;
     uint32_t n_buffers;
+    uint32_t fps_;
 
     int V4l2Close();
     int InitMmap();

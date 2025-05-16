@@ -95,10 +95,10 @@ void MppContext::InitMpp()
     /* fix input / output frame rate */
     rc_cfg.fps_in_flex    = 0;
     rc_cfg.fps_in_num     = fps;
-    rc_cfg.fps_in_denom  = 1;
+    // rc_cfg.fps_in_denom  = 1;
     rc_cfg.fps_out_flex   = 0;
     rc_cfg.fps_out_num    = fps;
-    rc_cfg.fps_out_denom = 1;
+    // rc_cfg.fps_out_denom = 1;
     rc_cfg.gop            = gop;
     rc_cfg.skip_cnt       = 0;
 
