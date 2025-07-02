@@ -16,6 +16,7 @@
 #include "video_capture.h"
 #include "video_source.h"
 #include "h264encoder.h"
+#include "calculate_cpu.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 
@@ -114,12 +115,14 @@ private:
     bool s_pause_;
 
     uint8_t *camera_buf_;
+    uint8_t *nv12_buf_;
     uint8_t *h264_buf_;
 
     FILE *h264_fp_;
 
     std::list<Buffer> h264_buf_list_;
     struct Camera *video_format_;
+    std::shared_ptr<CalculateCpu> calculate_ptr_;
 };
 
 // 生产yuyv视频流的工厂，软件编码

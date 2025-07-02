@@ -22,6 +22,7 @@ include_directories(
     v4l2demo/camera
     v4l2demo/h264camera
     v4l2demo/epoll
+    v4l2demo/calculate
 )
 
 add_subdirectory(src)
@@ -90,6 +91,7 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         v4l2demo/epoll/*.cpp
         v4l2demo/ringbuf/*.cpp
         v4l2demo/*.cpp
+        v4l2demo/calculate/*.cpp
     )
 
     if (USE_RK_HW_ENCODER)
