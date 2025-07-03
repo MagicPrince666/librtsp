@@ -3,7 +3,8 @@
  * @Date: 2021-02-05 15:12:06
  * @LastEditTime: 2021-02-20 14:28:43
  */
-#pragma once
+#ifndef __RTSP_HANDLER_H__
+#define __RTSP_HANDLER_H__
 
 #include "rtsp.h"
 
@@ -30,3 +31,5 @@ private:
     void GetParameter(rtsp_msg_t rtsp);
     void Redirect(rtsp_msg_t rtsp);
 };
+
+#endif

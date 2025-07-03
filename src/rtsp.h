@@ -3,7 +3,8 @@
  * @Date: 2021-02-04 16:43:10
  * @LastEditTime: 2021-02-20 16:39:00
  */
-#pragma once
+#ifndef __RTSP_H__
+#define __RTSP_H__
 
 #include <assert.h>
 #include <stdint.h>
@@ -89,3 +90,5 @@ typedef struct {
 #endif
     char session[DEFAULT_STRING_MIN_LEN];
 } rtsp_msg_t;
+
+#endif

@@ -10,8 +10,8 @@
 
 RtspParse g_rtsp_parse;
 
-#define EVENT_PARSE(msg)         \
-    rtsp_msg_t _rtsp;            \
+#define EVENT_PARSE(msg)                    \
+    rtsp_msg_t _rtsp;                       \
     g_rtsp_parse.RtspParseMsg(msg, &_rtsp); \
     switch (_rtsp.request.method) {
 
@@ -24,23 +24,21 @@ RtspParse g_rtsp_parse;
 
 #define EVENT(m, func, enable) \
     {                          \
-    case m: {                  \
-        if (enable)            \
-            func(_rtsp);       \
-        break;                 \
+        case m : {             \
+            if (enable)        \
+                func(_rtsp);   \
+    break;                     \
     }                          \
     }
 
-#define RELY_ADD_COND(m, v, msg, args...)   \
-    do {                                    \
-        if (m == v) {                       \
-            char str[2048] = {0};           \
-            snprintf(str, sizeof(str), ##args);\
-            sprintf(msg, "%s%s", msg, str); \
-        }                                   \
+#define RELY_ADD_COND(m, v, msg, args...)       \
+    do {                                        \
+        if (m == v) {                           \
+            char str[2048] = {0};               \
+            snprintf(str, sizeof(str), ##args); \
+            sprintf(msg, "%s%s", msg, str);     \
+        }                                       \
     } while (0)
-
-#define RELY_ADD(msg, args...) RELY_ADD_COND(0, 0, msg, ##args)
 
 RtspHandler::RtspHandler() {}
 
@@ -75,12 +73,13 @@ rtsp_msg_t RtspHandler::RtspMsgLoad(const char *msg)
 int RtspHandler::RtspRelyDumps(rtsp_rely_t rely, char *msg, uint32_t len)
 {
     rtsp_method_enum_t method = rely.request.method;
-    if (len < 1024)
+    if (len < 1024) {
         return -1;
+    }
     memset(msg, 0, len);
-    RELY_ADD(msg, "RTSP/1.0 %d %s\r\n", rely.status, rely.desc);
-    RELY_ADD(msg, "CSeq: %d\r\n", rely.cseq);
-    RELY_ADD(msg, "Date: %s\r\n", rely.datetime);
+    RELY_ADD_COND(0, 0, msg, "RTSP/1.0 %d %s\r\n", rely.status, rely.desc);
+    RELY_ADD_COND(0, 0, msg, "CSeq: %d\r\n", rely.cseq);
+    RELY_ADD_COND(0, 0, msg, "Date: %s\r\n", rely.datetime);
     RELY_ADD_COND(method, OPTIONS, msg, "Public: %s\r\n", DEFAULT_RTSP_SUPPORT_METHOD);
     RELY_ADD_COND(method, DESCRIBE, msg, "Content-type: application/sdp\r\n");
     RELY_ADD_COND(((method == SETUP) | (method == PLAY) | (method == TEARDOWN)), 1, msg,
@@ -99,7 +98,7 @@ int RtspHandler::RtspRelyDumps(rtsp_rely_t rely, char *msg, uint32_t len)
                   rely.request.url.uri,
                   rely.rtp_seq,
                   (long)rely.rtptime);
-    RELY_ADD(msg, "Content-Length: %d\r\n\r\n", rely.sdp_len);
+    RELY_ADD_COND(0, 0, msg, "Content-Length: %d\r\n\r\n", rely.sdp_len);
     RELY_ADD_COND(method, DESCRIBE, msg, "%s", rely.sdp);
     // printf("msg:%ld\n%s\n",strlen(msg),msg);
     return 0;

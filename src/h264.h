@@ -3,7 +3,8 @@
  * @Date: 2021-02-08 19:51:36
  * @LastEditTime: 2021-02-26 13:55:05
  */
-#pragma once
+#ifndef __H264_H__
+#define __H264_H__
 
 #include "rtp.h"
 
@@ -51,3 +52,5 @@ private:
     int NalIsHeader(uint8_t *ptr);
     uint8_t *NextNal(uint8_t *ptr, uint8_t *end);
 };
+
+#endif

@@ -3,7 +3,8 @@
  * @Date: 2021-02-11 17:01:24
  * @LastEditTime: 2021-02-23 17:50:10
  */
-#pragma once
+#ifndef __NET_H__
+#define __NET_H__
 
 #include <errno.h>
 #include <stdio.h>
@@ -59,3 +60,5 @@ public:
     int Deinit(udp_t *udp);
 private:
 };
+
+#endif

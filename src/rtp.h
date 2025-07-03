@@ -3,7 +3,8 @@
  * @Date: 2021-02-04 16:29:39
  * @LastEditTime: 2021-02-26 16:38:24
  */
-#pragma once
+#ifndef __RTP_H__
+#define __RTP_H__
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -78,3 +79,5 @@ private:
 private:
     rtp_header_t header_;
 };
+
+#endif

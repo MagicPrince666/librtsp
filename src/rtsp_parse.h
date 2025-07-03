@@ -3,7 +3,8 @@
  * @Date: 2021-02-05 14:32:30
  * @LastEditTime: 2021-02-26 16:38:36
  */
-#pragma once
+#ifndef __RTSP_PARSE_H__
+#define __RTSP_PARSE_H__
 
 #include "rtsp.h"
 
@@ -64,3 +65,4 @@ private:
     int RtspParseRequest(const char *msg, rtsp_request_t *req);
 };
 
+#endif
