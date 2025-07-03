@@ -83,14 +83,14 @@ static void _signal_handler(int signum)
 }
 #endif
 
-const char *rfc822_datetime_format(time_t time, char *datetime)
+const char *rfc822_datetime_format(time_t time, char *datetime, const uint32_t len)
 {
     int32_t r;
     char *date = asctime(gmtime(&time));
     char mon[8], week[8];
     int32_t year, day, hour, min, sec;
     sscanf(date, "%s %s %d %d:%d:%d %d", week, mon, &day, &hour, &min, &sec, &year);
-    r = sprintf(datetime, "%s, %02d %s %04d %02d:%02d:%02d GMT",
+    r = snprintf(datetime, len, "%s, %02d %s %04d %02d:%02d:%02d GMT",
                  week, day, mon, year, hour, min, sec);
     return r > 0 && r < 32 ? datetime : NULL;
 }
@@ -240,7 +240,7 @@ void rtsp_thread(std::string file_name)
         tcp_server.ReceiveMsg(&tcp, client, (uint8_t *)recvbuffer, sizeof(recvbuffer));
         rtsp_msg_t rtsp = rtsp_handler.RtspMsgLoad(recvbuffer);
         char datetime[30];
-        rfc822_datetime_format(time(NULL), datetime);
+        rfc822_datetime_format(time(NULL), datetime, sizeof(datetime));
         rtsp_rely_t rely = rtsp_handler.GetRely(rtsp);
         memcpy(rely.datetime, datetime, strlen(datetime));
         switch (rtsp.request.method) {
