@@ -31,12 +31,12 @@ RtspParse g_rtsp_parse;
     }                          \
     }
 
-#define RELY_ADD_COND(m, v, msg, args...)       \
+#define RELY_ADD_COND(m, v, msg, len, args...)       \
     do {                                        \
         if (m == v) {                           \
             char str[2048] = {0};               \
             snprintf(str, sizeof(str), ##args); \
-            sprintf(msg, "%s%s", msg, str);     \
+            snprintf(msg, len, "%s%s", msg, str);     \
         }                                       \
     } while (0)
 
@@ -77,29 +77,29 @@ int RtspHandler::RtspRelyDumps(rtsp_rely_t rely, char *msg, uint32_t len)
         return -1;
     }
     memset(msg, 0, len);
-    RELY_ADD_COND(0, 0, msg, "RTSP/1.0 %d %s\r\n", rely.status, rely.desc);
-    RELY_ADD_COND(0, 0, msg, "CSeq: %d\r\n", rely.cseq);
-    RELY_ADD_COND(0, 0, msg, "Date: %s\r\n", rely.datetime);
-    RELY_ADD_COND(method, OPTIONS, msg, "Public: %s\r\n", DEFAULT_RTSP_SUPPORT_METHOD);
-    RELY_ADD_COND(method, DESCRIBE, msg, "Content-type: application/sdp\r\n");
-    RELY_ADD_COND(((method == SETUP) | (method == PLAY) | (method == TEARDOWN)), 1, msg,
+    RELY_ADD_COND(0, 0, msg, len, "RTSP/1.0 %d %s\r\n", rely.status, rely.desc);
+    RELY_ADD_COND(0, 0, msg, len, "CSeq: %d\r\n", rely.cseq);
+    RELY_ADD_COND(0, 0, msg, len, "Date: %s\r\n", rely.datetime);
+    RELY_ADD_COND(method, OPTIONS, msg, len, "Public: %s\r\n", DEFAULT_RTSP_SUPPORT_METHOD);
+    RELY_ADD_COND(method, DESCRIBE, msg, len, "Content-type: application/sdp\r\n");
+    RELY_ADD_COND(((method == SETUP) | (method == PLAY) | (method == TEARDOWN)), 1, msg, len,
                   "Session: %s;timeout=%d\r\n", rely.session, rely.timeout == 0 ? 60 : rely.timeout);
-    RELY_ADD_COND(method, SETUP, msg, "Transport: RTP/AVP%s;%scast;client_port=%d-%d;server_port=%d-%d\r\n",
+    RELY_ADD_COND(method, SETUP, msg, len, "Transport: RTP/AVP%s;%scast;client_port=%d-%d;server_port=%d-%d\r\n",
                   rely.tansport.is_tcp ? "/TCP" : "",
                   rely.tansport.is_multicast ? "multi" : "uni",
                   rely.tansport.client_port,
                   rely.tansport.client_port + 1,
                   rely.tansport.server_port,
                   rely.tansport.server_port + 1);
-    RELY_ADD_COND(method, PLAY, msg, "Range: npt=0.000-\r\n");
-    RELY_ADD_COND(method, PLAY, msg, "RTP-Info: url=rtsp://%s:%d/%s;seq=%d;rtptime=%ld\r\n",
+    RELY_ADD_COND(method, PLAY, msg, len, "Range: npt=0.000-\r\n");
+    RELY_ADD_COND(method, PLAY, msg, len, "RTP-Info: url=rtsp://%s:%d/%s;seq=%d;rtptime=%ld\r\n",
                   rely.request.url.ip,
                   rely.request.url.port,
                   rely.request.url.uri,
                   rely.rtp_seq,
                   (long)rely.rtptime);
-    RELY_ADD_COND(0, 0, msg, "Content-Length: %d\r\n\r\n", rely.sdp_len);
-    RELY_ADD_COND(method, DESCRIBE, msg, "%s", rely.sdp);
+    RELY_ADD_COND(0, 0, msg, len, "Content-Length: %d\r\n\r\n", rely.sdp_len);
+    RELY_ADD_COND(method, DESCRIBE, msg, len, "%s", rely.sdp);
     // printf("msg:%ld\n%s\n",strlen(msg),msg);
     return 0;
 }
