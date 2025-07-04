@@ -113,7 +113,6 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
         list(APPEND main_srcs 
             v4l2demo/rkmpp/rk_mpp_encoder.cpp
-            v4l2demo/rkmpp/mpp.cpp
         )
 
         list(APPEND COMMON_LIBRARIES

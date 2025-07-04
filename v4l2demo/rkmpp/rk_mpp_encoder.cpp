@@ -1,5 +1,4 @@
 #include "rk_mpp_encoder.h"
-#include "spdlog/spdlog.h"
 #include <iostream>
 
 RkMppEncoder::RkMppEncoder(std::string dev, uint32_t width, uint32_t height, uint32_t fps)

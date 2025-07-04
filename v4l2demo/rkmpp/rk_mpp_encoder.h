@@ -4,7 +4,6 @@
 #include "video_capture.h"
 #include "video_source.h"
 #include "timer_fd.h"
-#include "mpp.h"
 #include <iostream>
 #include <memory>
 #include <thread>
@@ -22,7 +21,7 @@
 #include <rockchip/mpp_task.h>
 #include <rockchip/rk_mpi.h>
 #include <rga/RgaApi.h>
-// #define MPP_ALIGN(x, a) (((x) + (a)-1) & ~((a)-1))
+#define MPP_ALIGN(x, a) (((x) + (a)-1) & ~((a)-1))
 
 class RkMppEncoder : public VideoStream
 {
@@ -34,7 +33,6 @@ public:
 
 private:
     std::shared_ptr<V4l2VideoCapture> v4l2_ctx;
-    std::shared_ptr<MppContext> mpp_ctx;
     std::shared_ptr<TimerFd> loop_timer_ptr;
     std::shared_ptr<Calculate> calculate_ptr_;
     std::mutex data_mtx_;
