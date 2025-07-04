@@ -221,7 +221,7 @@ void rtp_thread(std::string dev)
     uint32_t fps = 30;
 
 #ifdef USE_RK_HW_ENCODER
-    std::unique_ptr<VideoFactory> video_stream_factory(new UvcMppCamera);
+    std::unique_ptr<VideoFactory> video_stream_factory(new MppCamera);
 #else
     std::unique_ptr<VideoFactory> video_stream_factory(new UvcYuyvCamera);
 #endif

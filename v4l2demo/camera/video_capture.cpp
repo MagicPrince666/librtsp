@@ -259,7 +259,7 @@ bool V4l2VideoCapture::InitMmap()
     CLEAR(req);
 
     if (camera_.v4l2_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_MJPEG) {
-        req.count = 1;
+        req.count = 2;
     } else {
         req.count = 6;
     }

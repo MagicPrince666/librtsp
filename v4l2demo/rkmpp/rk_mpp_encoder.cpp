@@ -1,86 +1,228 @@
 #include "rk_mpp_encoder.h"
+#include "spdlog/spdlog.h"
 #include <iostream>
 
 RkMppEncoder::RkMppEncoder(std::string dev, uint32_t width, uint32_t height, uint32_t fps)
-: VideoStream(dev, width, height, fps)
+    : VideoStream(dev, width, height, fps)
 {
     Init();
 }
 
 RkMppEncoder::~RkMppEncoder()
 {
-    // if (loop_thread_.joinable()) {
-    //     loop_thread_.join();
-    // }
+    if (mpp_frame_buffer_) {
+        mpp_buffer_put(mpp_frame_buffer_);
+        mpp_frame_buffer_ = nullptr;
+    }
+    if (mpp_packet_buffer_) {
+        mpp_buffer_put(mpp_packet_buffer_);
+        mpp_packet_buffer_ = nullptr;
+    }
+    if (mpp_frame_group_) {
+        mpp_buffer_group_put(mpp_frame_group_);
+        mpp_frame_group_ = nullptr;
+    }
+    if (mpp_packet_group_) {
+        mpp_buffer_group_put(mpp_packet_group_);
+        mpp_packet_group_ = nullptr;
+    }
+    if (mpp_frame_) {
+        mpp_frame_deinit(&mpp_frame_);
+        mpp_frame_ = nullptr;
+    }
+    if (mpp_packet_) {
+        mpp_packet_deinit(&mpp_packet_);
+        mpp_packet_ = nullptr;
+    }
+    if (mpp_ctx_) {
+        mpp_destroy(mpp_ctx_);
+        mpp_ctx_ = nullptr;
+    }
+    if (rgb_buffer_) {
+        delete[] rgb_buffer_;
+    }
 }
 
 void RkMppEncoder::Init()
 {
-    v4l2_ctx                = std::make_shared<V4l2VideoCapture>(dev_name_, video_width_, video_height_, video_fps_);
-    mpp_ctx                 = std::make_shared<MppContext>();
-    v4l2_ctx->AddCallback(std::bind(&RkMppEncoder::ProcessImage, this, std::placeholders::_1, std::placeholders::_2));
-    // v4l2_ctx->process_image_ = std::bind(&RkMppEncoder::ProcessImage, this, std::placeholders::_1, std::placeholders::_2);
-    // v4l2_ctx->force_format  = 1;
-    // v4l2_ctx->width         = video_width_;
-    // v4l2_ctx->height        = video_height_;
-    // v4l2_ctx->pixelformat   = V4L2_PIX_FMT_YUYV;
-    // v4l2_ctx->field         = V4L2_FIELD_INTERLACED;
-    mpp_ctx->width          = video_width_;
-    mpp_ctx->height         = video_height_;
-    mpp_ctx->fps            = video_fps_;
-    mpp_ctx->gop            = 30;
-    mpp_ctx->bps            = mpp_ctx->width * mpp_ctx->height / 8 * mpp_ctx->fps * 2;
-    mpp_ctx->write_frame_    = std::bind(&RkMppEncoder::WriteFrame, this, std::placeholders::_1, std::placeholders::_2);
+    v4l2_ctx = std::make_shared<V4l2VideoCapture>(dev_name_, video_width_, video_height_, video_fps_);
+    // v4l2_ctx->AddCallback(std::bind(&RkMppEncoder::ProcessImage, this, std::placeholders::_1, std::placeholders::_2));
+    rgb_buffer_ = new uint8_t[video_width_ * video_height_ * 3];
+    MPP_RET ret = mpp_create(&mpp_ctx_, &mpp_api_);
+    if (ret != MPP_OK) {
+        spdlog::error("mpp_create failed, ret = {}", static_cast<int>(ret));
+        throw std::runtime_error("mpp_create failed");
+    }
+    MpiCmd mpi_cmd     = MPP_CMD_BASE;
+    MppParam mpp_param = nullptr;
 
-    h264_buf_ = new (std::nothrow) uint8_t[video_width_ * video_height_ * 2];
+    mpi_cmd   = MPP_DEC_SET_PARSER_SPLIT_MODE;
+    mpp_param = &need_split_;
+    ret       = mpp_api_->control(mpp_ctx_, mpi_cmd, mpp_param);
+    if (ret != MPP_OK) {
+        spdlog::error("mpp_api_->control failed, ret = {}", static_cast<int>(ret));
+        throw std::runtime_error("mpp_api_->control failed");
+    }
+    ret = mpp_init(mpp_ctx_, MPP_CTX_DEC, MPP_VIDEO_CodingMJPEG);
+    if (ret != MPP_OK) {
+        spdlog::error("mpp_init failed, ret = {}", static_cast<int>(ret));
+        throw std::runtime_error("mpp_init failed");
+    }
+    MppFrameFormat fmt = MPP_FMT_YUV420SP_VU;
+    mpp_param          = &fmt;
+    ret                = mpp_api_->control(mpp_ctx_, MPP_DEC_SET_OUTPUT_FORMAT, mpp_param);
+    if (ret != MPP_OK) {
+        spdlog::error("mpp_api_->control failed, ret = {}", static_cast<int>(ret));
+        throw std::runtime_error("mpp_api_->control failed");
+    }
+    ret = mpp_frame_init(&mpp_frame_);
+    if (ret != MPP_OK) {
+        spdlog::error("mpp_frame_init failed, ret = {}", static_cast<int>(ret));
+        throw std::runtime_error("mpp_frame_init failed");
+    }
+    ret = mpp_buffer_group_get_internal(&mpp_frame_group_, MPP_BUFFER_TYPE_ION);
+    if (ret != MPP_OK) {
+        spdlog::error("mpp_buffer_group_get_internal failed, ret = {}", static_cast<int>(ret));
+        throw std::runtime_error("mpp_buffer_group_get_internal failed");
+    }
+    ret = mpp_buffer_group_get_internal(&mpp_packet_group_, MPP_BUFFER_TYPE_ION);
+    if (ret != MPP_OK) {
+        spdlog::error("mpp_buffer_group_get_internal failed, ret = ", static_cast<int>(ret));
+        throw std::runtime_error("mpp_buffer_group_get_internal failed");
+    }
+    RK_U32 hor_stride = MPP_ALIGN(video_width_, 16);
+    RK_U32 ver_stride = MPP_ALIGN(video_height_, 16);
+    ret               = mpp_buffer_get(mpp_frame_group_, &mpp_frame_buffer_, hor_stride * ver_stride * 4);
+    if (ret != MPP_OK) {
+        spdlog::error("mpp_buffer_get failed, ret = {}", static_cast<int>(ret));
+        throw std::runtime_error("mpp_buffer_get failed");
+    }
+    mpp_frame_set_buffer(mpp_frame_, mpp_frame_buffer_);
+    ret = mpp_buffer_get(mpp_packet_group_, &mpp_packet_buffer_, video_width_ * video_height_ * 3);
+    if (ret != MPP_OK) {
+        spdlog::error("mpp_buffer_get failed, ret = {}", static_cast<int>(ret));
+        throw std::runtime_error("mpp_buffer_get failed");
+    }
+    mpp_packet_init_with_buffer(&mpp_packet_, mpp_packet_buffer_);
+    data_buffer_ = (uint8_t *)mpp_buffer_get_ptr(mpp_packet_buffer_);
 
-    SpsHeader sps_header;
-    mpp_ctx->WriteHeader(&sps_header);
-    // v4l2_ctx->OpenDevice(dev_name_.c_str());
-    // v4l2_ctx->InitDevice();
-    // v4l2_ctx->StartCapturing();
-    v4l2_ctx->Init();
+    camera_buf_ = new (std::nothrow) uint8_t[video_width_ * video_height_ * 2];
+
+    v4l2_ctx->Init(V4L2_PIX_FMT_MJPEG); // V4L2_PIX_FMT_MJPEG
 
     calculate_ptr_ = std::make_shared<CalculateRockchip>();
     calculate_ptr_->Init();
-
-    // loop_timer_ptr = std::make_shared<TimerFd>();
-    // loop_timer_ptr->AddCallback(std::bind(&RkMppEncoder::MainLoop, this));
-    // loop_timer_ptr->InitTimer();
-    // loop_timer_ptr->StartTimer(0, 33000000);
-    
-    // loop_thread_ = std::thread([&]() { v4l2_ctx->MainLoop(); });
 }
 
-void RkMppEncoder::MainLoop()
+bool RkMppEncoder::mppFrame2RGB(const MppFrame frame, uint8_t *data)
 {
-    uint64_t lenght = v4l2_ctx->BuffOneFrame(h264_buf_);
-    ProcessImage(h264_buf_, lenght);
-}
-
-bool RkMppEncoder::ProcessImage(const uint8_t *p, const uint32_t size)
-{
-    return mpp_ctx->ProcessImage(p, size);
-}
-
-bool RkMppEncoder::WriteFrame(const uint8_t* data, const uint32_t size)
-{
-    std::unique_lock<std::mutex> lck(data_mtx_);
-    // std::cout << "frame size " << size << std::endl;
-    memcpy(h264_buf_, data, size);
-    h264_lenght_ = size;
+    int width        = mpp_frame_get_width(frame);
+    int height       = mpp_frame_get_height(frame);
+    MppBuffer buffer = mpp_frame_get_buffer(frame);
+    memset(data, 0, width * height * 3);
+    auto buffer_ptr = mpp_buffer_get_ptr(buffer);
+    rga_info_t src_info;
+    rga_info_t dst_info;
+    // NOTE: memset to zero is MUST
+    memset(&src_info, 0, sizeof(rga_info_t));
+    memset(&dst_info, 0, sizeof(rga_info_t));
+    src_info.fd      = -1;
+    src_info.mmuFlag = 1;
+    src_info.virAddr = buffer_ptr;
+    src_info.format  = RK_FORMAT_YCbCr_420_SP;
+    dst_info.fd      = -1;
+    dst_info.mmuFlag = 1;
+    dst_info.virAddr = data;
+    dst_info.format  = RK_FORMAT_BGR_888;
+    rga_set_rect(&src_info.rect, 0, 0, width, height, width, height, RK_FORMAT_YCbCr_420_SP);
+    rga_set_rect(&dst_info.rect, 0, 0, width, height, width, height, RK_FORMAT_BGR_888);
+    int ret = c_RkRgaBlit(&src_info, &dst_info, nullptr);
+    if (ret) {
+        spdlog::error("c_RkRgaBlit error {} errno {}", ret, strerror(errno));
+        return false;
+    }
     return true;
 }
+
+#if 0
+bool RkMppEncoder::decode(const std::shared_ptr<ob::ColorFrame> &frame, uint8_t *dest) {
+  MPP_RET ret = MPP_OK;
+  memset(data_buffer_, 0, video_width_ * video_height_ * 3);
+  memcpy(data_buffer_, frame->data(), frame->dataSize());
+  mpp_packet_set_pos(mpp_packet_, data_buffer_);
+  mpp_packet_set_length(mpp_packet_, frame->dataSize());
+  mpp_packet_set_eos(mpp_packet_);
+  CHECK_NOTNULL(mpp_ctx_);
+  ret = mpp_api_->poll(mpp_ctx_, MPP_PORT_INPUT, MPP_POLL_BLOCK);
+  if (ret != MPP_OK) {
+    RCLCPP_ERROR(rclcpp::get_logger("rk_mpp_decoder"), "mpp poll failed %d", ret);
+    return false;
+  }
+  ret = mpp_api_->dequeue(mpp_ctx_, MPP_PORT_INPUT, &mpp_task_);
+  if (ret != MPP_OK) {
+    RCLCPP_ERROR(rclcpp::get_logger("rk_mpp_decoder"), "mpp dequeue failed %d", ret);
+    return false;
+  }
+  mpp_task_meta_set_packet(mpp_task_, KEY_INPUT_PACKET, mpp_packet_);
+  mpp_task_meta_set_frame(mpp_task_, KEY_OUTPUT_FRAME, mpp_frame_);
+  ret = mpp_api_->enqueue(mpp_ctx_, MPP_PORT_INPUT, mpp_task_);
+  if (ret != MPP_OK) {
+    RCLCPP_ERROR(rclcpp::get_logger("rk_mpp_decoder"), "mpp enqueue failed %d", ret);
+    return false;
+  }
+  ret = mpp_api_->poll(mpp_ctx_, MPP_PORT_OUTPUT, MPP_POLL_BLOCK);
+  if (ret != MPP_OK) {
+    RCLCPP_ERROR(rclcpp::get_logger("rk_mpp_decoder"), "mpp poll failed %d", ret);
+    return false;
+  }
+  ret = mpp_api_->dequeue(mpp_ctx_, MPP_PORT_OUTPUT, &mpp_task_);
+  if (ret != MPP_OK) {
+    RCLCPP_ERROR(rclcpp::get_logger("rk_mpp_decoder"), "mpp dequeue failed %d", ret);
+    return false;
+  }
+  if (mpp_task_) {
+    MppFrame output_frame = nullptr;
+    mpp_task_meta_get_frame(mpp_task_, KEY_OUTPUT_FRAME, &output_frame);
+    if (mpp_frame_) {
+      int width = mpp_frame_get_width(mpp_frame_);
+      int height = mpp_frame_get_height(mpp_frame_);
+      if (width != video_width_ || height != video_height_) {
+        RCLCPP_ERROR_STREAM(rclcpp::get_logger("rk_mpp_decoder"),
+                            "mpp frame size error " << width << " " << height);
+        return false;
+      }
+      if (!mppFrame2RGB(mpp_frame_, rgb_buffer_)) {
+        RCLCPP_ERROR_STREAM(rclcpp::get_logger("rk_mpp_decoder"), "mpp frame to rgb error");
+        return false;
+      }
+      if (mpp_frame_get_eos(output_frame)) {
+        RCLCPP_INFO_STREAM(rclcpp::get_logger("rk_mpp_decoder"), "mpp frame get eos");
+      }
+    }
+    ret = mpp_api_->enqueue(mpp_ctx_, MPP_PORT_OUTPUT, mpp_task_);
+    if (ret != MPP_OK) {
+      RCLCPP_ERROR(rclcpp::get_logger("rk_mpp_decoder"), "mpp enqueue failed %d", ret);
+      return false;
+    }
+    CHECK_NOTNULL(dest);
+    memcpy(dest, rgb_buffer_, video_width_ * video_height_ * 3);
+    return true;
+  }
+  return false;
+}
+#endif
 
 int32_t RkMppEncoder::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
 {
     std::unique_lock<std::mutex> lck(data_mtx_);
+    uint64_t lenght = v4l2_ctx->BuffOneFrame(camera_buf_);
+
     if (h264_lenght_ < fMaxSize) {
-        memcpy(fTo, h264_buf_, h264_lenght_);
+        memcpy(fTo, camera_buf_, h264_lenght_);
         fFrameSize         = h264_lenght_;
         fNumTruncatedBytes = 0;
     } else {
-        memcpy(fTo, h264_buf_, fMaxSize);
+        memcpy(fTo, camera_buf_, fMaxSize);
         fNumTruncatedBytes = h264_lenght_ - fMaxSize;
         fFrameSize         = fMaxSize;
     }
