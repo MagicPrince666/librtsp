@@ -168,6 +168,26 @@ bool H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out, uint6
             u[i] = uvSrc[2 * i];      // U分量
             v[i] = uvSrc[2 * i + 1];   // V分量
         }
+    } else if (pixelformat_ == V4L2_PIX_FMT_YUYV) {
+        int32_t widthStep422 = encode_.param->i_width * 2;
+        uint8_t *p422;
+        for (int32_t i = 0; i < encode_.param->i_height; i += 2) {
+            p422 = in + i * widthStep422;
+
+            for (int32_t j = 0; j < widthStep422; j += 4) {
+                *(y++) = p422[j];
+                *(u++) = p422[j + 1];
+                *(y++) = p422[j + 2];
+            }
+
+            p422 += widthStep422;
+
+            for (int32_t j = 0; j < widthStep422; j += 4) {
+                *(y++) = p422[j];
+                *(v++) = p422[j + 3];
+                *(y++) = p422[j + 2];
+            }
+        }
     } else if (pixelformat_ == V4L2_PIX_FMT_YUV420) {
         memcpy(y, in, 307200);
         memcpy(u, in + 307200, 76800);

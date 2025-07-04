@@ -66,18 +66,13 @@ V4l2H264hData::~V4l2H264hData()
 
 void V4l2H264hData::Init()
 {
+    uint32_t pixelformat = V4L2_PIX_FMT_YUYV;
     p_capture_ = new (std::nothrow) V4l2VideoCapture(dev_name_.c_str(), video_width_, video_height_, video_fps_);
-    p_capture_->Init(V4L2_PIX_FMT_NV12); // 初始化摄像头
+    p_capture_->Init(pixelformat); // 初始化摄像头
     video_format_ = p_capture_->GetFormat();
     camera_buf_   = new (std::nothrow) uint8_t[p_capture_->GetFrameLength()];
-    encoder_      = new (std::nothrow) H264Encoder(video_format_->width, video_format_->height, V4L2_PIX_FMT_NV12);
+    encoder_      = new (std::nothrow) H264Encoder(video_format_->width, video_format_->height, video_format_->v4l2_fmt.fmt.pix.pixelformat);
     encoder_->Init();
-
-    if (video_format_->v4l2_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_NV12) {
-        int ySize = video_width_ * video_height_;
-        int uvSize = ySize / 4;  // 420采样，UV平面是Y平面的1/4
-        nv12_buf_ = new (std::nothrow) uint8_t[ySize + uvSize * 2];
-    }
 
 #if USE_BUF_LIST
 #else
