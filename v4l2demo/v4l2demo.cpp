@@ -216,14 +216,16 @@ void rtp_thread(std::string dev)
     H264 h264;// 好64通讯类
 
     spdlog::info("rtp server init.");
+    uint32_t width = 1920;
+    uint32_t height = 1080;
+    uint32_t fps = 30;
 
 #ifdef USE_RK_HW_ENCODER
     std::unique_ptr<VideoFactory> video_stream_factory(new UvcMppCamera);
 #else
     std::unique_ptr<VideoFactory> video_stream_factory(new UvcYuyvCamera);
 #endif
-    std::unique_ptr<VideoStream> h264_video_(video_stream_factory->createVideoStream(dev, 1920, 1080, 5));
-
+    std::unique_ptr<VideoStream> h264_video_(video_stream_factory->createVideoStream(dev, width, height, fps));
     uint32_t fMaxSize = 1843200;
     uint8_t *h264data = new uint8_t[fMaxSize];
 

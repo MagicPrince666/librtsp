@@ -41,6 +41,9 @@ void RkMppEncoder::Init()
     // v4l2_ctx->StartCapturing();
     v4l2_ctx->Init();
 
+    calculate_ptr_ = std::make_shared<CalculateRockchip>();
+    calculate_ptr_->Init();
+
     // loop_timer_ptr = std::make_shared<TimerFd>();
     // loop_timer_ptr->AddCallback(std::bind(&RkMppEncoder::MainLoop, this));
     // loop_timer_ptr->InitTimer();

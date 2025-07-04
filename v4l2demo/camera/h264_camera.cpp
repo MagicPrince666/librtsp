@@ -70,15 +70,13 @@ void V4l2H264hData::Init()
     p_capture_->Init(V4L2_PIX_FMT_NV12); // 初始化摄像头
     video_format_ = p_capture_->GetFormat();
     camera_buf_   = new (std::nothrow) uint8_t[p_capture_->GetFrameLength()];
-    encoder_      = new (std::nothrow) H264Encoder(video_format_->width, video_format_->height);
+    encoder_      = new (std::nothrow) H264Encoder(video_format_->width, video_format_->height, V4L2_PIX_FMT_NV12);
     encoder_->Init();
 
     if (video_format_->v4l2_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_NV12) {
         int ySize = video_width_ * video_height_;
         int uvSize = ySize / 4;  // 420采样，UV平面是Y平面的1/4
         nv12_buf_ = new (std::nothrow) uint8_t[ySize + uvSize * 2];
-        calculate_ptr_ = std::make_shared<CalculateCpu>();
-        calculate_ptr_->Init();
     }
 
 #if USE_BUF_LIST
@@ -154,9 +152,6 @@ int32_t V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSiz
     if (p_capture_) {
         len = p_capture_->BuffOneFrame(camera_buf_);
         // spdlog::info("get size after encoder = {}", len);
-        if (video_format_->v4l2_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_NV12) {
-            calculate_ptr_->Nv12Yuv420p(camera_buf_, nv12_buf_, video_width_, video_height_);
-        }
     }
 
     if (len <= 0) {
@@ -166,11 +161,7 @@ int32_t V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSiz
     }
 
     uint64_t length = 0;
-    if (video_format_->v4l2_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_NV12) {
-        encoder_->CompressFrame(FRAME_TYPE_AUTO, nv12_buf_, h264_buf_, length);
-    } else {
-        encoder_->CompressFrame(FRAME_TYPE_AUTO, camera_buf_, h264_buf_, length);
-    }
+    encoder_->CompressFrame(FRAME_TYPE_AUTO, camera_buf_, h264_buf_, length);
     if (length < fMaxSize) {
         memcpy(fTo, h264_buf_, length);
         fFrameSize         = length;

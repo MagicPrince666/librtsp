@@ -1,5 +1,8 @@
-#include "spdlog/spdlog.h"
+#include <cstring>
 #include "calculate_cpu.h"
+#if defined(__linux__)
+#include <linux/videodev2.h>
+#endif
 
 CalculateCpu::CalculateCpu() {}
 
@@ -7,10 +10,13 @@ CalculateCpu::~CalculateCpu() {}
 
 void CalculateCpu::Init()
 {
-
+#if defined(__linux__)
+    pix_fmt_fun_map_[V4L2_PIX_FMT_NV12] = std::bind(&CalculateCpu::Nv12Rgb24, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+    pix_fmt_fun_map_[V4L2_PIX_FMT_YUYV] = std::bind(&CalculateCpu::Yuv422Rgb, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+#endif
 }
 
-void CalculateCpu::Yuv422Rgb(const uint8_t* yuyv, uint8_t* rgb, int width, int height)
+bool CalculateCpu::Yuv422Rgb(const uint8_t* yuyv, uint8_t* rgb, int width, int height)
 {
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x += 2) {
@@ -40,13 +46,14 @@ void CalculateCpu::Yuv422Rgb(const uint8_t* yuyv, uint8_t* rgb, int width, int h
             rgb[rgbIndex + 5] = r1;
         }
     }
+    return true;
 }
 
-void CalculateCpu::Nv12Rgb24(const uint8_t* nv12, uint8_t* rgb, int width, int height)
+bool CalculateCpu::Nv12Rgb24(const uint8_t* nv12, uint8_t* rgb, int width, int height)
 {
     if (width <= 0 || height <= 0 || !nv12 || !rgb) {
         std::cerr << "Invalid input parameters" << std::endl;
-        return;
+        return false;
     }
     
     const int y_size = width * height;
@@ -95,9 +102,10 @@ void CalculateCpu::Nv12Rgb24(const uint8_t* nv12, uint8_t* rgb, int width, int h
             rgb[rgb_idx + 2] = static_cast<uint8_t>(b);
         }
     }
+    return true;
 }
 
-void CalculateCpu::Nv12Yuv420p(const uint8_t* nv12, uint8_t* yuv420p, int width, int height)
+bool CalculateCpu::Nv12Yuv420p(const uint8_t* nv12, uint8_t* yuv420p, int width, int height)
 {
     // 计算各平面大小
     int ySize = width * height;
@@ -121,4 +129,13 @@ void CalculateCpu::Nv12Yuv420p(const uint8_t* nv12, uint8_t* yuv420p, int width,
         uPlane[i] = uvSrc[2 * i];      // U分量
         vPlane[i] = uvSrc[2 * i + 1];   // V分量
     }
+    return true;
+}
+
+bool CalculateCpu::TransferRgb888(const uint8_t* raw, uint8_t* rgb, int width, int height, const uint32_t format)
+{
+    if (pix_fmt_fun_map_.count(format)) {
+        return pix_fmt_fun_map_[format](raw, rgb, width, height);
+    }
+    return false;
 }

@@ -91,8 +91,20 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
         v4l2demo/epoll/*.cpp
         v4l2demo/ringbuf/*.cpp
         v4l2demo/*.cpp
-        v4l2demo/calculate/*.cpp
+        v4l2demo/calculate/calculate_cpu.cpp
     )
+
+    pkg_check_modules(RGA REQUIRED librga)
+
+    if (RGA_FOUND)
+    message(STATUS "rga lib found : ${RGA_LIBRARIES}")
+    # include_directories(${RGA_INCLUDE_DIRS})
+    list(APPEND COMMON_LIBRARIES ${RGA_LIBRARIES})
+    add_definitions(-DUSE_ROCKCHIP_RGA)
+    list(APPEND main_srcs v4l2demo/calculate/calculate_rockchip.cpp)
+    else()
+    message(STATUS "rga lib not found : ${RGA_LIBRARIES}")
+    endif()
 
     if (USE_RK_HW_ENCODER)
         pkg_search_module(RK_MPP REQUIRED rockchip_mpp)
