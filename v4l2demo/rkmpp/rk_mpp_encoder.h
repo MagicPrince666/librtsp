@@ -33,7 +33,6 @@ public:
     int32_t getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes);
 
 private:
-    // std::shared_ptr<V4l2Context> v4l2_ctx;
     std::shared_ptr<V4l2VideoCapture> v4l2_ctx;
     std::shared_ptr<MppContext> mpp_ctx;
     std::shared_ptr<TimerFd> loop_timer_ptr;
@@ -61,7 +60,7 @@ private:
 
     bool mppFrame2RGB(const MppFrame frame, uint8_t* data);
 
-    // bool decode(const std::shared_ptr<ob::ColorFrame>& frame, uint8_t* dest) override;
+    bool Decode(uint8_t* dest);
 };
 
 class MppCamera : public VideoFactory
