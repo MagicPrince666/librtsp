@@ -3,7 +3,6 @@
 
 #include "video_capture.h"
 #include "video_source.h"
-#include "timer_fd.h"
 #include <iostream>
 #include <memory>
 #include <thread>
@@ -32,11 +31,11 @@ public:
     int32_t getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes);
 
 private:
-    std::shared_ptr<V4l2VideoCapture> v4l2_ctx;
-    std::shared_ptr<TimerFd> loop_timer_ptr;
+    std::shared_ptr<V4l2VideoCapture> v4l2_ctx_;
     std::shared_ptr<Calculate> calculate_ptr_;
     std::mutex data_mtx_;
     uint8_t *camera_buf_;
+    uint32_t camera_buf_size_;
     int h264_lenght_;
     std::thread loop_thread_;
 

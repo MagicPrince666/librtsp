@@ -44,8 +44,8 @@ RkMppEncoder::~RkMppEncoder()
 
 void RkMppEncoder::Init()
 {
-    v4l2_ctx = std::make_shared<V4l2VideoCapture>(dev_name_, video_width_, video_height_, video_fps_);
-    // v4l2_ctx->AddCallback(std::bind(&RkMppEncoder::ProcessImage, this, std::placeholders::_1, std::placeholders::_2));
+    v4l2_ctx_ = std::make_shared<V4l2VideoCapture>(dev_name_, video_width_, video_height_, video_fps_);
+    // v4l2_ctx_->AddCallback(std::bind(&RkMppEncoder::ProcessImage, this, std::placeholders::_1, std::placeholders::_2));
     rgb_buffer_ = new uint8_t[video_width_ * video_height_ * 3];
     MPP_RET ret = mpp_create(&mpp_ctx_, &mpp_api_);
     if (ret != MPP_OK) {
@@ -107,7 +107,7 @@ void RkMppEncoder::Init()
 
     camera_buf_ = new (std::nothrow) uint8_t[video_width_ * video_height_ * 2];
 
-    v4l2_ctx->Init(V4L2_PIX_FMT_MJPEG); // V4L2_PIX_FMT_MJPEG
+    v4l2_ctx_->Init(V4L2_PIX_FMT_MJPEG); // V4L2_PIX_FMT_MJPEG
 
     calculate_ptr_ = std::make_shared<CalculateRockchip>();
     calculate_ptr_->Init();
@@ -146,9 +146,9 @@ bool RkMppEncoder::mppFrame2RGB(const MppFrame frame, uint8_t *data)
 bool RkMppEncoder::Decode(uint8_t *dest) {
   MPP_RET ret = MPP_OK;
   memset(data_buffer_, 0, video_width_ * video_height_ * 3);
-  // memcpy(data_buffer_, frame->data(), frame->dataSize());
+  memcpy(data_buffer_, camera_buf_, camera_buf_size_);
   mpp_packet_set_pos(mpp_packet_, data_buffer_);
-  // mpp_packet_set_length(mpp_packet_, frame->dataSize());
+  mpp_packet_set_length(mpp_packet_, camera_buf_size_);
   mpp_packet_set_eos(mpp_packet_);
 
   ret = mpp_api_->poll(mpp_ctx_, MPP_PORT_INPUT, MPP_POLL_BLOCK);
@@ -210,7 +210,7 @@ bool RkMppEncoder::Decode(uint8_t *dest) {
 int32_t RkMppEncoder::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
 {
     std::unique_lock<std::mutex> lck(data_mtx_);
-    uint64_t lenght = v4l2_ctx->BuffOneFrame(camera_buf_);
+    camera_buf_size_ = v4l2_ctx_->BuffOneFrame(camera_buf_);
 
     if (h264_lenght_ < fMaxSize) {
         memcpy(fTo, camera_buf_, h264_lenght_);
