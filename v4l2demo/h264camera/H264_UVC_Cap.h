@@ -123,6 +123,8 @@ private:
      */
     std::string getCurrentTime8();
 
+    const char *V4l2FormatToString(uint32_t pixelformat);
+
 private:
     struct buffer {
         void *start;

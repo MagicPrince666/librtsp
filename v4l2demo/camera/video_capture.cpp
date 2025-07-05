@@ -110,7 +110,7 @@ uint64_t V4l2VideoCapture::BuffOneFrame(uint8_t *data)
     }
 
     // this operator below will change buf.index and (0 <= buf.index <= 3)
-    if (-1 == ioctl(camera_.fd, VIDIOC_DQBUF, &buf)) { // 这里卡住了
+    if (-1 == ioctl(camera_.fd, VIDIOC_DQBUF, &buf)) {
         std::cerr << "VIDIOC_DQBUF error " <<  strerror(errno) << std::endl;
         switch (errno) {
         case EAGAIN:
