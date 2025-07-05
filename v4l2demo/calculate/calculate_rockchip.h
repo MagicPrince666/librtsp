@@ -54,7 +54,7 @@ private:
         {V4L2_PIX_FMT_NV12, RK_FORMAT_YCbCr_420_SP},
         {V4L2_PIX_FMT_NV16, RK_FORMAT_YCbCr_422_SP},
         {V4L2_PIX_FMT_YUYV, RK_FORMAT_YUYV_422},
-        {V4L2_PIX_FMT_MJPEG, RK_FORMAT_RGB_888}
+        {V4L2_PIX_FMT_MJPEG, RK_FORMAT_UNKNOWN}
     };
 
     bool mppFrame2RGB(const MppFrame frame, uint8_t* data, const uint32_t dst_format);

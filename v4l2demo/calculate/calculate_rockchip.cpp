@@ -272,7 +272,7 @@ bool CalculateRockchip::TransferRgb888(const uint8_t* raw, uint8_t* rgb, int wid
 
 bool CalculateRockchip::Transfer(const uint8_t* raw, uint8_t* dst, int width, int height, const uint32_t src_format, const uint32_t dst_format)
 {
-    if (src_format == V4L2_PIX_FMT_MJPEG) {
+    if (src_format == V4L2_PIX_FMT_MJPEG && pix_fmt_map_.count(dst_format)) {
         return Decode(raw, dst, width, height, pix_fmt_map_[dst_format]);
     }
     return true;
