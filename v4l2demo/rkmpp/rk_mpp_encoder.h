@@ -9,7 +9,7 @@
 #include <mutex>
 #include <stdint.h>
 #include <stdio.h>
-#include "calculate_rockchip.h"
+#include "calculate.h"
 
 #include <rockchip/mpp_buffer.h>
 #include <rockchip/mpp_err.h>
@@ -39,25 +39,9 @@ private:
     int h264_lenght_;
     std::thread loop_thread_;
 
-    MppCtx mpp_ctx_ = nullptr;
-    MppApi* mpp_api_ = nullptr;
-    MppPacket mpp_packet_ = nullptr;
-    MppFrame mpp_frame_ = nullptr;
-    MppDecCfg mpp_dec_cfg_ = nullptr;
-    MppBuffer mpp_frame_buffer_ = nullptr;
-    MppBuffer mpp_packet_buffer_ = nullptr;
-    uint8_t* data_buffer_ = nullptr;
-    MppBufferGroup mpp_frame_group_ = nullptr;
-    MppBufferGroup mpp_packet_group_ = nullptr;
-    MppTask mpp_task_ = nullptr;
-    uint32_t need_split_ = 0;
-    uint8_t* rgb_buffer_ = nullptr;
-
     void Init();
 
-    bool mppFrame2RGB(const MppFrame frame, uint8_t* data);
-
-    bool Decode();
+    bool mppFrame2H264(const MppFrame frame, uint8_t* data);
 };
 
 class MppCamera : public VideoFactory
