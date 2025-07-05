@@ -139,3 +139,8 @@ bool CalculateCpu::TransferRgb888(const uint8_t* raw, uint8_t* rgb, int width, i
     }
     return false;
 }
+
+bool CalculateCpu::Transfer(const uint8_t* raw, uint8_t* dst, int width, int height, const uint32_t src_format, const uint32_t dst_format)
+{
+    return true;
+}

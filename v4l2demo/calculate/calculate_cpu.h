@@ -21,6 +21,8 @@ public:
 
     bool Nv12Yuv420p(const uint8_t* nv12, uint8_t* yuv420p, int width, int height);
 
+    bool Transfer(const uint8_t* raw, uint8_t* dst, int width, int height, const uint32_t src_format, const uint32_t dst_format);
+
 private:
     std::unordered_map<uint32_t, std::function<bool(const uint8_t*, uint8_t*, int, int)>> pix_fmt_fun_map_;
 };

@@ -28,7 +28,7 @@ void RkMppEncoder::Init()
 int32_t RkMppEncoder::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
 {
     uint32_t len = v4l2_ctx_->BuffOneFrame(camera_buf_);
-
+    // TO DO 将MJPG编码成H.264
     if (h264_lenght_ < fMaxSize) {
         memcpy(fTo, camera_buf_, h264_lenght_);
         fFrameSize         = h264_lenght_;

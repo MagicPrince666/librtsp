@@ -30,6 +30,8 @@ public:
 
     bool Nv12Yuv420p(const uint8_t* nv12, uint8_t* yuv420p, int width, int height);
 
+    bool Transfer(const uint8_t* raw, uint8_t* dst, int width, int height, const uint32_t src_format, const uint32_t dst_format);
+
 private:
     MppCtx mpp_ctx_ = nullptr;
     MppApi* mpp_api_ = nullptr;
@@ -55,9 +57,9 @@ private:
         {V4L2_PIX_FMT_MJPEG, RK_FORMAT_RGB_888}
     };
 
-    bool mppFrame2RGB(const MppFrame frame, uint8_t* data);
+    bool mppFrame2RGB(const MppFrame frame, uint8_t* data, const uint32_t dst_format);
 
-    bool Decode(const uint8_t* raw, uint8_t* rgb, int width, int height);
+    bool Decode(const uint8_t* raw, uint8_t* rgb, int width, int height, const uint32_t dst_format);
 };
 
 #endif

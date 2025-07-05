@@ -31,6 +31,9 @@
 
 #include "h264_camera.h"
 #include "h264encoder.h"
+#ifdef USE_RK_HW_ENCODER
+#include "calculate_rockchip.h"
+#endif
 
 #define USE_BUF_LIST 0
 
@@ -66,13 +69,23 @@ V4l2H264hData::~V4l2H264hData()
 
 void V4l2H264hData::Init()
 {
-    uint32_t pixelformat = V4L2_PIX_FMT_YUYV;
+    uint32_t pixelformat = V4L2_PIX_FMT_NV12;
+    uint32_t enc_pixelformat = pixelformat;
+    if (pixelformat == V4L2_PIX_FMT_MJPEG) {
+        enc_pixelformat = V4L2_PIX_FMT_NV12;
+    }
     p_capture_ = new (std::nothrow) V4l2VideoCapture(dev_name_.c_str(), video_width_, video_height_, video_fps_);
     p_capture_->Init(pixelformat); // 初始化摄像头
     video_format_ = p_capture_->GetFormat();
     camera_buf_   = new (std::nothrow) uint8_t[p_capture_->GetFrameLength()];
-    encoder_      = new (std::nothrow) H264Encoder(video_format_->width, video_format_->height, video_format_->v4l2_fmt.fmt.pix.pixelformat);
+    encoder_      = new (std::nothrow) H264Encoder(video_format_->width, video_format_->height, enc_pixelformat);
     encoder_->Init();
+
+#ifdef USE_RK_HW_ENCODER
+    calculate_ptr_ = std::make_shared<CalculateRockchip>(video_width_, video_height_);
+    calculate_ptr_->Init();
+    yuv420_buf_ = new (std::nothrow) uint8_t[p_capture_->GetFrameLength()];
+#endif
 
 #if USE_BUF_LIST
 #else
@@ -147,6 +160,9 @@ int32_t V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSiz
     if (p_capture_) {
         len = p_capture_->BuffOneFrame(camera_buf_);
         // spdlog::info("get size after encoder = {}", len);
+        if (video_format_->v4l2_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_MJPEG) {
+            calculate_ptr_->Transfer(camera_buf_, yuv420_buf_, video_width_, video_height_, V4L2_PIX_FMT_MJPEG, V4L2_PIX_FMT_NV12);
+        }
     }
 
     if (len <= 0) {
@@ -156,7 +172,11 @@ int32_t V4l2H264hData::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSiz
     }
 
     uint64_t length = 0;
-    encoder_->CompressFrame(FRAME_TYPE_AUTO, camera_buf_, h264_buf_, length);
+    if (video_format_->v4l2_fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_MJPEG) {
+        encoder_->CompressFrame(FRAME_TYPE_AUTO, yuv420_buf_, h264_buf_, length);
+    } else {
+        encoder_->CompressFrame(FRAME_TYPE_AUTO, camera_buf_, h264_buf_, length);
+    }
     if (length < fMaxSize) {
         memcpy(fTo, h264_buf_, length);
         fFrameSize         = length;
