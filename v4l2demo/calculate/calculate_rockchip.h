@@ -28,6 +28,8 @@ public:
 
     bool TransferRgb888(const uint8_t* raw, uint8_t* rgb, int width, int height, const uint32_t format);
 
+    bool Nv12Yuv420p(const uint8_t* nv12, uint8_t* yuv420p, int width, int height);
+
 private:
     MppCtx mpp_ctx_ = nullptr;
     MppApi* mpp_api_ = nullptr;

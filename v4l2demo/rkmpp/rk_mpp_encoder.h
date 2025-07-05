@@ -33,15 +33,10 @@ public:
 private:
     std::shared_ptr<V4l2VideoCapture> v4l2_ctx_;
     std::shared_ptr<Calculate> calculate_ptr_;
-    std::mutex data_mtx_;
     uint8_t *camera_buf_;
-    uint32_t camera_buf_size_;
     int h264_lenght_;
-    std::thread loop_thread_;
 
     void Init();
-
-    bool mppFrame2H264(const MppFrame frame, uint8_t* data);
 };
 
 class MppCamera : public VideoFactory
