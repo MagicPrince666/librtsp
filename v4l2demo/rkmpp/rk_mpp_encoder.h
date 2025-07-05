@@ -57,7 +57,7 @@ private:
 
     bool mppFrame2RGB(const MppFrame frame, uint8_t* data);
 
-    bool Decode(uint8_t* dest);
+    bool Decode();
 };
 
 class MppCamera : public VideoFactory

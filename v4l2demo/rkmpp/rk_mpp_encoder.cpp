@@ -143,7 +143,7 @@ bool RkMppEncoder::mppFrame2RGB(const MppFrame frame, uint8_t *data)
     return true;
 }
 
-bool RkMppEncoder::Decode(uint8_t *dest) {
+bool RkMppEncoder::Decode() {
   MPP_RET ret = MPP_OK;
   memset(data_buffer_, 0, video_width_ * video_height_ * 3);
   memcpy(data_buffer_, camera_buf_, camera_buf_size_);
@@ -201,7 +201,7 @@ bool RkMppEncoder::Decode(uint8_t *dest) {
       std::cerr << "mpp enqueue failed " << ret << std::endl;
       return false;
     }
-    memcpy(dest, rgb_buffer_, video_width_ * video_height_ * 3);
+    // memcpy(dest, rgb_buffer_, video_width_ * video_height_ * 3);
     return true;
   }
   return false;
@@ -211,6 +211,7 @@ int32_t RkMppEncoder::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize
 {
     std::unique_lock<std::mutex> lck(data_mtx_);
     camera_buf_size_ = v4l2_ctx_->BuffOneFrame(camera_buf_);
+    Decode();
 
     if (h264_lenght_ < fMaxSize) {
         memcpy(fTo, camera_buf_, h264_lenght_);
