@@ -118,15 +118,29 @@ void H264Encoder::Init()
     if ((encode_.handle = x264_encoder_open(encode_.param)) == 0) {
         return;
     }
-// #ifdef USE_NV12_FORMAT
-//     x264_picture_alloc(encode_.picture, X264_CSP_NV12, encode_.param->i_width,
-//                        encode_.param->i_height);
-//     encode_.picture->img.i_csp = X264_CSP_NV12;
-// #else
+#if 1
     x264_picture_alloc(encode_.picture, X264_CSP_I420, encode_.param->i_width,
-                       encode_.param->i_height);
-    encode_.picture->img.i_csp = X264_CSP_I420;
-// #endif
+                        encode_.param->i_height);
+        encode_.picture->img.i_csp = X264_CSP_I420;
+#else
+    if (pixelformat_ == V4L2_PIX_FMT_NV12) {
+        x264_picture_alloc(encode_.picture, X264_CSP_NV12, encode_.param->i_width,
+                           encode_.param->i_height);
+        encode_.picture->img.i_csp = X264_CSP_NV12;
+    } else if (pixelformat_ == V4L2_PIX_FMT_YUYV) {
+        x264_picture_alloc(encode_.picture, X264_CSP_YUYV, encode_.param->i_width,
+                        encode_.param->i_height);
+        encode_.picture->img.i_csp = X264_CSP_YUYV;
+    } else if (pixelformat_ == V4L2_PIX_FMT_YUV420) {
+        x264_picture_alloc(encode_.picture, X264_CSP_I420, encode_.param->i_width,
+                        encode_.param->i_height);
+        encode_.picture->img.i_csp = X264_CSP_I420;
+    }else if (pixelformat_ == V4L2_PIX_FMT_RGB24) {
+        x264_picture_alloc(encode_.picture, X264_CSP_RGB, encode_.param->i_width,
+                        encode_.param->i_height);
+        encode_.picture->img.i_csp = X264_CSP_RGB;
+    }
+#endif
     encode_.picture->img.i_plane = 3;
 }
 
@@ -153,6 +167,7 @@ bool H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out, uint6
     int result     = 0;
     uint8_t *p_out = out;
 
+#if 1
     char *y = (char *)(encode_.picture->img.plane[0]);
     char *u = (char *)(encode_.picture->img.plane[1]);
     char *v = (char *)(encode_.picture->img.plane[2]);
@@ -189,11 +204,27 @@ bool H264Encoder::CompressFrame(frametype type, uint8_t *in, uint8_t *out, uint6
             }
         }
     } else if (pixelformat_ == V4L2_PIX_FMT_YUV420) {
-        memcpy(y, in, 307200);
-        memcpy(u, in + 307200, 76800);
-        memcpy(v, in + 384000, 76800);
+        memcpy(y, in, video_width_ * video_height_);
+        memcpy(u, in + video_width_ * video_height_, video_width_ * video_height_ / 4);
+        memcpy(v, in + video_width_ * video_height_ + video_width_ * video_height_ / 4, video_width_ * video_height_ / 4);
     }
-
+#else
+    if (pixelformat_ == V4L2_PIX_FMT_NV12) {
+        memcpy(encode_.picture->img.plane[0], in, video_width_ * video_height_); // Y 平面
+        memcpy(encode_.picture->img.plane[1], in + video_width_ * video_height_, video_width_ * video_height_ / 2); // UV 平面
+    } else if (pixelformat_ == V4L2_PIX_FMT_YUYV) {
+        memcpy(encode_.picture->img.plane[0], in, video_width_ * video_height_ * 2); // YUYV 数据大小为宽度 * 高度 * 2
+    } else if (pixelformat_ == V4L2_PIX_FMT_YUV420) {
+        char *y = (char *)(encode_.picture->img.plane[0]);
+        char *u = (char *)(encode_.picture->img.plane[1]);
+        char *v = (char *)(encode_.picture->img.plane[2]);
+        memcpy(y, in, video_width_ * video_height_);
+        memcpy(u, in + video_width_ * video_height_, video_width_ * video_height_ / 4);
+        memcpy(v, in + video_width_ * video_height_ + video_width_ * video_height_ / 4, video_width_ * video_height_ / 4);
+    } else if (pixelformat_ == V4L2_PIX_FMT_RGB24) {
+        memcpy(encode_.picture->img.plane[0], in, video_width_ * video_height_ * 3);
+    }
+#endif
     switch (type) {
     case FRAME_TYPE_P:
         encode_.picture->i_type = X264_TYPE_P;
