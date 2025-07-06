@@ -33,6 +33,8 @@
 #include "h264encoder.h"
 #ifdef USE_RK_HW_ENCODER
 #include "calculate_rockchip.h"
+#else
+#include "calculate_cpu.h"
 #endif
 
 #define USE_BUF_LIST 0
@@ -81,11 +83,14 @@ void V4l2H264hData::Init()
     encoder_      = new (std::nothrow) H264Encoder(video_format_->width, video_format_->height, enc_pixelformat);
     encoder_->Init();
 
+    yuv420_buf_ = new (std::nothrow) uint8_t[p_capture_->GetFrameLength()];
+
 #ifdef USE_RK_HW_ENCODER
     calculate_ptr_ = std::make_shared<CalculateRockchip>(video_width_, video_height_);
-    calculate_ptr_->Init();
-    yuv420_buf_ = new (std::nothrow) uint8_t[p_capture_->GetFrameLength()];
+#else
+    calculate_ptr_ = std::make_shared<CalculateCpu>();
 #endif
+    calculate_ptr_->Init();
 
 #if USE_BUF_LIST
 #else
