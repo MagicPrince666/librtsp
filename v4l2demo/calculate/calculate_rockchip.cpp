@@ -98,6 +98,10 @@ void CalculateRockchip::Init()
     }
     mpp_packet_init_with_buffer(&mpp_packet_, mpp_packet_buffer_);
     data_buffer_ = (uint8_t *)mpp_buffer_get_ptr(mpp_packet_buffer_);
+    if (!data_buffer_) {
+        std::cerr << "mpp_buffer_get_ptr failed" << std::endl;
+        throw std::runtime_error("mpp_buffer_get_ptr failed");
+    }
 
     // 初始化 RGA
     if (c_RkRgaInit() != 0) {
