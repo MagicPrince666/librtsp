@@ -79,7 +79,7 @@ bool RkMppEncoder::Init()
     mpp_enc_cfg_set_s32(m_cfg, "prep:height", m_height);
     mpp_enc_cfg_set_s32(m_cfg, "prep:hor_stride", m_width);
     mpp_enc_cfg_set_s32(m_cfg, "prep:ver_stride", m_height);
-    mpp_enc_cfg_set_s32(m_cfg, "prep:format", MPP_FMT_YUV420P);
+    mpp_enc_cfg_set_s32(m_cfg, "prep:format", MPP_FMT_YUV420SP);
     
     mpp_enc_cfg_set_s32(m_cfg, "rc:mode", MPP_ENC_RC_MODE_CBR);
     mpp_enc_cfg_set_s32(m_cfg, "rc:bps_target", m_bitrate);
@@ -132,7 +132,7 @@ bool RkMppEncoder::encodeFrame(void* inputData, void** outputData, size_t* outpu
     mpp_frame_set_height(frame, m_height);
     mpp_frame_set_hor_stride(frame, m_width);
     mpp_frame_set_ver_stride(frame, m_height);
-    mpp_frame_set_fmt(frame, MPP_FMT_YUV420P);
+    mpp_frame_set_fmt(frame, MPP_FMT_YUV420SP);
     mpp_frame_set_eos(frame, 0);
     
     // 创建输入缓冲区
@@ -220,7 +220,7 @@ bool RkMppEncoder::encodeFrame(void* inputData, void** outputData, size_t* outpu
 int32_t RkMppEncoder::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
 {
     uint32_t len = v4l2_ctx_->BuffOneFrame(camera_buf_);
-    calculate_ptr_->Transfer(camera_buf_, yuv420_buf_, video_width_, video_height_, V4L2_PIX_FMT_MJPEG, V4L2_PIX_FMT_YUV420);
+    calculate_ptr_->Transfer(camera_buf_, yuv420_buf_, video_width_, video_height_, V4L2_PIX_FMT_MJPEG, V4L2_PIX_FMT_NV12);
 
     void* encoded_data = nullptr;
     size_t encoded_size = 0;
