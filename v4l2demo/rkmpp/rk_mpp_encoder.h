@@ -20,7 +20,11 @@
 #include <rockchip/mpp_task.h>
 #include <rockchip/rk_mpi.h>
 #include <rga/RgaApi.h>
+
 #define MPP_ALIGN(x, a) (((x) + (a)-1) & ~((a)-1))
+#define FRAME_RATE 30
+#define GOP_SIZE   30
+#define BIT_RATE   4000000  // 4Mbps
 
 class RkMppEncoder : public VideoStream
 {
@@ -34,9 +38,24 @@ private:
     std::shared_ptr<V4l2VideoCapture> v4l2_ctx_;
     std::shared_ptr<Calculate> calculate_ptr_;
     uint8_t *camera_buf_;
+    uint8_t *yuv420_buf_;
     int h264_lenght_;
 
-    void Init();
+    MppCtx m_ctx;
+    MppApi* m_mpi;
+    MppBufferGroup m_buf_grp;
+    MppEncCfg m_cfg;
+
+    int m_width;
+    int m_height;
+    int m_fps;
+    int m_bitrate;
+    int m_gop;
+    size_t m_frame_size;
+
+    bool Init();
+
+    bool encodeFrame(void* inputData, void** outputData, size_t* outputSize);
 };
 
 class MppCamera : public VideoFactory

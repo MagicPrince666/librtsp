@@ -58,7 +58,7 @@ private:
         {V4L2_PIX_FMT_MJPEG, RK_FORMAT_UNKNOWN}
     };
 
-    bool mppFrame2RGB(const MppFrame frame, uint8_t* data, const uint32_t dst_format);
+    bool mppFrame2DstFormat(const MppFrame frame, uint8_t* data, const uint32_t dst_format);
 
     bool Decode(const uint8_t* raw, uint8_t* rgb, int width, int height, const uint32_t dst_format);
 };

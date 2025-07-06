@@ -282,7 +282,7 @@ bool CalculateRockchip::Transfer(const uint8_t* raw, uint8_t* dst, int width, in
     return true;
 }
 
-bool CalculateRockchip::mppFrame2RGB(const MppFrame frame, uint8_t *data, const uint32_t dst_format)
+bool CalculateRockchip::mppFrame2DstFormat(const MppFrame frame, uint8_t *data, const uint32_t dst_format)
 {
     int width        = mpp_frame_get_width(frame);
     int height       = mpp_frame_get_height(frame);
@@ -315,7 +315,7 @@ bool CalculateRockchip::mppFrame2RGB(const MppFrame frame, uint8_t *data, const 
 bool CalculateRockchip::Decode(const uint8_t* raw, uint8_t* rgb, int width, int height, const uint32_t dst_format) {
   MPP_RET ret = MPP_OK;
   uint32_t camera_size = width * height * 3;
-  memset(data_buffer_, 0, width * height * 3);
+  memset(data_buffer_, 0, camera_size);
   memcpy(data_buffer_, raw, camera_size);
   mpp_packet_set_pos(mpp_packet_, data_buffer_);
   mpp_packet_set_length(mpp_packet_, camera_size);
@@ -358,8 +358,8 @@ bool CalculateRockchip::Decode(const uint8_t* raw, uint8_t* rgb, int width, int 
         std::cerr << "mpp frame size error " << tmp_height << " " << tmp_height << std::endl;
         return false;
       }
-      if (!mppFrame2RGB(mpp_frame_, rgb, dst_format)) {
-        std::cerr << "mpp frame to rgb error" << std::endl;
+      if (!mppFrame2DstFormat(mpp_frame_, rgb, dst_format)) {
+        std::cerr << "mpp frame to dst format error" << std::endl;
         return false;
       }
       if (mpp_frame_get_eos(output_frame)) {

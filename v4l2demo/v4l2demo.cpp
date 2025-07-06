@@ -226,7 +226,7 @@ void rtp_thread(std::string dev)
     std::unique_ptr<VideoFactory> video_stream_factory(new UvcYuyvCamera);
 #endif
     std::unique_ptr<VideoStream> h264_video_(video_stream_factory->createVideoStream(dev, width, height, fps));
-    uint32_t fMaxSize = 1843200;
+    uint32_t fMaxSize = width * height;
     uint8_t *h264data = new uint8_t[fMaxSize];
 
     while (g_pause) {
