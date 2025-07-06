@@ -76,17 +76,9 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     )
 
     find_package(PkgConfig REQUIRED)
-    # 查找libx264库
-    pkg_check_modules(LIBX264 x264)
-
-    if (LIBX264_FOUND)
-        list(APPEND COMMON_LIBRARIES
-            ${LIBX264_LIBRARIES}
-        )
-    endif ()
 
     file(GLOB main_srcs 
-        v4l2demo/camera/*.cpp
+        v4l2demo/camera/video_capture.cpp
         v4l2demo/h264camera/*.cpp
         v4l2demo/epoll/*.cpp
         v4l2demo/ringbuf/*.cpp
@@ -97,7 +89,7 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
     if (USE_RK_HW_ENCODER)
         pkg_search_module(RK_MPP REQUIRED rockchip_mpp)
         if (NOT RK_MPP_FOUND)
-            message(FATAL_ERROR "rockchip_mpp is not found")
+            message(FATAL_ERROR "rockchip_mpp is not found use x264")
         endif ()
         pkg_search_module(RGA librga)
         if (NOT RGA_FOUND)
@@ -125,7 +117,19 @@ IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
             ${RK_MPP_INCLUDE_DIRS}
             ${RGA_INCLUDE_DIRS}
         )
+    else()
+        # 查找libx264库
+        pkg_check_modules(LIBX264 x264)
 
+        if (LIBX264_FOUND)
+            list(APPEND main_srcs
+                v4l2demo/camera/h264encoder.cpp
+                v4l2demo/camera/h264_camera.cpp
+            )
+            list(APPEND COMMON_LIBRARIES
+                ${LIBX264_LIBRARIES}
+            )
+        endif ()
     endif ()
 
     add_executable(${EXEC_NAME2} ${main_srcs})
