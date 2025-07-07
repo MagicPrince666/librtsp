@@ -116,7 +116,7 @@ bool RkMppEncoder::Init()
     return true;
 }
 
-bool RkMppEncoder::encodeFrame(void* inputData, void** outputData, size_t* outputSize) {
+bool RkMppEncoder::EncodeFrame(void* inputData, uint8_t* &outputData, size_t* outputSize) {
     MPP_RET ret = MPP_OK;
     MppBuffer input_buf = nullptr;
     MppBuffer output_buf = nullptr;
@@ -203,13 +203,13 @@ bool RkMppEncoder::encodeFrame(void* inputData, void** outputData, size_t* outpu
     size_t length = mpp_packet_get_length(packet);
     
     // 复制输出数据
-    *outputData = malloc(length);
-    if (!*outputData) {
+    outputData = new uint8_t[length];
+    if (!outputData) {
         fprintf(stderr, "malloc output buffer failed\n");
         return false;
     }
     
-    memcpy(*outputData, data, length);
+    memcpy(outputData, data, length);
     *outputSize = length;
     
     // 释放资源
@@ -233,9 +233,9 @@ int32_t RkMppEncoder::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize
         target_buff = camera_buf_;
     }
 
-    void* encoded_data = nullptr;
+    uint8_t* encoded_data = nullptr;
     size_t encoded_size = 0;
-    if (!encodeFrame(target_buff, &encoded_data, &encoded_size)) {
+    if (!EncodeFrame(target_buff, encoded_data, &encoded_size)) {
         fprintf(stderr, "Encode frame failed\n");
         return -1;
     }
@@ -249,6 +249,6 @@ int32_t RkMppEncoder::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize
         fNumTruncatedBytes = encoded_size - fMaxSize;
         fFrameSize         = fMaxSize;
     }
-    free(encoded_data);
+    delete[] encoded_data;
     return fFrameSize;
 }

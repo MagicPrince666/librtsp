@@ -56,7 +56,7 @@ private:
 
     bool Init();
 
-    bool encodeFrame(void* inputData, void** outputData, size_t* outputSize);
+    bool EncodeFrame(void* inputData, uint8_t* &outputData, size_t* outputSize);
 };
 
 class MppCamera : public VideoFactory
