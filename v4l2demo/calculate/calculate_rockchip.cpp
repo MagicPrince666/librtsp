@@ -102,12 +102,6 @@ void CalculateRockchip::Init()
         std::cerr << "mpp_buffer_get_ptr failed" << std::endl;
         throw std::runtime_error("mpp_buffer_get_ptr failed");
     }
-
-    // 初始化 RGA
-    if (c_RkRgaInit() != 0) {
-        fprintf(stderr, "RGA Init fail\n");
-        return;
-    }
 }
 
 bool CalculateRockchip::Yuv422Rgb(const uint8_t* yuyv, uint8_t* rgb, int width, int height)

@@ -27,10 +27,11 @@
 #include "ringbuffer.h"
 #include "epoll.h"
 
-#include "h264_camera.h"
 #include "H264_UVC_Cap.h"
 #ifdef USE_RK_HW_ENCODER
 #include "rk_mpp_encoder.h"
+#else
+#include "h264_camera.h"
 #endif
 
 std::atomic<bool> g_pause;

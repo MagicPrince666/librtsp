@@ -40,6 +40,7 @@ private:
     uint8_t *camera_buf_;
     uint8_t *yuv420_buf_;
     int h264_lenght_;
+    uint32_t pixelformat_;
 
     MppCtx m_ctx;
     MppApi* m_mpi;
