@@ -51,7 +51,7 @@ private:
 
     std::unordered_map<uint32_t, uint32_t> pix_fmt_map_ = {
         {V4L2_PIX_FMT_UYVY, RK_FORMAT_UYVY_422},
-        {V4L2_PIX_FMT_NV12, RK_FORMAT_YCbCr_420_SP},
+        {V4L2_PIX_FMT_NV12, RK_FORMAT_YCrCb_420_SP},
         {V4L2_PIX_FMT_NV16, RK_FORMAT_YCbCr_422_SP},
         {V4L2_PIX_FMT_YUYV, RK_FORMAT_YUYV_422},
         {V4L2_PIX_FMT_YUV420, RK_FORMAT_YUYV_420},

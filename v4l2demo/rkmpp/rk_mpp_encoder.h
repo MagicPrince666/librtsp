@@ -24,7 +24,7 @@
 #define MPP_ALIGN(x, a) (((x) + (a)-1) & ~((a)-1))
 #define FRAME_RATE 30
 #define GOP_SIZE   30
-#define BIT_RATE   4000000  // 4Mbps
+#define BIT_RATE   2000000  // 4Mbps
 
 class RkMppEncoder : public VideoStream
 {
