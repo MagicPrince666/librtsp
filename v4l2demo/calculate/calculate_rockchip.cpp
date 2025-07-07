@@ -61,7 +61,7 @@ void CalculateRockchip::Init()
         std::cerr << "mpp_init failed, ret = " << ret << std::endl;
         throw std::runtime_error("mpp_init failed");
     }
-    MppFrameFormat fmt = MPP_FMT_YUV420SP_VU;
+    MppFrameFormat fmt = MPP_FMT_YUV420SP;
     mpp_param          = &fmt;
     ret                = mpp_api_->control(mpp_ctx_, MPP_DEC_SET_OUTPUT_FORMAT, mpp_param);
     if (ret != MPP_OK) {
