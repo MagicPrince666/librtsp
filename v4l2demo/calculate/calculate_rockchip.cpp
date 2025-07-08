@@ -152,7 +152,7 @@ bool CalculateRockchip::TransferRgb888(const uint8_t* raw, uint8_t* rgb, int wid
     }
 
     if (format == V4L2_PIX_FMT_MJPEG) {
-        return Decode(raw, rgb, width, height, RK_FORMAT_RGB_888);
+        return Decode(raw, rgb, width, height, pix_fmt_map_[format], RK_FORMAT_RGB_888);
     }
 
     // 配置源图像
@@ -198,12 +198,12 @@ bool CalculateRockchip::TransferRgb888(const uint8_t* raw, uint8_t* rgb, int wid
 bool CalculateRockchip::Transfer(const uint8_t* raw, uint8_t* dst, int width, int height, const uint32_t src_format, const uint32_t dst_format)
 {
     if (src_format == V4L2_PIX_FMT_MJPEG && pix_fmt_map_.count(dst_format)) {
-        return Decode(raw, dst, width, height, pix_fmt_map_[dst_format]);
+        return Decode(raw, dst, width, height, pix_fmt_map_[src_format], pix_fmt_map_[dst_format]);
     }
     return true;
 }
 
-bool CalculateRockchip::mppFrame2DstFormat(const MppFrame frame, uint8_t *data, const uint32_t dst_format)
+bool CalculateRockchip::mppFrame2DstFormat(const MppFrame frame, uint8_t *data, const uint32_t src_format, const uint32_t dst_format)
 {
     int width        = mpp_frame_get_width(frame);
     int height       = mpp_frame_get_height(frame);
@@ -218,12 +218,12 @@ bool CalculateRockchip::mppFrame2DstFormat(const MppFrame frame, uint8_t *data, 
     src_info.fd      = -1;
     src_info.mmuFlag = 1;
     src_info.virAddr = buffer_ptr;
-    src_info.format  = RK_FORMAT_YCbCr_420_SP;
+    src_info.format  = src_format;
     dst_info.fd      = -1;
     dst_info.mmuFlag = 1;
     dst_info.virAddr = data;
     dst_info.format  = dst_format;
-    rga_set_rect(&src_info.rect, 0, 0, width, height, width, height, RK_FORMAT_YCbCr_420_SP);
+    rga_set_rect(&src_info.rect, 0, 0, width, height, width, height, src_format);
     rga_set_rect(&dst_info.rect, 0, 0, width, height, width, height, dst_format);
     int ret = c_RkRgaBlit(&src_info, &dst_info, nullptr);
     if (ret) {
@@ -233,7 +233,7 @@ bool CalculateRockchip::mppFrame2DstFormat(const MppFrame frame, uint8_t *data, 
     return true;
 }
 
-bool CalculateRockchip::Decode(const uint8_t* raw, uint8_t* rgb, int width, int height, const uint32_t dst_format) {
+bool CalculateRockchip::Decode(const uint8_t* raw, uint8_t* rgb, int width, int height, const uint32_t src_format, const uint32_t dst_format) {
   MPP_RET ret = MPP_OK;
   uint32_t camera_size = width * height * 3;
   memset(data_buffer_, 0, camera_size);
@@ -279,7 +279,7 @@ bool CalculateRockchip::Decode(const uint8_t* raw, uint8_t* rgb, int width, int 
         std::cerr << "mpp frame size error " << tmp_height << " " << tmp_height << std::endl;
         return false;
       }
-      if (!mppFrame2DstFormat(mpp_frame_, rgb, dst_format)) {
+      if (!mppFrame2DstFormat(mpp_frame_, rgb, src_format, dst_format)) {
         std::cerr << "mpp frame to dst format error" << std::endl;
         return false;
       }
