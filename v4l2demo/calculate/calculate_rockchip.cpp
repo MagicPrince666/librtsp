@@ -107,42 +107,17 @@ void CalculateRockchip::Init()
 
 bool CalculateRockchip::Yuv422Rgb(const uint8_t *yuyv, uint8_t *rgb, int width, int height)
 {
-    return TransferRgb888(yuyv, rgb, width, height, RK_FORMAT_YUYV_422);
+    return Transfer(yuyv, rgb, width, height, RK_FORMAT_YUYV_422, RK_FORMAT_RGB_888);
 }
 
 bool CalculateRockchip::Nv12Rgb24(const uint8_t *nv12, uint8_t *rgb, int width, int height)
 {
-    return TransferRgb888(nv12, rgb, width, height, RK_FORMAT_YCbCr_422_SP);
+    return Transfer(nv12, rgb, width, height, RK_FORMAT_YCbCr_422_SP, RK_FORMAT_RGB_888);
 }
 
 bool CalculateRockchip::Nv12Yuv420p(const uint8_t *nv12, uint8_t *yuv420p, int width, int height)
 {
-    int tmp_width    = mpp_frame_get_width(mpp_frame_);
-    int tmp_height   = mpp_frame_get_height(mpp_frame_);
-    MppBuffer buffer = mpp_frame_get_buffer(mpp_frame_);
-    // memset(yuv420p, 0, width * height * 3);
-    auto buffer_ptr = mpp_buffer_get_ptr(buffer);
-    rga_info_t src_info;
-    rga_info_t dst_info;
-    // NOTE: memset to zero is MUST
-    memset(&src_info, 0, sizeof(rga_info_t));
-    memset(&dst_info, 0, sizeof(rga_info_t));
-    src_info.fd      = -1;
-    src_info.mmuFlag = 1;
-    src_info.virAddr = buffer_ptr;
-    src_info.format  = RK_FORMAT_YCbCr_422_SP;
-    dst_info.fd      = -1;
-    dst_info.mmuFlag = 1;
-    dst_info.virAddr = yuv420p;
-    dst_info.format  = RK_FORMAT_RGB_888;
-    rga_set_rect(&src_info.rect, 0, 0, width, height, tmp_width, tmp_height, RK_FORMAT_YCbCr_422_SP);
-    rga_set_rect(&dst_info.rect, 0, 0, width, height, tmp_width, tmp_height, RK_FORMAT_RGB_888);
-    int ret = c_RkRgaBlit(&src_info, &dst_info, nullptr);
-    if (ret) {
-        std::cerr << "c_RkRgaBlit error " << ret << " errno " << strerror(errno) << std::endl;
-        return false;
-    }
-    return true;
+    return Transfer(nv12, yuv420p, width, height, RK_FORMAT_YCbCr_420_SP, RK_FORMAT_YUYV_420);
 }
 
 bool CalculateRockchip::TransferRgb888(const uint8_t *raw, uint8_t *rgb, int width, int height, const uint32_t format)
@@ -156,44 +131,7 @@ bool CalculateRockchip::TransferRgb888(const uint8_t *raw, uint8_t *rgb, int wid
         return Decode(raw, rgb, width, height, pix_fmt_map_[format], RK_FORMAT_RGB_888);
     }
 
-    // 配置源图像
-    rga_info_t srcInfo;
-    memset(&srcInfo, 0, sizeof(rga_info_t));
-    srcInfo.fd      = -1; // 使用虚拟地址
-    srcInfo.virAddr = (void *)raw;
-    srcInfo.mmuFlag = 1; // 启用MMU
-
-    // 设置源图像区域参数
-    rga_set_rect(&srcInfo.rect,
-                 0, 0,          // 起点坐标
-                 width, height, // 宽高
-                 width, height, // 虚拟宽高（步长）
-                 0              // raw格式
-    );
-    // 转换一下
-    srcInfo.rect.format = pix_fmt_map_[format];
-
-    // 配置目标图像（RGB888）
-    rga_info_t dstInfo;
-    memset(&dstInfo, 0, sizeof(rga_info_t));
-    dstInfo.fd      = -1;
-    dstInfo.virAddr = rgb;
-    dstInfo.mmuFlag = 1;
-
-    // 设置目标图像区域参数
-    rga_set_rect(&dstInfo.rect,
-                 0, 0,             // 起点坐标
-                 width, height,    // 宽高
-                 width, height,    // 步长=宽度x3（RGB888）
-                 RK_FORMAT_RGB_888 // RGB格式
-    );
-
-    int ret = c_RkRgaBlit(&srcInfo, &dstInfo, nullptr);
-    if (ret != 0) {
-        fprintf(stderr, "RGA transfer fail with: %d\n", ret);
-        return false;
-    }
-    return true;
+    return Transfer(raw, rgb, width, height, pix_fmt_map_[format], RK_FORMAT_RGB_888);
 }
 
 bool CalculateRockchip::Transfer(const uint8_t *raw, uint8_t *dst, int width, int height, const uint32_t src_format, const uint32_t dst_format)
@@ -240,7 +178,7 @@ bool CalculateRockchip::mppFrame2DstFormat(const MppFrame frame, uint8_t *data, 
 bool CalculateRockchip::Decode(const uint8_t *raw, uint8_t *rgb, int width, int height, const uint32_t src_format, const uint32_t dst_format)
 {
     MPP_RET ret          = MPP_OK;
-    uint32_t camera_size = width * height * 3;
+    uint32_t camera_size = width * height * 3 / 2;
     memset(data_buffer_, 0, camera_size);
     memcpy(data_buffer_, raw, camera_size);
     mpp_packet_set_pos(mpp_packet_, data_buffer_);
@@ -290,7 +228,7 @@ bool CalculateRockchip::Decode(const uint8_t *raw, uint8_t *rgb, int width, int 
                 // 格式相同则无需转换
                 MppBuffer buffer = mpp_frame_get_buffer(mpp_frame_);
                 uint8_t* buffer_ptr = (uint8_t*)mpp_buffer_get_ptr(buffer);
-                memcpy(rgb, buffer_ptr, tmp_width * tmp_height * 3);
+                memcpy(rgb, buffer_ptr, tmp_width * tmp_height * 3 / 2);
             } else {
                 if (!mppFrame2DstFormat(mpp_frame_, rgb, src_format, dst_format)) {
                     std::cerr << "mpp frame to dst format error" << std::endl;

@@ -36,14 +36,14 @@ bool RkMppEncoder::Init()
     std::cout << "RkMppEncoder::Init()" << std::endl;
     v4l2_ctx_ = std::make_shared<V4l2VideoCapture>(dev_name_, video_width_, video_height_, video_fps_);
     // v4l2_ctx_->AddCallback(std::bind(&RkMppEncoder::ProcessImage, this, std::placeholders::_1, std::placeholders::_2));
-    camera_buf_ = new (std::nothrow) uint8_t[video_width_ * video_height_ * 3];
+    camera_buf_ = new (std::nothrow) uint8_t[video_width_ * video_height_ * 3 / 2];
 
     pixelformat_ = V4L2_PIX_FMT_MJPEG;
 
     v4l2_ctx_->Init(pixelformat_); // V4L2_PIX_FMT_MJPEG
 
     if (pixelformat_ == V4L2_PIX_FMT_MJPEG) { // MJPG需要重编码
-        yuv420_buf_ = new (std::nothrow) uint8_t[video_width_ * video_height_ * 2];
+        yuv420_buf_ = new (std::nothrow) uint8_t[video_width_ * video_height_ * 3 / 2];
         calculate_ptr_ = std::make_shared<CalculateRockchip>(video_width_, video_height_);
         calculate_ptr_->Init();
     }
@@ -224,9 +224,11 @@ bool RkMppEncoder::EncodeFrame(void* inputData, uint8_t* &outputData, size_t* ou
 int32_t RkMppEncoder::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize, unsigned &fNumTruncatedBytes)
 {
     uint8_t * target_buff;
+    memset(camera_buf_, 0, video_width_ * video_height_ * 3 / 2);
     uint32_t len = v4l2_ctx_->BuffOneFrame(camera_buf_);
 
     if (calculate_ptr_) {
+        memset(yuv420_buf_, 0, video_width_ * video_height_ * 3 / 2);
         calculate_ptr_->Transfer(camera_buf_, yuv420_buf_, video_width_, video_height_, V4L2_PIX_FMT_MJPEG, V4L2_PIX_FMT_NV12);
         target_buff = yuv420_buf_;
     } else {
