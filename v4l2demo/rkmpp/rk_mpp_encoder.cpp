@@ -229,6 +229,7 @@ int32_t RkMppEncoder::getData(void *fTo, unsigned fMaxSize, unsigned &fFrameSize
 
     if (calculate_ptr_) {
         memset(yuv420_buf_, 0, video_width_ * video_height_ * 3 / 2);
+        calculate_ptr_->SetBufferSize(len);
         calculate_ptr_->Transfer(camera_buf_, yuv420_buf_, video_width_, video_height_, V4L2_PIX_FMT_MJPEG, V4L2_PIX_FMT_NV12);
         target_buff = yuv420_buf_;
     } else {

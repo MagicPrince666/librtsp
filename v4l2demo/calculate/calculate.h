@@ -19,6 +19,13 @@ public:
     virtual bool Nv12Yuv420p(const uint8_t* nv12, uint8_t* yuv420p, int width, int height) = 0;
 
     virtual bool Transfer(const uint8_t* raw, uint8_t* dst, int width, int height, const uint32_t src_format, const uint32_t dst_format) = 0;
+
+    void SetBufferSize(uint32_t size) {
+        buff_size_ = size;
+    }
+
+protected:
+    uint32_t buff_size_;
 };
 
 #endif

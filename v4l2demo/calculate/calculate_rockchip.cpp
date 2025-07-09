@@ -178,12 +178,12 @@ bool CalculateRockchip::mppFrame2DstFormat(const MppFrame frame, uint8_t *data, 
 bool CalculateRockchip::Decode(const uint8_t *raw, uint8_t *rgb, int width, int height, const uint32_t src_format, const uint32_t dst_format)
 {
     MPP_RET ret          = MPP_OK;
-    uint32_t camera_size = width * height * 3 / 2;
+    uint32_t camera_size = buff_size_;
     memset(data_buffer_, 0, camera_size);
     memcpy(data_buffer_, raw, camera_size);
-    mpp_packet_set_pos(mpp_packet_, data_buffer_);
-    mpp_packet_set_length(mpp_packet_, camera_size);
-    mpp_packet_set_eos(mpp_packet_);
+    mpp_packet_set_pos(mpp_packet_, data_buffer_); // MPP 数据包(MppPacket)的当前读写位置
+    mpp_packet_set_length(mpp_packet_, camera_size); // MPP 数据包(MppPacket)的有效数据长度
+    mpp_packet_set_eos(mpp_packet_); // 设置数据包结束标志
 
     ret = mpp_api_->poll(mpp_ctx_, MPP_PORT_INPUT, MPP_POLL_BLOCK);
     if (ret != MPP_OK) {
