@@ -1,11 +1,12 @@
 #include "calculate_rockchip.h"
 #include <unistd.h>
 
-#define MPP_ALIGN(x, a) (((x) + (a)-1) & ~((a)-1))
+#define MPP_ALIGN(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
-CalculateRockchip::CalculateRockchip(uint32_t width, uint32_t height) 
-: video_width_(width), video_height_(height)
-{}
+CalculateRockchip::CalculateRockchip(uint32_t width, uint32_t height)
+    : video_width_(width), video_height_(height)
+{
+}
 
 CalculateRockchip::~CalculateRockchip()
 {
@@ -87,7 +88,7 @@ void CalculateRockchip::Init()
     RK_U32 ver_stride = MPP_ALIGN(video_height_, 16);
     ret               = mpp_buffer_get(mpp_frame_group_, &mpp_frame_buffer_, hor_stride * ver_stride * 4);
     if (ret != MPP_OK) {
-        std::cerr << "mpp_buffer_get failed, ret = " <<  ret << std::endl;
+        std::cerr << "mpp_buffer_get failed, ret = " << ret << std::endl;
         throw std::runtime_error("mpp_buffer_get failed");
     }
     mpp_frame_set_buffer(mpp_frame_, mpp_frame_buffer_);
@@ -104,20 +105,20 @@ void CalculateRockchip::Init()
     }
 }
 
-bool CalculateRockchip::Yuv422Rgb(const uint8_t* yuyv, uint8_t* rgb, int width, int height)
+bool CalculateRockchip::Yuv422Rgb(const uint8_t *yuyv, uint8_t *rgb, int width, int height)
 {
     return TransferRgb888(yuyv, rgb, width, height, RK_FORMAT_YUYV_422);
 }
 
-bool CalculateRockchip::Nv12Rgb24(const uint8_t* nv12, uint8_t* rgb, int width, int height)
+bool CalculateRockchip::Nv12Rgb24(const uint8_t *nv12, uint8_t *rgb, int width, int height)
 {
     return TransferRgb888(nv12, rgb, width, height, RK_FORMAT_YCbCr_422_SP);
 }
 
-bool CalculateRockchip::Nv12Yuv420p(const uint8_t* nv12, uint8_t* yuv420p, int width, int height)
+bool CalculateRockchip::Nv12Yuv420p(const uint8_t *nv12, uint8_t *yuv420p, int width, int height)
 {
-    int tmp_width        = mpp_frame_get_width(mpp_frame_);
-    int tmp_height       = mpp_frame_get_height(mpp_frame_);
+    int tmp_width    = mpp_frame_get_width(mpp_frame_);
+    int tmp_height   = mpp_frame_get_height(mpp_frame_);
     MppBuffer buffer = mpp_frame_get_buffer(mpp_frame_);
     // memset(yuv420p, 0, width * height * 3);
     auto buffer_ptr = mpp_buffer_get_ptr(buffer);
@@ -144,7 +145,7 @@ bool CalculateRockchip::Nv12Yuv420p(const uint8_t* nv12, uint8_t* yuv420p, int w
     return true;
 }
 
-bool CalculateRockchip::TransferRgb888(const uint8_t* raw, uint8_t* rgb, int width, int height, const uint32_t format)
+bool CalculateRockchip::TransferRgb888(const uint8_t *raw, uint8_t *rgb, int width, int height, const uint32_t format)
 {
     if (width <= 0 || height <= 0 || !raw || !rgb) {
         std::cerr << "Invalid input parameters" << std::endl;
@@ -158,33 +159,33 @@ bool CalculateRockchip::TransferRgb888(const uint8_t* raw, uint8_t* rgb, int wid
     // 配置源图像
     rga_info_t srcInfo;
     memset(&srcInfo, 0, sizeof(rga_info_t));
-    srcInfo.fd = -1;  // 使用虚拟地址
-    srcInfo.virAddr = (void*)raw;
-    srcInfo.mmuFlag = 1;  // 启用MMU
+    srcInfo.fd      = -1; // 使用虚拟地址
+    srcInfo.virAddr = (void *)raw;
+    srcInfo.mmuFlag = 1; // 启用MMU
 
     // 设置源图像区域参数
     rga_set_rect(&srcInfo.rect,
-        0, 0,             // 起点坐标
-        width, height,     // 宽高
-        width, height,     // 虚拟宽高（步长）
-        0  // raw格式
+                 0, 0,          // 起点坐标
+                 width, height, // 宽高
+                 width, height, // 虚拟宽高（步长）
+                 0              // raw格式
     );
     // 转换一下
     srcInfo.rect.format = pix_fmt_map_[format];
-    
+
     // 配置目标图像（RGB888）
     rga_info_t dstInfo;
     memset(&dstInfo, 0, sizeof(rga_info_t));
-    dstInfo.fd = -1;
+    dstInfo.fd      = -1;
     dstInfo.virAddr = rgb;
     dstInfo.mmuFlag = 1;
 
     // 设置目标图像区域参数
     rga_set_rect(&dstInfo.rect,
-        0, 0,             // 起点坐标
-        width, height,     // 宽高
-        width, height, // 步长=宽度x3（RGB888）
-        RK_FORMAT_RGB_888  // RGB格式
+                 0, 0,             // 起点坐标
+                 width, height,    // 宽高
+                 width, height,    // 步长=宽度x3（RGB888）
+                 RK_FORMAT_RGB_888 // RGB格式
     );
 
     int ret = c_RkRgaBlit(&srcInfo, &dstInfo, nullptr);
@@ -195,10 +196,13 @@ bool CalculateRockchip::TransferRgb888(const uint8_t* raw, uint8_t* rgb, int wid
     return true;
 }
 
-bool CalculateRockchip::Transfer(const uint8_t* raw, uint8_t* dst, int width, int height, const uint32_t src_format, const uint32_t dst_format)
+bool CalculateRockchip::Transfer(const uint8_t *raw, uint8_t *dst, int width, int height, const uint32_t src_format, const uint32_t dst_format)
 {
     if (src_format == V4L2_PIX_FMT_MJPEG && pix_fmt_map_.count(dst_format)) {
         return Decode(raw, dst, width, height, pix_fmt_map_[src_format], pix_fmt_map_[dst_format]);
+    } else {
+        MppFrame frame;
+        return mppFrame2DstFormat(frame, dst, pix_fmt_map_[src_format], pix_fmt_map_[dst_format]);
     }
     return true;
 }
@@ -233,67 +237,77 @@ bool CalculateRockchip::mppFrame2DstFormat(const MppFrame frame, uint8_t *data, 
     return true;
 }
 
-bool CalculateRockchip::Decode(const uint8_t* raw, uint8_t* rgb, int width, int height, const uint32_t src_format, const uint32_t dst_format) {
-  MPP_RET ret = MPP_OK;
-  uint32_t camera_size = width * height * 3;
-  memset(data_buffer_, 0, camera_size);
-  memcpy(data_buffer_, raw, camera_size);
-  mpp_packet_set_pos(mpp_packet_, data_buffer_);
-  mpp_packet_set_length(mpp_packet_, camera_size);
-  mpp_packet_set_eos(mpp_packet_);
+bool CalculateRockchip::Decode(const uint8_t *raw, uint8_t *rgb, int width, int height, const uint32_t src_format, const uint32_t dst_format)
+{
+    MPP_RET ret          = MPP_OK;
+    uint32_t camera_size = width * height * 3;
+    memset(data_buffer_, 0, camera_size);
+    memcpy(data_buffer_, raw, camera_size);
+    mpp_packet_set_pos(mpp_packet_, data_buffer_);
+    mpp_packet_set_length(mpp_packet_, camera_size);
+    mpp_packet_set_eos(mpp_packet_);
 
-  ret = mpp_api_->poll(mpp_ctx_, MPP_PORT_INPUT, MPP_POLL_BLOCK);
-  if (ret != MPP_OK) {
-    std::cerr << "mpp poll failed " << ret << std::endl;
-    return false;
-  }
-  ret = mpp_api_->dequeue(mpp_ctx_, MPP_PORT_INPUT, &mpp_task_);
-  if (ret != MPP_OK) {
-    std::cerr << "mpp dequeue failed " << ret << std::endl;
-    return false;
-  }
-  mpp_task_meta_set_packet(mpp_task_, KEY_INPUT_PACKET, mpp_packet_);
-  mpp_task_meta_set_frame(mpp_task_, KEY_OUTPUT_FRAME, mpp_frame_);
-  ret = mpp_api_->enqueue(mpp_ctx_, MPP_PORT_INPUT, mpp_task_);
-  if (ret != MPP_OK) {
-    std::cerr << "mpp enqueue failed " << ret << std::endl;
-    return false;
-  }
-  ret = mpp_api_->poll(mpp_ctx_, MPP_PORT_OUTPUT, MPP_POLL_BLOCK);
-  if (ret != MPP_OK) {
-    std::cerr << "mpp poll failed " << ret << std::endl;
-    return false;
-  }
-  ret = mpp_api_->dequeue(mpp_ctx_, MPP_PORT_OUTPUT, &mpp_task_);
-  if (ret != MPP_OK) {
-    std::cerr << "mpp dequeue failed " << ret << std::endl;
-    return false;
-  }
-  if (mpp_task_) {
-    MppFrame output_frame = nullptr;
-    mpp_task_meta_get_frame(mpp_task_, KEY_OUTPUT_FRAME, &output_frame);
-    if (mpp_frame_) {
-      int tmp_width = mpp_frame_get_width(mpp_frame_);
-      int tmp_height = mpp_frame_get_height(mpp_frame_);
-      if (width != tmp_width || height != tmp_height) {
-        std::cerr << "mpp frame size error " << tmp_height << " " << tmp_height << std::endl;
-        return false;
-      }
-      if (!mppFrame2DstFormat(mpp_frame_, rgb, src_format, dst_format)) {
-        std::cerr << "mpp frame to dst format error" << std::endl;
-        return false;
-      }
-      if (mpp_frame_get_eos(output_frame)) {
-        std::cout <<  "mpp frame get eos" << std::endl;
-      }
-    }
-    ret = mpp_api_->enqueue(mpp_ctx_, MPP_PORT_OUTPUT, mpp_task_);
+    ret = mpp_api_->poll(mpp_ctx_, MPP_PORT_INPUT, MPP_POLL_BLOCK);
     if (ret != MPP_OK) {
-      std::cerr << "mpp enqueue failed " << ret << std::endl;
-      return false;
+        std::cerr << "mpp poll failed " << ret << std::endl;
+        return false;
     }
-    // memcpy(dest, rgb_buffer_, video_width_ * video_height_ * 3);
-    return true;
-  }
-  return false;
+    ret = mpp_api_->dequeue(mpp_ctx_, MPP_PORT_INPUT, &mpp_task_);
+    if (ret != MPP_OK) {
+        std::cerr << "mpp dequeue failed " << ret << std::endl;
+        return false;
+    }
+    mpp_task_meta_set_packet(mpp_task_, KEY_INPUT_PACKET, mpp_packet_);
+    mpp_task_meta_set_frame(mpp_task_, KEY_OUTPUT_FRAME, mpp_frame_);
+    ret = mpp_api_->enqueue(mpp_ctx_, MPP_PORT_INPUT, mpp_task_);
+    if (ret != MPP_OK) {
+        std::cerr << "mpp enqueue failed " << ret << std::endl;
+        return false;
+    }
+    ret = mpp_api_->poll(mpp_ctx_, MPP_PORT_OUTPUT, MPP_POLL_BLOCK);
+    if (ret != MPP_OK) {
+        std::cerr << "mpp poll failed " << ret << std::endl;
+        return false;
+    }
+    ret = mpp_api_->dequeue(mpp_ctx_, MPP_PORT_OUTPUT, &mpp_task_);
+    if (ret != MPP_OK) {
+        std::cerr << "mpp dequeue failed " << ret << std::endl;
+        return false;
+    }
+    if (mpp_task_) {
+        MppFrame output_frame = nullptr;
+        mpp_task_meta_get_frame(mpp_task_, KEY_OUTPUT_FRAME, &output_frame);
+        if (mpp_frame_) {
+            int tmp_width  = mpp_frame_get_width(mpp_frame_);
+            int tmp_height = mpp_frame_get_height(mpp_frame_);
+            if (width != tmp_width || height != tmp_height) {
+                std::cerr << "mpp frame size error " << tmp_height << " " << tmp_height << std::endl;
+                return false;
+            }
+
+            // std::cout << "src_format " << src_format << " dst_format " << dst_format << std::endl;
+            if (src_format == dst_format) {
+                // 格式相同则无需转换
+                MppBuffer buffer = mpp_frame_get_buffer(mpp_frame_);
+                uint8_t* buffer_ptr = (uint8_t*)mpp_buffer_get_ptr(buffer);
+                memcpy(rgb, buffer_ptr, tmp_width * tmp_height * 3);
+            } else {
+                if (!mppFrame2DstFormat(mpp_frame_, rgb, src_format, dst_format)) {
+                    std::cerr << "mpp frame to dst format error" << std::endl;
+                    return false;
+                }
+            }
+            if (mpp_frame_get_eos(output_frame)) {
+                std::cout << "mpp frame get eos" << std::endl;
+            }
+        }
+        ret = mpp_api_->enqueue(mpp_ctx_, MPP_PORT_OUTPUT, mpp_task_);
+        if (ret != MPP_OK) {
+            std::cerr << "mpp enqueue failed " << ret << std::endl;
+            return false;
+        }
+        // memcpy(dest, rgb_buffer_, video_width_ * video_height_ * 3);
+        return true;
+    }
+    return false;
 }
